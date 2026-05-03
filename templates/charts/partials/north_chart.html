@@ -1,0 +1,18 @@
+<div class="north-chart" aria-label="{{ label }}">
+  <svg viewBox="0 0 100 100" role="img" fill="none">
+    <rect class="chart-line" x="1" y="1" width="98" height="98"></rect>
+    <path class="chart-line" d="M1 1 L99 99 M99 1 L1 99 M50 1 L99 50 L50 99 L1 50 Z"></path>
+    {% for house in houses %}
+      <text class="house-planets" x="{{ house.position.planets.x }}" y="{{ house.position.planets.y }}">
+        {% for planet in house.occupants %}
+          <tspan x="{{ house.position.planets.x }}" dy="{% if forloop.first %}0{% else %}3.1{% endif %}">
+            {{ planet.code }}
+          </tspan>
+        {% endfor %}
+        <tspan class="house-sign-inline" x="{{ house.position.planets.x }}" dy="{% if house.occupants %}3.7{% else %}0{% endif %}">
+          ({{ house.sign_number }})
+        </tspan>
+      </text>
+    {% endfor %}
+  </svg>
+</div>

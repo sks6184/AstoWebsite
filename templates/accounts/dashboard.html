@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Astrology GPT{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <h1>Dashboard</h1>
+  <a class="button icon-new" href="{% url 'chart_create' %}">New chart</a>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <h2>Your plan</h2>
+    {% if current_plan %}
+      <p>{{ current_plan.name }}</p>
+    {% else %}
+      <p>Free starter plan</p>
+    {% endif %}
+    {% if next_plan %}
+      <p class="plan-upgrade-copy">
+        Upgrade to {{ next_plan.name }} for more saved charts and deeper questions.
+      </p>
+      <a class="button icon-upgrade" href="{% url 'home' %}#pricing">Upgrade plan</a>
+    {% else %}
+      <p class="plan-max-note">You are already on the maximum plan.</p>
+    {% endif %}
+    {% if credit_status %}
+      <div class="credit-pill" aria-label="Question credit status">
+        {% if credit_status.enforced %}
+          <strong>{{ credit_status.remaining }}</strong>
+          <span>credits left</span>
+        {% else %}
+          <strong>Unlimited</strong>
+          <span>questions</span>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <h2>Ask a question</h2>
+    <p>Use your saved chart context to create a reading.</p>
+    {% if charts %}
+      <a class="button icon-ask" href="{% url 'ask_question' %}">Ask now</a>
+    {% else %}
+      <button class="button icon-ask" type="button" data-requires-chart>Ask now</button>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <h2>Recent charts</h2>
+    {% for chart in charts %}
+      <p>{{ chart.name }} - {{ chart.birth_place }}</p>
+    {% empty %}
+      <p>No charts saved yet.</p>
+    {% endfor %}
+  </div>
+  <div class="panel">
+    <h2>Recent conversations</h2>
+    {% for conversation in conversations %}
+      <p>{{ conversation }}</p>
+    {% empty %}
+      <p>No conversations yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<dialog class="app-dialog" id="create-chart-dialog">
+  <form method="dialog">
+    <h2>Create a chart first</h2>
+    <p>You need at least one saved birth chart before asking a question.</p>
+    <div class="dialog-actions">
+      <button class="button secondary" value="cancel">Cancel</button>
+      <button class="button icon-new" value="confirm">OK, create chart</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (() => {
+    const askButton = document.querySelector("[data-requires-chart]");
+    const dialog = document.getElementById("create-chart-dialog");
+    if (!askButton || !dialog) {
+      return;
+    }
+
+    askButton.addEventListener("click", () => {
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else if (window.confirm("Create a chart before asking a question?")) {
+        window.location.href = "{% url 'chart_create' %}";
+      }
+    });
+
+    dialog.addEventListener("close", () => {
+      if (dialog.returnValue === "confirm") {
+        window.location.href = "{% url 'chart_create' %}";
+      }
+    });
+  })();
+</script>
+{% endblock %}

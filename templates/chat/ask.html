@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load chat_formatting %}
+
+{% block title %}Ask - Astrology GPT{% endblock %}
+
+{% block content %}
+<div class="ask-workspace">
+  <section class="panel ask-panel">
+    <h1>Ask a question</h1>
+    {% if credit_status %}
+      <p class="credit-status">
+        {% if credit_status.enforced %}
+          Questions remaining: <strong>{{ credit_status.remaining }}</strong> of {{ credit_status.total }}.
+        {% else %}
+          Question limits are currently off.
+        {% endif %}
+      </p>
+      {% if credit_status.enforced and not credit_status.has_credits %}
+        <p class="credit-warning">
+          You have used all your question credits.
+          <a href="{% url 'home' %}#pricing">Buy more credits</a>
+        </p>
+      {% endif %}
+    {% endif %}
+    <form method="post" data-ask-form>
+      {% csrf_token %}
+      <label for="chart-select">Chart</label>
+      <select id="chart-select" name="chart_id">
+        <option value="">No chart selected</option>
+        {% for chart in charts %}
+          <option value="{{ chart.id }}" {% if conversation.chart_id == chart.id or selected_chart_id == chart.id %}selected{% endif %}>
+            {{ chart.name }} - {{ chart.birth_place }}
+          </option>
+        {% endfor %}
+      </select>
+      {{ form.depth_level.label_tag }}
+      {{ form.depth_level }}
+      {{ form.answer_language.label_tag }}
+      {{ form.answer_language }}
+      {{ form.question.label_tag }}
+      {{ form.question }}
+      <button class="button icon-ask" type="submit">Ask</button>
+    </form>
+  </section>
+
+  <section class="panel answer-panel">
+    <div class="answer-panel__header">
+      <h2>Generated answer</h2>
+      {% if conversation %}
+        <span>{{ conversation.get_depth_level_display }}</span>
+      {% endif %}
+    </div>
+
+    {% if conversation %}
+      <div class="answer-thread">
+        {% for message in conversation.messages.all %}
+          <article class="message {{ message.role }}">
+            <strong>{{ message.get_role_display }}</strong>
+            <div class="message-content">
+              {% if message.role == "assistant" %}
+                {{ message.content|astro_answer }}
+              {% else %}
+                <p>{{ message.content }}</p>
+              {% endif %}
+            </div>
+            {% if message.model_name %}
+              <small class="message-meta">
+                {{ message.model_name }} · input {{ message.prompt_tokens }} · output {{ message.completion_tokens }}
+              </small>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="answer-empty">
+        <h3>Your answer will appear here.</h3>
+        <p>Select a chart, choose the depth and language, then ask your question.</p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<div class="loading-overlay" data-loading-overlay hidden>
+  <div class="loading-card" role="status" aria-live="polite">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <h2>Preparing your answer</h2>
+    <p>Gathering chart calculations and reading from the astrology knowledge base...</p>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const form = document.querySelector("[data-ask-form]");
+    const overlay = document.querySelector("[data-loading-overlay]");
+    if (!form || !overlay) {
+      return;
+    }
+
+    form.addEventListener("submit", () => {
+      overlay.hidden = false;
+      document.body.classList.add("is-loading");
+
+      form.querySelectorAll("button, input, textarea").forEach((field) => {
+        field.readOnly = true;
+        if (field.tagName === "BUTTON") {
+          field.disabled = true;
+        }
+      });
+    });
+  })();
+</script>
+{% endblock %}

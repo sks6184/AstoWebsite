@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Astrology GPT - Vedic chart readings{% endblock %}
+{% block body_class %}home-body{% endblock %}
+
+{% block content %}
+<div class="home-page">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Vedic Intelligence for Modern Life</p>
+      <h1>Sage Wisdom Meets Modern Intelligence.</h1>
+      <p>
+        Rooted in the heritage of Parashar, Bhrigu, and Jaimini, this system blends
+        classical Vedic principles with modern AI to calculate charts, preserve insights,
+        and answer deeper life questions.
+      </p>
+      <div class="actions">
+        {% if user.is_authenticated %}
+          <a class="button icon-dashboard" href="{% url 'dashboard' %}">Open dashboard</a>
+        {% else %}
+          <a class="button icon-login" href="{% url 'login' %}">Login</a>
+        {% endif %}
+        <a class="button secondary icon-new" href="{% url 'chart_create' %}">Create chart</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <article>
+      <h2>Free</h2>
+      <p>1 saved chart, 2 quick questions.</p>
+    </article>
+    <article>
+      <h2>$5</h2>
+      <p>10 saved charts, 5 deeper questions.</p>
+    </article>
+    <article>
+      <h2>$10</h2>
+      <p>15 saved charts, 10 full analysis questions.</p>
+    </article>
+  </section>
+</div>
+{% endblock %}

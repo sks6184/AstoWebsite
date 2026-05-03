@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Charts - Astrology GPT{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <h1>Saved charts</h1>
+  <a class="button icon-new" href="{% url 'chart_create' %}">New chart</a>
+</section>
+
+<section class="chart-stack">
+  {% for chart in charts %}
+    <details class="chart-card">
+      <summary class="chart-summary">
+        <span>
+          <strong>{{ chart.name }}</strong>
+          {{ chart.birth_date|date:"d-M-Y" }} at {{ chart.birth_time }} - {{ chart.birth_place }}
+        </span>
+        <span class="chart-actions">
+          <a
+            class="chart-action icon-ask"
+            href="{% url 'ask_question' %}?chart_id={{ chart.id }}"
+            onclick="event.stopPropagation();"
+          >Ask</a>
+          <span class="chart-summary__action icon-show">Show chart</span>
+          <form
+            action="{% url 'chart_delete' chart.id %}"
+            method="post"
+            onclick="event.stopPropagation();"
+            onsubmit="return confirm('Delete {{ chart.name|escapejs }}? This cannot be undone.');"
+          >
+            {% csrf_token %}
+            <button class="chart-action chart-action--danger icon-delete" type="submit">Delete</button>
+          </form>
+        </span>
+      </summary>
+
+      {% if chart.chart_data.calculation_error %}
+        <div class="chart-warning">
+          {{ chart.chart_data.calculation_error }}
+          Create the chart again by selecting a birthplace suggestion so latitude and longitude are saved.
+        </div>
+      {% elif chart.chart_data.d1 %}
+        <div class="chart-body">
+          <section class="chart-panel chart-panel--charts">
+            <div class="chart-pair">
+              <div>
+                <h2>Lagna Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d1.houses label="Lagna chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Hora Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d2.houses label="Hora chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Saptamsha Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d7.houses label="Saptamsha chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Navamsha Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d9.houses label="Navamsha chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Dasamsa Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d10.houses label="Dasamsa chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Vimshamsha Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d20.houses label="Vimshamsha chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Siddhamsha Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d24.houses label="Siddhamsha chart with planets in houses" %}
+              </div>
+              <div>
+                <h2>Trimsamsha Chart</h2>
+                {% include "charts/partials/north_chart.html" with houses=chart.chart_data.d30.houses label="Trimsamsha chart with planets in houses" %}
+              </div>
+            </div>
+          </section>
+
+          <div class="chart-table-stack">
+            <section class="chart-panel chart-panel--table">
+              <h2>Planet Details</h2>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Planet</th>
+                      <th>House</th>
+                      <th>Sign</th>
+                      <th>Sign Lord</th>
+                      <th>Degree</th>
+                      <th>Nakshatra</th>
+                      <th>Nakshatra Lord</th>
+                      <th>Pada</th>
+                      <th>Jaimini Karaka</th>
+                      <th>Motion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for planet in chart.chart_data.d1.planets %}
+                      <tr>
+                        <td>{{ planet.name }}</td>
+                        <td>{{ planet.house }}</td>
+                        <td>{{ planet.sign }}</td>
+                        <td>{{ planet.sign_lord }}</td>
+                        <td>{{ planet.degree }}</td>
+                        <td>{{ planet.nakshatra }}</td>
+                        <td>{{ planet.nakshatra_lord }}</td>
+                        <td>{{ planet.pada }}</td>
+                        <td>{{ planet.jaimini_karaka|default:"-" }}</td>
+                        <td>{{ planet.motion }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <p class="chart-note">D = direct, R = retrograde. Calculations use Lahiri ayanamsa.</p>
+            </section>
+
+            <section class="chart-panel chart-panel--table">
+              <h2>Ashtakavarga</h2>
+              <p class="chart-note">
+                Bhinna Ashtakavarga bindus by sign, with Sarvashtakavarga total in the last column.
+              </p>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>House</th>
+                      <th>Sign</th>
+                      {% for planet_code in chart.chart_data.ashtakavarga.planet_codes %}
+                        <th>{{ planet_code }}</th>
+                      {% endfor %}
+                      <th>SAV</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row in chart.chart_data.ashtakavarga.rows %}
+                      <tr>
+                        <td>{{ row.house }}</td>
+                        <td>{{ row.sign }}</td>
+                        {% for planet_code, score in row.scores.items %}
+                          <td>{{ score }}</td>
+                        {% endfor %}
+                        <td><strong>{{ row.sarva }}</strong></td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <th colspan="2">Total</th>
+                      {% for planet_code, planet_data in chart.chart_data.ashtakavarga.bhinna.items %}
+                        <th>{{ planet_data.total }}</th>
+                      {% endfor %}
+                      <th>{{ chart.chart_data.ashtakavarga.sarva.total }}</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </section>
+
+            <section class="chart-panel" data-dasha-section>
+              <h2>Vimshottari Dasha</h2>
+              <p class="chart-note">
+                Moon nakshatra: {{ chart.chart_data.dashas.vimshottari.moon_nakshatra }}.
+                Balance starts with {{ chart.chart_data.dashas.vimshottari.balance_lord }}.
+              </p>
+              <div class="dasha-layout">
+                <div class="table-wrap">
+                  <table class="data-table dasha-table">
+                    <thead>
+                      <tr>
+                        <th>Dasha</th>
+                        <th>Start</th>
+                        <th>End</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for period in chart.chart_data.dashas.vimshottari.periods %}
+                        <tr
+                          class="dasha-row"
+                          tabindex="0"
+                          data-target="antardasha-{{ chart.id }}-{{ forloop.counter }}"
+                        >
+                          <td>{{ period.lord }}{% if period.balance %} balance{% endif %}</td>
+                          <td>{{ period.start_display }}</td>
+                          <td>{{ period.end_display }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <aside class="antardasha-panel" data-antardasha-panel>
+                  <h3>Antardasha</h3>
+                  <p class="chart-note">Select a Vimshottari row to view Antardasha dates.</p>
+                </aside>
+              </div>
+
+              {% for period in chart.chart_data.dashas.vimshottari.periods %}
+                <template id="antardasha-{{ chart.id }}-{{ forloop.counter }}">
+                  <h3>{{ period.lord }} Antardasha</h3>
+                  <div class="table-wrap">
+                    <table class="data-table data-table--compact">
+                      <thead>
+                        <tr>
+                          <th>Antardasha</th>
+                          <th>Start</th>
+                          <th>End</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for antardasha in period.antardashas %}
+                          <tr>
+                            <td>{{ period.lord }}/{{ antardasha.lord }}</td>
+                            <td>{{ antardasha.start_display }}</td>
+                            <td>{{ antardasha.end_display }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+              {% endfor %}
+
+            </section>
+
+            <section class="chart-panel" data-dasha-section>
+              <h2>Jaimini Chara Dasha</h2>
+              <div class="dasha-layout">
+                <div class="table-wrap">
+                  <table class="data-table dasha-table">
+                    <thead>
+                      <tr>
+                        <th>Rashi Dasha</th>
+                        <th>Years</th>
+                        <th>Start</th>
+                        <th>End</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for period in chart.chart_data.jaimini.chara_dasha.periods %}
+                        <tr
+                          class="dasha-row"
+                          tabindex="0"
+                          data-target="chara-antardasha-{{ chart.id }}-{{ forloop.counter }}"
+                        >
+                          <td>{{ period.sign }}</td>
+                          <td>{{ period.duration_years }}</td>
+                          <td>{{ period.start_display }}</td>
+                          <td>{{ period.end_display }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <aside class="antardasha-panel" data-antardasha-panel>
+                  <h3>Jaimini Antardasha</h3>
+                  <p class="chart-note">Select a Chara Dasha row to view Antardasha dates.</p>
+                </aside>
+              </div>
+
+              {% for period in chart.chart_data.jaimini.chara_dasha.periods %}
+                <template id="chara-antardasha-{{ chart.id }}-{{ forloop.counter }}">
+                  <h3>{{ period.sign }} Antardasha</h3>
+                  <div class="table-wrap">
+                    <table class="data-table data-table--compact">
+                      <thead>
+                        <tr>
+                          <th>Antardasha</th>
+                          <th>Start</th>
+                          <th>End</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for subperiod in period.subperiods %}
+                          <tr>
+                            <td>{{ period.sign }}/{{ subperiod.sign }}</td>
+                            <td>{{ subperiod.start_display }}</td>
+                            <td>{{ subperiod.end_display }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </template>
+              {% endfor %}
+            </section>
+          </div>
+        </div>
+      {% else %}
+        <div class="chart-warning">
+          This chart was saved before calculations were added. Create it again from a selected birthplace suggestion.
+        </div>
+      {% endif %}
+    </details>
+  {% empty %}
+    <section class="panel">
+      <p>No charts yet.</p>
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+  document.querySelectorAll(".dasha-row").forEach((row) => {
+    const showAntardasha = () => {
+      const section = row.closest("[data-dasha-section]");
+      const panel = section.querySelector("[data-antardasha-panel]");
+      const template = document.getElementById(row.dataset.target);
+      if (!panel || !template) return;
+
+      section.querySelectorAll(".dasha-row").forEach((item) => item.classList.remove("is-selected"));
+      row.classList.add("is-selected");
+      panel.innerHTML = template.innerHTML;
+    };
+
+    row.addEventListener("click", showAntardasha);
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showAntardasha();
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

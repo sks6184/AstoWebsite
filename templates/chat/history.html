@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load chat_formatting %}
+
+{% block title %}Question History - Astrology GPT{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <h1>Question History</h1>
+  <a class="button icon-ask" href="{% url 'ask_question' %}">Ask new</a>
+</section>
+
+<section class="history-stack">
+  {% for conversation in conversations %}
+    <details class="history-card">
+      <summary class="history-summary">
+        <span>
+          <strong>{{ conversation.title }}</strong>
+          <small>{{ conversation.chart.name|default:"No chart" }} - {{ conversation.get_depth_level_display }}</small>
+        </span>
+        <time>{{ conversation.updated_at|date:"d-M-Y H:i" }}</time>
+      </summary>
+      <div class="history-answer">
+        {% for message in conversation.messages.all %}
+          <article class="message {{ message.role }}">
+            <strong>{{ message.get_role_display }}</strong>
+            <div class="message-content">
+              {% if message.role == "assistant" %}
+                {{ message.content|astro_answer }}
+              {% else %}
+                <p>{{ message.content }}</p>
+              {% endif %}
+            </div>
+            {% if message.model_name %}
+              <small class="message-meta">
+                {{ message.model_name }} &middot; input {{ message.prompt_tokens }} &middot; output {{ message.completion_tokens }}
+              </small>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    </details>
+  {% empty %}
+    <section class="panel">
+      <p>No questions yet.</p>
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}

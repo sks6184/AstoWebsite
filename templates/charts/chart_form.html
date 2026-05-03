@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Create Chart - Astrology GPT{% endblock %}
+
+{% block content %}
+<section class="panel narrow">
+  <h1>Create chart</h1>
+  <form method="post" data-place-suggestions-url="{% url 'birth_place_suggestions' %}">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <p>
+      {{ form.name.label_tag }}
+      {{ form.name }}
+      {{ form.name.errors }}
+    </p>
+    <p>
+      {{ form.birth_date.label_tag }}
+      {{ form.birth_date }}
+      {{ form.birth_date.errors }}
+    </p>
+    <p>
+      {{ form.birth_time.label_tag }}
+      {{ form.birth_time }}
+      {{ form.birth_time.errors }}
+    </p>
+    <p class="place-field">
+      {{ form.birth_place.label_tag }}
+      {{ form.birth_place }}
+      {{ form.birth_place.errors }}
+      <span class="place-hint">Choose a suggestion to fill coordinates automatically.</span>
+    </p>
+    <div class="place-autocomplete" hidden></div>
+    {{ form.latitude }}
+    {{ form.longitude }}
+    <p class="timezone-status" data-timezone-status>
+      Timezone will be detected automatically when you choose a birthplace suggestion.
+    </p>
+    <details class="timezone-fallback">
+      <summary>Timezone fallback</summary>
+      <p>
+        {{ form.timezone.label_tag }}
+        {{ form.timezone }}
+        {{ form.timezone.errors }}
+        <span class="place-hint">Use only if you need to manually correct the detected timezone.</span>
+      </p>
+    </details>
+    <button class="button icon-save" type="submit">Save chart</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+  const form = document.querySelector("[data-place-suggestions-url]");
+  if (!form) return;
+
+  const input = form.querySelector("[data-place-autocomplete]");
+  const latitude = form.querySelector("#id_latitude");
+  const longitude = form.querySelector("#id_longitude");
+  const timezone = form.querySelector("#id_timezone");
+  const timezoneStatus = form.querySelector("[data-timezone-status]");
+  const list = form.querySelector(".place-autocomplete");
+  const endpoint = form.dataset.placeSuggestionsUrl;
+  let controller;
+  let debounceTimer;
+
+  function clearSelection() {
+    latitude.value = "";
+    longitude.value = "";
+    if (timezoneStatus) {
+      timezoneStatus.textContent = "Choose a birthplace suggestion to detect timezone automatically.";
+    }
+  }
+
+  function closeList() {
+    list.hidden = true;
+    list.innerHTML = "";
+  }
+
+  function renderMessage(message) {
+    list.innerHTML = `<div class="place-autocomplete__message">${message}</div>`;
+    list.hidden = false;
+  }
+
+  function renderResults(results) {
+    if (!results.length) {
+      renderMessage("No matching places found.");
+      return;
+    }
+
+    list.innerHTML = results.map((place, index) => `
+      <button
+        type="button"
+        class="place-autocomplete__option"
+        data-index="${index}"
+      >
+        <span>${place.label}</span>
+        <small>${place.latitude}, ${place.longitude}</small>
+      </button>
+    `).join("");
+    list.hidden = false;
+
+    list.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", () => {
+        const place = results[Number(button.dataset.index)];
+        input.value = place.label;
+        latitude.value = place.latitude;
+        longitude.value = place.longitude;
+        if (place.timezone && timezone) {
+          timezone.value = place.timezone;
+          if (timezoneStatus) {
+            timezoneStatus.textContent = `Timezone detected: ${place.timezone}`;
+          }
+        } else if (timezoneStatus) {
+          timezoneStatus.textContent = "Timezone was not returned for this place. Use fallback if needed.";
+        }
+        closeList();
+      });
+    });
+  }
+
+  async function fetchPlaces(query) {
+    if (controller) controller.abort();
+    controller = new AbortController();
+
+    const url = `${endpoint}?q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, {
+      headers: {"X-Requested-With": "XMLHttpRequest"},
+      signal: controller.signal,
+    });
+    return response.json();
+  }
+
+  input.addEventListener("input", () => {
+    clearSelection();
+    window.clearTimeout(debounceTimer);
+    const query = input.value.trim();
+
+    if (query.length < 2) {
+      closeList();
+      return;
+    }
+
+    debounceTimer = window.setTimeout(async () => {
+      try {
+        const data = await fetchPlaces(query);
+        if (!data.configured || data.error) {
+          renderMessage(data.error || "Birthplace lookup is not configured.");
+          return;
+        }
+        renderResults(data.results || []);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          renderMessage("Birthplace lookup is unavailable.");
+        }
+      }
+    }, 300);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) {
+      closeList();
+    }
+  });
+})();
+</script>
+{% endblock %}
