@@ -114,14 +114,96 @@ def _dasha_lord_transit_checks(chart_data, lords, target_date, category_houses, 
     return checks
 
 
-def _window_explanation(active_dasha_label, transit_checks):
-    parts = [f"Active dasha for this window: {active_dasha_label}."]
-    for check in transit_checks:
-        parts.append(
-            f"{check['role']} {check['lord_name']} transits house {check['transit_house_from_lagna']} "
-            f"with Sarvashtakavarga {check['sarvashtakavarga_points']} "
-            f"(threshold {check['ashtakavarga_threshold']})."
+def _context_signature(context):
+    return (
+        context.get("transit_house_from_lagna"),
+        context.get("transit_sign_number"),
+        context.get("sarvashtakavarga_points"),
+    )
+
+
+def _transit_segments_for_lord(chart_data, lord, start_date, end_date, category_houses, mahadasha_lord=None, antardasha_lord=None):
+    segments = []
+    current_date = start_date
+    current_context = None
+    current_start = start_date
+
+    while current_date <= end_date:
+        _, _, context = _transit_score(chart_data, lord, current_date, category_houses)
+        signature = _context_signature(context)
+
+        if current_context is None:
+            current_context = context
+            current_start = current_date
+        elif signature != _context_signature(current_context):
+            segment_end = current_date - timedelta(days=1)
+            segments.append(_segment_payload(lord, current_context, current_start, segment_end, mahadasha_lord, antardasha_lord))
+            current_context = context
+            current_start = current_date
+
+        current_date += timedelta(days=1)
+
+    if current_context is not None:
+        segments.append(_segment_payload(lord, current_context, current_start, end_date, mahadasha_lord, antardasha_lord))
+
+    return segments
+
+
+def _segment_payload(lord, context, start_date, end_date, mahadasha_lord=None, antardasha_lord=None):
+    return {
+        "lord": lord,
+        "lord_name": PLANET_NAMES.get(lord, lord),
+        "role": _lord_role(lord, mahadasha_lord, antardasha_lord),
+        "start": start_date.isoformat(),
+        "end": end_date.isoformat(),
+        "start_display": _format_date(start_date),
+        "end_display": _format_date(end_date),
+        "transit_house_from_lagna": context.get("transit_house_from_lagna"),
+        "transit_sign_number": context.get("transit_sign_number"),
+        "sarvashtakavarga_points": context.get("sarvashtakavarga_points"),
+        "ashtakavarga_threshold": context.get("ashtakavarga_threshold"),
+        "can_deliver_owned_or_placed_house_results": context.get("can_deliver_owned_or_placed_house_results"),
+    }
+
+
+def _transit_segments(chart_data, lords, start_date, end_date, category_houses, mahadasha_lord=None, antardasha_lord=None):
+    segments = []
+    for lord in dict.fromkeys([lord for lord in lords if lord]):
+        segments.extend(
+            _transit_segments_for_lord(
+                chart_data,
+                lord,
+                start_date,
+                end_date,
+                category_houses,
+                mahadasha_lord,
+                antardasha_lord,
+            )
         )
+    return segments
+
+
+def _window_explanation(active_dasha_label, transit_checks, transit_segments=None):
+    parts = [f"Active dasha for this window: {active_dasha_label}."]
+    changing_segments = [
+        segment
+        for segment in (transit_segments or [])
+        if segment["start"] != segment["end"]
+    ]
+    if changing_segments:
+        parts.append("Do not treat this whole period as one fixed transit. Transit segments inside this period:")
+        for segment in changing_segments[:10]:
+            parts.append(
+                f"{segment['role']} {segment['lord_name']}: {segment['start_display']} to {segment['end_display']} "
+                f"house {segment['transit_house_from_lagna']} with SAV {segment['sarvashtakavarga_points']}."
+            )
+    else:
+        for check in transit_checks:
+            parts.append(
+                f"{check['role']} {check['lord_name']} transits house {check['transit_house_from_lagna']} "
+                f"with Sarvashtakavarga {check['sarvashtakavarga_points']} "
+                f"(threshold {check['ashtakavarga_threshold']})."
+            )
     return " ".join(parts)
 
 
@@ -138,6 +220,15 @@ def _window_from_antardasha(chart_data, mahadasha, antardasha, category, start_d
         chart_data,
         [md_lord, ad_lord],
         midpoint,
+        category_houses,
+        md_lord,
+        ad_lord,
+    )
+    transit_segments = _transit_segments(
+        chart_data,
+        [md_lord, ad_lord],
+        window_start,
+        window_end,
         category_houses,
         md_lord,
         ad_lord,
@@ -167,7 +258,8 @@ def _window_from_antardasha(chart_data, mahadasha, antardasha, category, start_d
             "label": f"{md_lord}/{ad_lord}",
         },
         "dasha_lord_transit_checks": transit_checks,
-        "required_explanation": _window_explanation(f"{md_lord}/{ad_lord}", transit_checks),
+        "transit_segments": transit_segments,
+        "required_explanation": _window_explanation(f"{md_lord}/{ad_lord}", transit_checks, transit_segments),
         "score": min(score, 100),
         "type": "vimshottari_antardasha_window",
         "reasons": reasons[:8],

@@ -8,7 +8,7 @@ from openai import OpenAI, OpenAIError
 from .prediction_context import build_prediction_context
 
 
-ANSWER_CACHE_VERSION = "v4-required-window-explanation"
+ANSWER_CACHE_VERSION = "v6-segment-first-explanation"
 
 
 def model_for_depth(depth_level):
@@ -42,6 +42,8 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "Then explain the transit of the Mahadasha lord and the transit of the Antardasha lord using "
         "that window's dasha_lord_transit_checks, including Sarvashtakavarga points. "
         "Use each window's required_explanation as the factual basis for the Reason section. "
+        "If a window includes transit_segments, explain the segment changes instead of treating the whole period "
+        "as one fixed transit. Mention any date where the Mahadasha or Antardasha lord changes sign/house.\n"
         "Do not mention another transit planet as the main reason unless it is the Mahadasha lord or Antardasha lord "
         "for that exact window.\n"
         "Use computed_context.temporal_policy.current_date as today's date. "
