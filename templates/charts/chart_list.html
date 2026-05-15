@@ -22,7 +22,7 @@
             href="{% url 'ask_question' %}?chart_id={{ chart.id }}"
             onclick="event.stopPropagation();"
           >Ask</a>
-          <span class="chart-summary__action icon-show">Show chart</span>
+          <span class="chart-summary__action icon-show">Show</span>
           <form
             action="{% url 'chart_delete' chart.id %}"
             method="post"
@@ -82,8 +82,8 @@
           <div class="chart-table-stack">
             <section class="chart-panel chart-panel--table">
               <h2>Planet Details</h2>
-              <div class="table-wrap">
-                <table class="data-table">
+              <div class="table-wrap table-wrap--planet-details">
+                <table class="data-table data-table--planet-details">
                   <thead>
                     <tr>
                       <th>Planet</th>
@@ -124,8 +124,8 @@
               <p class="chart-note">
                 Bhinna Ashtakavarga bindus by sign, with Sarvashtakavarga total in the last column.
               </p>
-              <div class="table-wrap">
-                <table class="data-table">
+              <div class="table-wrap table-wrap--ashtakavarga">
+                <table class="data-table data-table--ashtakavarga">
                   <thead>
                     <tr>
                       <th>House</th>
@@ -307,27 +307,27 @@
 
 {% block extra_scripts %}
 <script>
-(() => {
-  document.querySelectorAll(".dasha-row").forEach((row) => {
-    const showAntardasha = () => {
-      const section = row.closest("[data-dasha-section]");
-      const panel = section.querySelector("[data-antardasha-panel]");
-      const template = document.getElementById(row.dataset.target);
-      if (!panel || !template) return;
+  (() => {
+    document.querySelectorAll(".dasha-row").forEach((row) => {
+      const showAntardasha = () => {
+        const section = row.closest("[data-dasha-section]");
+        const panel = section.querySelector("[data-antardasha-panel]");
+        const template = document.getElementById(row.dataset.target);
+        if (!panel || !template) return;
 
-      section.querySelectorAll(".dasha-row").forEach((item) => item.classList.remove("is-selected"));
-      row.classList.add("is-selected");
-      panel.innerHTML = template.innerHTML;
-    };
+        section.querySelectorAll(".dasha-row").forEach((item) => item.classList.remove("is-selected"));
+        row.classList.add("is-selected");
+        panel.innerHTML = template.innerHTML;
+      };
 
-    row.addEventListener("click", showAntardasha);
-    row.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        showAntardasha();
-      }
+      row.addEventListener("click", showAntardasha);
+      row.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          showAntardasha();
+        }
+      });
     });
-  });
-})();
+  })();
 </script>
 {% endblock %}

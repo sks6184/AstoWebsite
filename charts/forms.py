@@ -23,7 +23,17 @@ class SavedChartForm(forms.ModelForm):
 
     class Meta:
         model = SavedChart
-        fields = ["name", "birth_date", "birth_time", "birth_place", "latitude", "longitude", "timezone"]
+        fields = [
+            "name",
+            "birth_date",
+            "birth_time",
+            "birth_place",
+            "gender",
+            "marital_status",
+            "latitude",
+            "longitude",
+            "timezone",
+        ]
         widgets = {
             "birth_time": forms.TimeInput(attrs={"type": "time"}),
             "birth_place": forms.TextInput(

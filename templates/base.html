@@ -13,11 +13,17 @@
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
     <a class="brand" href="{% url 'home' %}">Astrology GPT</a>
-    <nav>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <nav id="site-nav" class="site-nav">
       {% if user.is_authenticated %}
         <a href="{% url 'dashboard' %}">Dashboard</a>
         <a href="{% url 'home' %}#pricing">Buy a Plan</a>
         <a href="{% url 'chart_list' %}">Charts</a>
+        <a href="{% url 'report_list' %}">Reports</a>
         <a href="{% url 'ask_question' %}">Ask</a>
         <a href="{% url 'question_history' %}">History</a>
         <form action="{% url 'logout' %}" method="post">
@@ -43,6 +49,39 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+  <script>
+    (() => {
+      const toggle = document.querySelector(".menu-toggle");
+      const nav = document.querySelector("#site-nav");
+
+      if (!toggle || !nav) {
+        return;
+      }
+
+      const closeMenu = () => {
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open menu");
+      };
+
+      toggle.addEventListener("click", () => {
+        const isOpen = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!isOpen));
+        toggle.setAttribute("aria-label", isOpen ? "Open menu" : "Close menu");
+      });
+
+      nav.addEventListener("click", (event) => {
+        if (event.target.closest("a, button")) {
+          closeMenu();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.matchMedia("(min-width: 981px)").matches) {
+          closeMenu();
+        }
+      });
+    })();
+  </script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

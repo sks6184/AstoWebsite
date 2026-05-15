@@ -1,24 +1,16 @@
 from django import forms
 
+from astro_site.localization import SUPPORTED_LANGUAGES
+
 from .models import Conversation
-
-
-ANSWER_LANGUAGE_CHOICES = [
-    ("English", "English"),
-    ("Hindi", "Hindi"),
-    ("Telugu", "Telugu"),
-    ("Marathi", "Marathi"),
-    ("Kannada", "Kannada"),
-    ("Tamil", "Tamil"),
-    ("Bengali", "Bengali"),
-    ("Vietnamese", "Vietnamese"),
-    ("Mandarin", "Mandarin"),
-    ("Malay", "Malay"),
-]
 
 
 class AskQuestionForm(forms.Form):
     chart_id = forms.IntegerField(required=False, widget=forms.HiddenInput)
     depth_level = forms.ChoiceField(choices=Conversation.DEPTH_CHOICES)
-    answer_language = forms.ChoiceField(choices=ANSWER_LANGUAGE_CHOICES, initial="English")
+    answer_language = forms.ChoiceField(
+        choices=SUPPORTED_LANGUAGES,
+        initial="English",
+        label="Answer language",
+    )
     question = forms.CharField(widget=forms.Textarea(attrs={"rows": 4}))

@@ -4,50 +4,53 @@
 {% block title %}Ask - Astrology GPT{% endblock %}
 
 {% block content %}
-<div class="ask-workspace">
-  <section class="panel ask-panel">
-    <h1>Ask a question</h1>
-    {% if credit_status %}
-      <p class="credit-status">
-        {% if credit_status.enforced %}
-          Questions remaining: <strong>{{ credit_status.remaining }}</strong> of {{ credit_status.total }}.
-        {% else %}
-          Question limits are currently off.
-        {% endif %}
-      </p>
-      {% if credit_status.enforced and not credit_status.has_credits %}
-        <p class="credit-warning">
-          You have used all your question credits.
-          <a href="{% url 'home' %}#pricing">Buy more credits</a>
+<div class="ask-workspace{% if conversation %} ask-workspace--answer-only{% endif %}">
+  {% if not conversation %}
+    <section class="panel ask-panel">
+      <h1>Ask a question</h1>
+      {% if credit_status %}
+        <p class="credit-status">
+          {% if credit_status.enforced %}
+            Questions remaining: <strong>{{ credit_status.remaining }}</strong> of {{ credit_status.total }}.
+          {% else %}
+            Question limits are currently off.
+          {% endif %}
         </p>
+        {% if credit_status.enforced and not credit_status.has_credits %}
+          <p class="credit-warning">
+            You have used all your question credits.
+            <a href="{% url 'home' %}#pricing">Buy more credits</a>
+          </p>
+        {% endif %}
       {% endif %}
-    {% endif %}
-    <form method="post" data-ask-form>
-      {% csrf_token %}
-      <label for="chart-select">Chart</label>
-      <select id="chart-select" name="chart_id">
-        <option value="">No chart selected</option>
-        {% for chart in charts %}
-          <option value="{{ chart.id }}" {% if conversation.chart_id == chart.id or selected_chart_id == chart.id %}selected{% endif %}>
-            {{ chart.name }} - {{ chart.birth_place }}
-          </option>
-        {% endfor %}
-      </select>
-      {{ form.depth_level.label_tag }}
-      {{ form.depth_level }}
-      {{ form.answer_language.label_tag }}
-      {{ form.answer_language }}
-      {{ form.question.label_tag }}
-      {{ form.question }}
-      <button class="button icon-ask" type="submit">Ask</button>
-    </form>
-  </section>
+      <form method="post" action="{% url 'ask_question' %}" data-ask-form autocomplete="off">
+        {% csrf_token %}
+        <label for="chart-select">Chart</label>
+        <select id="chart-select" name="chart_id">
+          <option value="">No chart selected</option>
+          {% for chart in charts %}
+            <option value="{{ chart.id }}" {% if selected_chart_id == chart.id %}selected{% endif %}>
+              {{ chart.name }} - {{ chart.birth_place }}
+            </option>
+          {% endfor %}
+        </select>
+        {{ form.depth_level.label_tag }}
+        {{ form.depth_level }}
+        {{ form.answer_language.label_tag }}
+        {{ form.answer_language }}
+        {{ form.question.label_tag }}
+        {{ form.question }}
+        <button class="button icon-ask" type="submit">Ask</button>
+      </form>
+    </section>
+  {% endif %}
 
   <section class="panel answer-panel">
     <div class="answer-panel__header">
       <h2>Generated answer</h2>
       {% if conversation %}
         <span>{{ conversation.get_depth_level_display }}</span>
+        <a class="button secondary" href="{% url 'ask_question' %}">Ask another question</a>
       {% endif %}
     </div>
 
@@ -55,10 +58,10 @@
       <div class="answer-thread">
         {% for message in conversation.messages.all %}
           <article class="message {{ message.role }}">
-            <strong>{{ message.get_role_display }}</strong>
+            <strong>{% if message.role == "assistant" %}Jyotish Analysis{% else %}{{ message.get_role_display }}{% endif %}</strong>
             <div class="message-content">
               {% if message.role == "assistant" %}
-                {{ message.content|astro_answer }}
+                {{ message.content|astro_answer:remedy_note }}
               {% else %}
                 <p>{{ message.content }}</p>
               {% endif %}

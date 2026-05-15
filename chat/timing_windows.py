@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from .prediction_context import CATEGORY_RULES, PLANET_NAMES, _owned_houses, _planet_by_code, _transit_context_for_lord
+from charts.jaimini_confirmation import build_jaimini_confirmation
+from charts.vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, transit_context_for_lord
+
+from .prediction_context import CATEGORY_RULES
 
 
 SLOW_TRANSIT_LORDS = ["Ju", "Sa", "Ra", "Ke"]
@@ -35,8 +38,8 @@ def _periods_in_range(periods, start_date, end_date):
 
 
 def _house_score(chart_data, planet_code, category_houses):
-    planet = _planet_by_code(chart_data, planet_code)
-    owned = _owned_houses(chart_data, planet_code)
+    planet = get_planet(chart_data, planet_code)
+    owned = get_owned_houses(chart_data, planet_code)
     placed = planet.get("house")
     score = 0
     reasons = []
@@ -59,7 +62,7 @@ def _house_score(chart_data, planet_code, category_houses):
 
 def _transit_score(chart_data, planet_code, target_date, category_houses):
     target_dt = datetime.combine(target_date, datetime.min.time(), tzinfo=ZoneInfo("UTC"))
-    context = _transit_context_for_lord(chart_data, planet_code, target_dt)
+    context = transit_context_for_lord(chart_data, planet_code, target_dt)
     score = 0
     reasons = []
 
@@ -244,7 +247,7 @@ def _window_from_antardasha(chart_data, mahadasha, antardasha, category, start_d
                 f"{transit_check['lord_name']} can deliver owned/placed house results by SAV rule."
             )
 
-    return {
+    window = {
         "start": window_start.isoformat(),
         "end": window_end.isoformat(),
         "start_display": _format_date(window_start),
@@ -264,6 +267,13 @@ def _window_from_antardasha(chart_data, mahadasha, antardasha, category, start_d
         "type": "vimshottari_antardasha_window",
         "reasons": reasons[:8],
     }
+    window["jaimini_confirmation"] = build_jaimini_confirmation(
+        chart_data,
+        category,
+        category_houses,
+        midpoint,
+    )
+    return window
 
 
 def _monthly_transit_windows(chart_data, category, start_date, end_date, mahadasha_lord=None, antardasha_lord=None):
@@ -297,37 +307,43 @@ def _monthly_transit_windows(chart_data, category, start_date, end_date, mahadas
                 reasons.extend(transit_check["reasons"])
 
         if score:
-            windows.append(
-                {
-                    "start": current.isoformat(),
-                    "end": month_end.isoformat(),
-                    "start_display": _format_date(current),
-                    "end_display": _format_date(month_end),
-                    "label": f"{dasha_label} transit support" if dasha_lords else "Transit support",
-                    "mahadasha_lord": mahadasha_lord,
-                    "antardasha_lord": antardasha_lord,
-                    "active_dasha": {
-                        "mahadasha": mahadasha_lord,
-                        "antardasha": antardasha_lord,
-                        "label": dasha_label,
-                    },
-                    "dasha_lord_transit_checks": transit_checks,
-                    "required_explanation": _window_explanation(dasha_label, transit_checks),
-                    "score": min(score, 100),
-                    "type": "monthly_transit_window",
-                    "reasons": reasons[:8],
-                }
-            )
+            midpoint = current + timedelta(days=(month_end - current).days // 2)
+            window = {
+                "start": current.isoformat(),
+                "end": month_end.isoformat(),
+                "start_display": _format_date(current),
+                "end_display": _format_date(month_end),
+                "label": f"{dasha_label} transit support" if dasha_lords else "Transit support",
+                "mahadasha_lord": mahadasha_lord,
+                "antardasha_lord": antardasha_lord,
+                "active_dasha": {
+                    "mahadasha": mahadasha_lord,
+                    "antardasha": antardasha_lord,
+                    "label": dasha_label,
+                },
+                "dasha_lord_transit_checks": transit_checks,
+                "required_explanation": _window_explanation(dasha_label, transit_checks),
+                "score": min(score, 100),
+                "type": "monthly_transit_window",
+                "reasons": reasons[:8],
+                "jaimini_confirmation": build_jaimini_confirmation(
+                    chart_data,
+                    category,
+                    category_houses,
+                    midpoint,
+                ),
+            }
+            windows.append(window)
         current = _add_months(current, 1)
 
     return windows
 
 
-def build_timing_windows(question, chart_data, category, start_date, months=24):
+def build_timing_windows(question, chart_data, category, start_date, months=60, end_date=None):
     if category == "general":
         return []
 
-    end_date = _add_months(start_date, months)
+    end_date = end_date or _add_months(start_date, months)
     vimshottari = chart_data.get("dashas", {}).get("vimshottari", {})
     windows = []
 

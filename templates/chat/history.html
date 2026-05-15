@@ -22,7 +22,7 @@
       <div class="history-answer">
         {% for message in conversation.messages.all %}
           <article class="message {{ message.role }}">
-            <strong>{{ message.get_role_display }}</strong>
+            <strong>{% if message.role == "assistant" %}Jyotish Analysis{% else %}{{ message.get_role_display }}{% endif %}</strong>
             <div class="message-content">
               {% if message.role == "assistant" %}
                 {{ message.content|astro_answer }}

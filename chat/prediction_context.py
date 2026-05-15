@@ -1,47 +1,13 @@
-from datetime import datetime
+import re
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-import swisseph as swe
 from django.utils import timezone
 
-
-PLANET_IDS = {
-    "Su": swe.SUN,
-    "Mo": swe.MOON,
-    "Ma": swe.MARS,
-    "Me": swe.MERCURY,
-    "Ju": swe.JUPITER,
-    "Ve": swe.VENUS,
-    "Sa": swe.SATURN,
-    "Ra": swe.TRUE_NODE,
-}
-
-PLANET_NAMES = {
-    "Su": "Sun",
-    "Mo": "Moon",
-    "Ma": "Mars",
-    "Me": "Mercury",
-    "Ju": "Jupiter",
-    "Ve": "Venus",
-    "Sa": "Saturn",
-    "Ra": "Rahu",
-    "Ke": "Ketu",
-}
-
-SIGN_LORDS = {
-    1: "Ma",
-    2: "Ve",
-    3: "Me",
-    4: "Mo",
-    5: "Su",
-    6: "Me",
-    7: "Ve",
-    8: "Ma",
-    9: "Ju",
-    10: "Sa",
-    11: "Sa",
-    12: "Ju",
-}
+from charts.jaimini_confirmation import build_jaimini_confirmation
+from charts.remedies import remedies_for_dasha
+from charts.transit_priority import build_transit_priority_context
+from charts.vedic_utils import PLANET_IDS, get_planets, parse_iso_date, transit_context_for_lord
 
 CATEGORY_RULES = {
     "career": {
@@ -155,14 +121,28 @@ CATEGORY_RULES = {
             "visa",
             "abroad",
             "travel",
+            "stay",
+            "stay here",
+            "long time",
+            "settle",
             "settlement",
             "immigration",
+            "migration",
+            "migrate",
             "relocation",
+            "move abroad",
+            "move overseas",
             "overseas",
+            "residence",
+            "resident",
+            "permanent resident",
+            "permanent residency",
+            "work permit",
             "citizenship",
+            "country",
         ],
-        "houses": [3, 7, 9, 12],
-        "divisional_charts": ["d1"],
+        "houses": [3, 4, 7, 9, 10, 12],
+        "divisional_charts": ["d1", "d4", "d9", "d10"],
     },
     "legal_and_enemies": {
         "keywords": [
@@ -204,8 +184,123 @@ def classify_question(question):
     return "general"
 
 
+def _answer_contract(question, category):
+    lowered = question.lower().strip()
+    binary_markers = [
+        "will ",
+        "can ",
+        "should ",
+        "would ",
+        "is ",
+        "are ",
+        "am ",
+        "do ",
+        "does ",
+        "did ",
+        "possible",
+        "yes or no",
+        "?",
+    ]
+    direct_answer_required = any(marker in f" {lowered}" for marker in binary_markers)
+    return {
+        "category": category,
+        "direct_answer_required": direct_answer_required,
+        "binary_answer_options": [
+            "Likely yes",
+            "Likely no",
+            "Mixed, leaning yes",
+            "Mixed, leaning no",
+        ],
+        "confidence_options": ["High", "Medium", "Low"],
+        "visible_answer_style": "natural_question_aware_prose",
+        "avoid_visible_headings": ["Short Answer", "Confidence", "Astrological Reason"],
+        "allowed_supporting_headings": ["Timing", "Why this is indicated", "Remedy", "Practical guidance"],
+        "instruction": (
+            "Start with a natural sentence that reuses the user's subject and gives the outcome probability. "
+            "For yes/no or stay/move/job/marriage questions, choose one binary_answer_option internally, "
+            "but do not print the option as a label. Convert it into human wording such as "
+            "'Your stay in the foreign country is likely to continue, though...' "
+            "Do not use AI-looking headings like Short Answer or Confidence."
+        ),
+    }
+
+
+def _prediction_horizon(question):
+    lowered = question.lower()
+    if any(marker in lowered for marker in ["weekly", "this week", "next week", "7 days", "next 7 days"]):
+        return "weekly"
+    return "monthly"
+
+
+def _add_months(value, months):
+    year = value.year + (value.month - 1 + months) // 12
+    month = (value.month - 1 + months) % 12 + 1
+    day = min(value.day, 28)
+    return value.replace(year=year, month=month, day=day)
+
+
+def _time_scope(question, target_date):
+    lowered = question.lower()
+    explicit_year = re.search(r"\b(20\d{2})\b", lowered)
+    if explicit_year:
+        year = int(explicit_year.group(1))
+        return {
+            "phrase": explicit_year.group(1),
+            "start": date(year, 1, 1),
+            "end": date(year, 12, 31),
+            "months": None,
+            "is_default": False,
+            "instruction": f"Only consider dates from 01-Jan-{year} to 31-Dec-{year}.",
+        }
+    if "this year" in lowered or "current year" in lowered:
+        return {
+            "phrase": "this year",
+            "start": target_date,
+            "end": date(target_date.year, 12, 31),
+            "months": None,
+            "is_default": False,
+            "instruction": f"Only consider the remaining current year: {target_date.isoformat()} to {target_date.year}-12-31.",
+        }
+    if "next year" in lowered:
+        year = target_date.year + 1
+        return {
+            "phrase": "next year",
+            "start": date(year, 1, 1),
+            "end": date(year, 12, 31),
+            "months": None,
+            "is_default": False,
+            "instruction": f"Only consider next calendar year: 01-Jan-{year} to 31-Dec-{year}.",
+        }
+    if "next 12 months" in lowered or "coming 12 months" in lowered:
+        return {
+            "phrase": "next 12 months",
+            "start": target_date,
+            "end": _add_months(target_date, 12),
+            "months": 12,
+            "is_default": False,
+            "instruction": "Only consider the next 12 months from current_date.",
+        }
+    if "this month" in lowered or "current month" in lowered:
+        return {
+            "phrase": "this month",
+            "start": target_date,
+            "end": date(target_date.year, target_date.month, 28),
+            "months": None,
+            "is_default": False,
+            "instruction": "Only consider the current calendar month.",
+        }
+    return {
+        "phrase": "default_next_5_years",
+        "start": target_date,
+        "end": _add_months(target_date, 60),
+        "months": 60,
+        "is_default": True,
+        "instruction": "No explicit time phrase was found; scan the next 5 years using dasha, transit, and Jaimini confirmation.",
+    }
+
+
 def _parse_date(value):
-    return datetime.fromisoformat(value).date()
+    return parse_iso_date(value)
 
 
 def _current_period(periods, target_date):
@@ -229,67 +324,13 @@ def _current_chara_context(chart_data, target_date):
     }
 
 
-def _planet_by_code(chart_data, code):
-    for planet in chart_data.get("d1", {}).get("planets", []):
-        if planet.get("code") == code:
-            return planet
-    return {}
-
-
-def _owned_houses(chart_data, planet_code):
-    asc_sign_number = chart_data.get("ascendant", {}).get("sign_number")
-    if not asc_sign_number:
-        return []
-    return [
-        ((sign_number - asc_sign_number) % 12) + 1
-        for sign_number, owner_code in SIGN_LORDS.items()
-        if owner_code == planet_code
-    ]
-
-
-def _transit_longitude(planet_code, target_dt):
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
-    jd_ut = swe.julday(
-        target_dt.year,
-        target_dt.month,
-        target_dt.day,
-        target_dt.hour + target_dt.minute / 60 + target_dt.second / 3600,
-    )
-    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
-    if planet_code == "Ke":
-        rahu_values, _ = swe.calc_ut(jd_ut, swe.TRUE_NODE, flags)
-        return (rahu_values[0] + 180) % 360
-    values, _ = swe.calc_ut(jd_ut, PLANET_IDS[planet_code], flags)
-    return values[0] % 360
-
-
 def _transit_context_for_lord(chart_data, planet_code, target_dt):
-    longitude = _transit_longitude(planet_code, target_dt)
-    sign_number = int(longitude // 30) + 1
-    asc_sign_number = chart_data.get("ascendant", {}).get("sign_number", 1)
-    house = ((sign_number - asc_sign_number) % 12) + 1
-    sav = 0
-    for row in chart_data.get("ashtakavarga", {}).get("rows", []):
-        if row.get("house") == house:
-            sav = row.get("sarva", 0)
-            break
-    natal_planet = _planet_by_code(chart_data, planet_code)
-    return {
-        "lord": planet_code,
-        "lord_name": PLANET_NAMES.get(planet_code, planet_code),
-        "transit_sign_number": sign_number,
-        "transit_house_from_lagna": house,
-        "sarvashtakavarga_points": sav,
-        "ashtakavarga_threshold": 28,
-        "can_deliver_owned_or_placed_house_results": sav > 28,
-        "natal_placed_house": natal_planet.get("house"),
-        "owned_houses": _owned_houses(chart_data, planet_code),
-    }
+    return transit_context_for_lord(chart_data, planet_code, target_dt)
 
 
 def _compact_chart_context(chart_data, category):
     houses = CATEGORY_RULES.get(category, {}).get("houses", [])
-    planets = chart_data.get("d1", {}).get("planets", [])
+    planets = get_planets(chart_data, "d1", include_ascendant=True)
     requested_divisional_charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", ["d1"])
     relevant_planets = [
         {
@@ -333,12 +374,14 @@ def _compact_chart_context(chart_data, category):
     }
 
 
-def build_prediction_context(question, chart_data, target_date=None):
+def build_prediction_context(question, chart_data, target_date=None, answer_language="English"):
     from .timing_windows import build_timing_windows
 
     target_date = target_date or timezone.localdate()
     target_dt = datetime.combine(target_date, datetime.min.time(), tzinfo=ZoneInfo("UTC"))
     category = classify_question(question)
+    horizon = _prediction_horizon(question)
+    time_scope = _time_scope(question, target_date)
     vimshottari = chart_data.get("dashas", {}).get("vimshottari", {})
     mahadasha = _current_period(vimshottari.get("periods", []), target_date)
     antardasha = _current_period(mahadasha.get("antardashas", []), target_date)
@@ -349,7 +392,21 @@ def build_prediction_context(question, chart_data, target_date=None):
         for lord in dict.fromkeys(dasha_lords)
         if lord in PLANET_IDS or lord == "Ke"
     ]
-    timing_windows = build_timing_windows(question, chart_data, category, target_date)
+    timing_windows = build_timing_windows(
+        question,
+        chart_data,
+        category,
+        time_scope["start"],
+        months=time_scope.get("months") or 60,
+        end_date=time_scope["end"],
+    )
+    for window in timing_windows:
+        active_dasha = window.get("active_dasha", {})
+        window["remedies"] = remedies_for_dasha(
+            active_dasha.get("mahadasha") or window.get("mahadasha_lord"),
+            active_dasha.get("antardasha") or window.get("antardasha_lord"),
+            answer_language,
+        )
 
     return {
         "question": question,
@@ -361,25 +418,52 @@ def build_prediction_context(question, chart_data, target_date=None):
         },
         "temporal_policy": {
             "current_date": target_date.isoformat(),
+            "prediction_horizon": horizon,
+            "time_scope": {
+                "phrase": time_scope["phrase"],
+                "start": time_scope["start"].isoformat(),
+                "end": time_scope["end"].isoformat(),
+                "is_default": time_scope["is_default"],
+                "instruction": time_scope["instruction"],
+            },
             "past_periods_are_context_only": True,
             "answer_should_separate_past_current_future": True,
             "never_call_dates_before_current_date_upcoming": True,
             "future_timing_source": "candidate_timing_windows",
         },
+        "answer_contract": _answer_contract(question, category),
         "algorithm": {
             "source": "Algo.docx",
             "steps": [
-                "Use locally calculated D1/D9/D10, nakshatras, dashas, and ashtakavarga.",
+                "Use locally calculated D1 and relevant varga charts, nakshatras, dashas, and ashtakavarga.",
                 "Find current Mahadasha and Antardasha.",
-                "Calculate current and monthly future transits of Mahadasha lord and Antardasha lord.",
-                "Check Sarvashtakavarga points in the houses those lords transit.",
+                "Calculate transit priority deterministically from Python before LLM interpretation.",
+                "For weekly questions, include Moon plus Sun, Mercury, Venus, Mars, Jupiter, Saturn, Rahu, and Ketu.",
+                "For monthly questions, exclude Moon and use other planets with Dasha/Antardasha lord priority.",
+                "Check Sarvashtakavarga points in the houses those planets transit.",
                 "If points are greater than 28, the lord can deliver results of owned and placed houses.",
+                "If points are low, treat the transit as frictional or requiring care.",
                 "Treat dates before current_date as past context, not prediction.",
             ],
         },
         "dasha": {"mahadasha": mahadasha, "antardasha": antardasha},
+        "current_remedies": remedies_for_dasha(mahadasha.get("lord"), antardasha.get("lord"), answer_language),
         "jaimini_cross_check": _current_chara_context(chart_data, target_date),
+        "jaimini_confirmation": build_jaimini_confirmation(
+            chart_data,
+            category,
+            CATEGORY_RULES.get(category, {}).get("houses", []),
+            target_date,
+        ),
         "transit_lords": transit_lords,
+        "transit_priority": build_transit_priority_context(
+            chart_data,
+            CATEGORY_RULES.get(category, {}).get("houses", []),
+            target_date,
+            mahadasha_lord=mahadasha.get("lord"),
+            antardasha_lord=antardasha.get("lord"),
+            horizon=horizon,
+        ),
         "candidate_timing_windows": timing_windows,
         "chart_summary": _compact_chart_context(chart_data, category),
     }

@@ -19,6 +19,7 @@ class Conversation(models.Model):
     chart = models.ForeignKey(SavedChart, on_delete=models.SET_NULL, null=True, blank=True)
     title = models.CharField(max_length=160, blank=True)
     depth_level = models.PositiveSmallIntegerField(choices=DEPTH_CHOICES, default=QUICK)
+    answer_language = models.CharField(max_length=40, default="English")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

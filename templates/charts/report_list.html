@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Astrology GPT{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <h1>Reports</h1>
+  <a class="button icon-new" href="{% url 'chart_create' %}">New chart</a>
+</section>
+
+<section class="report-list">
+  {% for chart in charts %}
+    <article class="report-list__item">
+      <div>
+        <h2>{{ chart.name }}</h2>
+        <p>{{ chart.birth_date|date:"d-M-Y" }} at {{ chart.birth_time }} - {{ chart.birth_place }}</p>
+      </div>
+      <div class="report-list__actions">
+        <label for="report-language-{{ chart.id }}">Language</label>
+        <select id="report-language-{{ chart.id }}" data-report-language>
+          {% for value, label in report_languages %}
+            <option value="{{ value }}" {% if report_language == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <a
+          class="chart-action icon-report"
+          href="{% url 'chart_report' chart.id %}?language={{ report_language|urlencode }}"
+          data-report-link
+          data-report-base="{% url 'chart_report' chart.id %}"
+        >Open report</a>
+        <a
+          class="chart-action icon-report"
+          href="{% url 'chart_report_pdf' chart.id %}?language={{ report_language|urlencode }}"
+          data-report-pdf-link
+          data-report-base="{% url 'chart_report_pdf' chart.id %}"
+        >Download PDF</a>
+      </div>
+    </article>
+  {% empty %}
+    <section class="panel">
+      <p>No charts yet. Create a chart first, then reports will appear here.</p>
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<div class="loading-overlay" data-report-loading-overlay hidden>
+  <div class="loading-card" role="status" aria-live="polite">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <h2>Preparing your report</h2>
+    <p>Calculating monthly windows, checking stored predictions, and writing report guidance...</p>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const overlay = document.querySelector("[data-report-loading-overlay]");
+    const rows = document.querySelectorAll(".report-list__item");
+    if (!rows.length) {
+      return;
+    }
+
+    rows.forEach((row) => {
+      const select = row.querySelector("[data-report-language]");
+      const links = row.querySelectorAll("[data-report-base]");
+      const updateLinks = () => {
+        const language = encodeURIComponent(select.value);
+        links.forEach((link) => {
+          link.href = `${link.dataset.reportBase}?language=${language}`;
+        });
+      };
+
+      if (select) {
+        select.addEventListener("change", updateLinks);
+        updateLinks();
+      }
+    });
+
+    document.querySelectorAll("[data-report-link]").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (!overlay) {
+          return;
+        }
+        overlay.hidden = false;
+        document.body.classList.add("is-loading");
+        link.textContent = "Preparing...";
+      });
+    });
+
+    window.addEventListener("pageshow", () => {
+      if (overlay) {
+        overlay.hidden = true;
+      }
+      document.body.classList.remove("is-loading");
+      document.querySelectorAll("[data-report-link]").forEach((link) => {
+        link.textContent = "Open report";
+      });
+    });
+  })();
+</script>
+{% endblock %}

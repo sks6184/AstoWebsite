@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from accounts.credits import question_credit_status
+from astro_site.localization import remedy_devotion_note
 from charts.models import SavedChart
 
 from .forms import AskQuestionForm
@@ -35,6 +36,7 @@ def ask_question(request):
                 user=request.user,
                 chart=chart,
                 depth_level=depth_level,
+                answer_language=answer_language,
                 title=question[:120],
             )
             Message.objects.create(conversation=conversation, role=Message.USER, content=question)
@@ -52,6 +54,7 @@ def ask_question(request):
                 prompt_tokens=result.get("prompt_tokens", 0),
                 completion_tokens=result.get("completion_tokens", 0),
             )
+            return redirect("conversation_detail", conversation_id=conversation.id)
     else:
         form = AskQuestionForm()
     return render(
@@ -63,6 +66,7 @@ def ask_question(request):
             "conversation": conversation,
             "selected_chart_id": int(selected_chart_id) if selected_chart_id.isdigit() else None,
             "credit_status": credit_status,
+            "remedy_note": remedy_devotion_note("English"),
         },
     )
 
@@ -85,6 +89,7 @@ def conversation_detail(request, conversation_id):
             "conversation": conversation,
             "conversations": conversations,
             "credit_status": question_credit_status(request.user),
+            "remedy_note": remedy_devotion_note(conversation.answer_language),
         },
     )
 

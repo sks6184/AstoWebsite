@@ -74,6 +74,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "astro_site.context_processors.auth_flags",
+                "astro_site.context_processors.ui_language",
             ],
         },
     },

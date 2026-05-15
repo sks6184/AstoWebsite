@@ -11,8 +11,8 @@ class MessageInline(admin.TabularInline):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("title", "user", "depth_level", "chart", "updated_at")
-    list_filter = ("depth_level", "created_at")
+    list_display = ("title", "user", "depth_level", "answer_language", "chart", "updated_at")
+    list_filter = ("depth_level", "answer_language", "created_at")
     search_fields = ("title", "user__username", "user__email")
     inlines = [MessageInline]
 

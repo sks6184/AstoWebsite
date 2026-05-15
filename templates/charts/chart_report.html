@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+
+{% block title %}Chart Report - {{ chart.name }}{% endblock %}
+
+{% block content %}
+<section class="report-toolbar">
+  <a class="button secondary" href="{% url 'chart_list' %}">Back to charts</a>
+  <form class="report-language-form" method="get" data-report-language-form>
+    <label for="report-language">Report language</label>
+    <select id="report-language" name="language">
+      {% for value, label in report_languages %}
+        <option value="{{ value }}" {% if report_language == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  <a class="button icon-report" href="{% url 'chart_report_pdf' chart.id %}?language={{ report_language|urlencode }}">Download PDF</a>
+</section>
+
+<article class="report-page">
+  <header class="report-cover">
+    <p class="eyebrow">Astrology GPT Report</p>
+    <h1>{{ chart.name }}</h1>
+    <p>{{ chart.birth_date|date:"d-M-Y" }} at {{ chart.birth_time }} · {{ chart.birth_place }}</p>
+  </header>
+
+  <details class="report-section">
+    <summary>Birth Details <span>View</span></summary>
+    <div class="report-section__body">
+    <div class="report-facts">
+      <p><strong>Name</strong><span>{{ chart.name }}</span></p>
+      <p><strong>Date</strong><span>{{ chart.birth_date|date:"d-M-Y" }}</span></p>
+      <p><strong>Time</strong><span>{{ chart.birth_time }}</span></p>
+      <p><strong>Place</strong><span>{{ chart.birth_place }}</span></p>
+      <p><strong>Timezone</strong><span>{{ chart.timezone }}</span></p>
+      <p><strong>Gender</strong><span>{{ chart.get_gender_display }}</span></p>
+      <p><strong>Marital status</strong><span>{{ chart.get_marital_status_display }}</span></p>
+      <p><strong>Janma Nakshatra</strong><span>{{ report.birth_details.janma_nakshatra|default:"-" }}</span></p>
+      <p><strong>Chandra Rashi</strong><span>{{ report.birth_details.chandra_rashi|default:"-" }}</span></p>
+      <p><strong>Lagna</strong><span>{{ report.birth_details.lagna|default:"-" }}</span></p>
+      <p><strong>Lagnesh</strong><span>{{ report.birth_details.lagnesh|default:"-" }}</span></p>
+      <p>
+        <strong>Manglik</strong>
+        <span>
+          {% if report.birth_details.manglik %}
+            Yes - Mars in house {{ report.birth_details.manglik_house }}
+          {% else %}
+            No
+          {% endif %}
+        </span>
+      </p>
+      <p>
+        <strong>Kaal Sarpa Dosha</strong>
+        <span>{% if report.birth_details.kaal_sarpa_dosha %}Yes{% else %}No{% endif %}</span>
+      </p>
+      <p>
+        <strong>Shani Sade Sati</strong>
+        <span>
+          {% if report.sade_sati.available %}
+            {% if report.sade_sati.running %}
+              Running - {{ report.sade_sati.start_display }} to {{ report.sade_sati.end_display }}
+            {% else %}
+              No - Next starts {{ report.sade_sati.start_display }} to {{ report.sade_sati.end_display }}
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </span>
+      </p>
+    </div>
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Shani Sade Sati <span>View</span></summary>
+    <div class="report-section__body">
+      {% if report.sade_sati.available %}
+        <div class="report-subblock">
+          <strong>Status</strong>
+          <ul class="report-trigger-list">
+            <li>
+              {% if report.sade_sati.running %}
+                Sade Sati is running from {{ report.sade_sati.start_display }} to {{ report.sade_sati.end_display }}.
+              {% else %}
+                Sade Sati is not running. The next Sade Sati runs from {{ report.sade_sati.start_display }} to {{ report.sade_sati.end_display }}.
+              {% endif %}
+            </li>
+            <li>Natal Moon: {{ report.sade_sati.natal_moon_sign }}. Current Saturn transit: {{ report.sade_sati.current_saturn_sign }}.</li>
+            {% if report.sade_sati.current_phase %}
+              <li>Current phase: {{ report.sade_sati.current_phase }}.</li>
+            {% endif %}
+            {% if report.sade_sati.natal_tone %}
+              <li>{{ report.sade_sati.natal_tone }}</li>
+            {% endif %}
+          </ul>
+        </div>
+        {% if report.sade_sati.running and report.sade_sati.remedies.remedies %}
+          <div class="report-subblock">
+            <strong>Remedies</strong>
+            <p class="chart-note remedy-note"><em>{{ report.sade_sati.remedies.devotion_note }}</em></p>
+            <ul class="report-trigger-list">
+              {% for remedy in report.sade_sati.remedies.remedies %}
+                <li><strong>Beej Mantra:</strong> {{ remedy.beej_mantra }} ({{ remedy.beej_transliteration }})</li>
+                <li><strong>Beej Meaning:</strong> {{ remedy.beej_meaning }}</li>
+                <li><strong>Deity Mantra:</strong> {{ remedy.deity_mantra }} ({{ remedy.deity_transliteration }})</li>
+                {% if remedy.extra_guidance %}
+                  {% for line in remedy.extra_guidance %}
+                    <li>{{ line }}</li>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% else %}
+        <p class="chart-note">Sade Sati cannot be calculated because natal Moon data is not available.</p>
+      {% endif %}
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Charts <span>View</span></summary>
+    <div class="report-section__body">
+    <div class="report-chart-grid">
+      {% for chart_key, chart_data in report.charts.items %}
+        <div class="report-chart-item">
+          <h3>{{ chart_key|upper }}</h3>
+          {% include "charts/partials/north_chart.html" with houses=chart_data.houses label=chart_key %}
+        </div>
+      {% endfor %}
+    </div>
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Planet Details <span>View</span></summary>
+    <div class="report-section__body">
+    <div class="table-wrap table-wrap--planet-details">
+      <table class="data-table data-table--planet-details">
+        <thead>
+          <tr>
+            <th>Planet</th>
+            <th>House</th>
+            <th>Sign</th>
+            <th>Sign Lord</th>
+            <th>Degree</th>
+            <th>Nakshatra</th>
+            <th>Pada</th>
+            <th>Karaka</th>
+            <th>Motion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for planet in report.planet_details %}
+            <tr>
+              <td>{{ planet.name }}</td>
+              <td>{{ planet.house }}</td>
+              <td>{{ planet.sign }}</td>
+              <td>{{ planet.sign_lord }}</td>
+              <td>{{ planet.degree }}</td>
+              <td>{{ planet.nakshatra }}</td>
+              <td>{{ planet.pada }}</td>
+              <td>{{ planet.jaimini_karaka|default:"-" }}</td>
+              <td>{{ planet.motion }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Vimshottari Dasha <span>View</span></summary>
+    <div class="report-section__body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Dasha</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Antardasha Periods</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for period in report.vimshottari.periods %}
+            <tr>
+              <td>{{ period.lord }}{% if period.balance %} balance{% endif %}</td>
+              <td>{{ period.start_display }}</td>
+              <td>{{ period.end_display }}</td>
+              <td>
+                {% for antardasha in period.antardashas %}
+                  {{ period.lord }}/{{ antardasha.lord }}:
+                  {{ antardasha.start_display }} to {{ antardasha.end_display }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Jaimini Chara Dasha <span>View</span></summary>
+    <div class="report-section__body">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rashi Dasha</th>
+            <th>Years</th>
+            <th>Start</th>
+            <th>End</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for period in report.jaimini.chara_dasha.periods %}
+            <tr>
+              <td>{{ period.sign }}</td>
+              <td>{{ period.duration_years }}</td>
+              <td>{{ period.start_display }}</td>
+              <td>{{ period.end_display }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>Significant Yogas <span>View</span></summary>
+    <div class="report-section__body">
+    {% if report.yogas %}
+      <div class="report-yoga-list">
+        {% for yoga in report.yogas %}
+          <article>
+            <h3>{{ yoga.name }}</h3>
+            <p class="chart-note">{{ yoga.category }} · Strength: {{ yoga.strength|title }}</p>
+            <p>{{ yoga.meaning }}</p>
+            {% if yoga.evidence %}
+              <ul class="report-trigger-list">
+                {% for item in yoga.evidence %}
+                  <li>{{ item }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="chart-note">No high-confidence Yogas from the current rule set were detected for this chart.</p>
+    {% endif %}
+    </div>
+  </details>
+
+  <details class="report-section">
+    <summary>One Year Prediction <span>View</span></summary>
+    <div class="report-section__body">
+    {% regroup yearly.predictions by month as month_groups %}
+    <div class="monthly-report">
+      {% for group in month_groups %}
+        <details class="monthly-report__month">
+          <summary>{{ group.grouper|date:"F Y" }} <span>View</span></summary>
+          <div class="monthly-report__body">
+          {% with month_context=group.list.0.computed_context %}
+            {% if month_context.dasha_lord_details %}
+              <div class="report-subblock">
+                <strong>Dasha and Antardasha Lord Placement</strong>
+                <ul class="report-trigger-list">
+                  {% for detail in month_context.dasha_lord_details %}
+                    <li>
+                      {{ detail.role }}: {{ detail.lord_name }}.
+                      Natal: {{ detail.natal.sign }} / house {{ detail.natal.house }}
+                      {% if detail.natal.degree %} at {{ detail.natal.degree }}{% endif %}
+                      {% if detail.natal.nakshatra %}, {{ detail.natal.nakshatra }}{% endif %}.
+                      {% if detail.transit.used_for_monthly_scoring %}
+                        Transit: {{ detail.transit.sign }} / house {{ detail.transit.house }}.
+                        Sarvashtakavarga: {{ detail.transit.sarvashtakavarga_points }}.
+                      {% else %}
+                        {{ detail.note }}
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            {% if month_context.secondary_transit_triggers %}
+              <div class="report-subblock">
+                <strong>Secondary Transit Support</strong>
+                <ul class="report-trigger-list">
+                  {% for trigger in month_context.secondary_transit_triggers %}
+                    <li>{{ trigger.reason }} Transit: {{ trigger.transit_sign }} / house {{ trigger.transit_house }}.</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            {% if month_context.transit_priority.events %}
+              <div class="report-subblock">
+                <strong>Transit Priority</strong>
+                <ul class="report-trigger-list">
+                  {% for event in month_context.transit_priority.events|slice:":4" %}
+                    <li>
+                      {{ event.planet_name }}: {{ event.tone|title }} transit in {{ event.transit_sign }} / house {{ event.transit_house }}
+                      with Sarvashtakavarga {{ event.sarvashtakavarga_points }}.
+                      Activated houses: {{ event.activated_houses|join:", " }}.
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            {% if month_context.jaimini_confirmation %}
+              <div class="report-subblock">
+                <strong>Jaimini Confirmation</strong>
+                <ul class="report-trigger-list">
+                  <li>
+                    Status: {{ month_context.jaimini_confirmation.status|title }}.
+                    Chara Dasha:
+                    {{ month_context.jaimini_confirmation.active_chara_dasha.mahadasha.sign }}
+                    / {{ month_context.jaimini_confirmation.active_chara_dasha.antardasha.sign }}.
+                    Activated houses:
+                    {{ month_context.jaimini_confirmation.activated_houses|join:", " }}.
+                  </li>
+                  {% for reason in month_context.jaimini_confirmation.reasons|slice:":3" %}
+                    <li>{{ reason }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            {% if month_context.remedies.remedies %}
+              <div class="report-subblock">
+                <strong>Remedies</strong>
+                <p class="chart-note remedy-note"><em>{{ month_context.remedies.devotion_note }}</em></p>
+                <ul class="report-trigger-list">
+                  {% for remedy in month_context.remedies.remedies %}
+                    <li><strong>Beej Mantra:</strong> {{ remedy.beej_mantra }} ({{ remedy.beej_transliteration }})</li>
+                    <li><strong>Beej Meaning:</strong> {{ remedy.beej_meaning }}</li>
+                    <li><strong>Deity Mantra:</strong> {{ remedy.deity_mantra }} ({{ remedy.deity_transliteration }})</li>
+                    <li><strong>Deity Meaning:</strong> {{ remedy.deity_meaning }}</li>
+                    {% if remedy.extra_guidance %}
+                      {% for line in remedy.extra_guidance %}
+                        <li>{{ line }}</li>
+                      {% endfor %}
+                    {% endif %}
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% for prediction in group.list %}
+            <article>
+              <h4>{{ prediction.computed_context.topic_label }} Predictions</h4>
+              {% if prediction.computed_context.prediction_bullets %}
+                <div class="report-subblock">
+                  <ul class="report-trigger-list">
+                    <li>{{ prediction.prediction_text }}</li>
+                    {% for bullet in prediction.computed_context.prediction_bullets %}
+                      <li>{{ bullet }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+            </article>
+          {% endfor %}
+          </div>
+        </details>
+      {% endfor %}
+    </div>
+    </div>
+  </details>
+</article>
+{% endblock %}
+
+{% block extra_scripts %}
+<div class="loading-overlay" data-report-loading-overlay hidden>
+  <div class="loading-card" role="status" aria-live="polite">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <h2>Preparing your report</h2>
+    <p>Refreshing the report language and prediction text...</p>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const form = document.querySelector("[data-report-language-form]");
+    const overlay = document.querySelector("[data-report-loading-overlay]");
+    if (!form || !overlay) {
+      return;
+    }
+
+    const showLoading = () => {
+      overlay.hidden = false;
+      document.body.classList.add("is-loading");
+    };
+
+    form.addEventListener("change", () => {
+      showLoading();
+      form.submit();
+    });
+
+    form.addEventListener("submit", showLoading);
+  })();
+
+  (() => {
+    let openedForPrint = [];
+
+    window.addEventListener("beforeprint", () => {
+      openedForPrint = Array.from(
+        document.querySelectorAll(".report-section:not([open]), .monthly-report__month:not([open])")
+      );
+      openedForPrint.forEach((section) => {
+        section.setAttribute("open", "");
+      });
+    });
+
+    window.addEventListener("afterprint", () => {
+      openedForPrint.forEach((section) => {
+        section.removeAttribute("open");
+      });
+      openedForPrint = [];
+    });
+  })();
+</script>
+{% endblock %}

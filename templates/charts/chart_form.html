@@ -30,6 +30,16 @@
       <span class="place-hint">Choose a suggestion to fill coordinates automatically.</span>
     </p>
     <div class="place-autocomplete" hidden></div>
+    <p>
+      {{ form.gender.label_tag }}
+      {{ form.gender }}
+      {{ form.gender.errors }}
+    </p>
+    <p>
+      {{ form.marital_status.label_tag }}
+      {{ form.marital_status }}
+      {{ form.marital_status.errors }}
+    </p>
     {{ form.latitude }}
     {{ form.longitude }}
     <p class="timezone-status" data-timezone-status>

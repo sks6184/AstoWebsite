@@ -5,6 +5,7 @@ import swisseph as swe
 
 from .ashtakavarga import build_ashtakavarga
 from .jaimini import build_chara_dasha
+from .yogas import detect_yogas
 
 
 SIGNS = [
@@ -211,6 +212,15 @@ def _saptamsa_longitude(longitude):
     is_odd_sign = (sign_index + 1) % 2 == 1
     start_sign_index = sign_index if is_odd_sign else (sign_index + 6) % 12
     return _varga_longitude(longitude, 7, start_sign_index)
+
+
+def _chaturthamsha_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    sign_degree = longitude % 30
+    quarter = int(sign_degree // 7.5)
+    chaturthamsha_sign_index = (sign_index + (quarter * 3)) % 12
+    chaturthamsha_degree = (sign_degree % 7.5) * 4
+    return chaturthamsha_sign_index * 30 + chaturthamsha_degree
 
 
 def _navamsha_longitude(longitude):
@@ -449,6 +459,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
 
     houses = _build_houses(asc_sign_index, planets)
     d2 = _build_divisional_chart(asc_longitude, planets, _hora_longitude)
+    d4 = _build_divisional_chart(asc_longitude, planets, _chaturthamsha_longitude)
     d7 = _build_divisional_chart(asc_longitude, planets, _saptamsa_longitude)
     d9 = _build_divisional_chart(asc_longitude, planets, _navamsha_longitude)
     d10 = _build_divisional_chart(asc_longitude, planets, _dasamsa_longitude)
@@ -460,7 +471,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
     vimshottari = _dasha_periods(birth_date, moon["longitude"])
     vimshottari["periods"] = _add_antardashas(vimshottari["periods"])
 
-    return {
+    chart_data = {
         "name": name,
         "birth_date": birth_date.isoformat(),
         "birth_time": birth_time.isoformat(),
@@ -470,11 +481,12 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         "timezone": timezone,
         "system": "vedic_lahiri",
         "ayanamsa": "Lahiri",
-        "chart_template": "north_indian_clear_sign_positions_v8_extra_vargas",
+        "chart_template": "north_indian_clear_sign_positions_v9_d4_extra_vargas",
         "julian_day_ut": jd_ut,
         "ascendant": ascendant,
         "d1": {"houses": houses, "planets": [ascendant] + planets},
         "d2": d2,
+        "d4": d4,
         "d7": d7,
         "d9": d9,
         "d10": d10,
@@ -485,6 +497,8 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         "jaimini": {"chara_dasha": build_chara_dasha(birth_date, ascendant, planets)},
         "dashas": {"vimshottari": vimshottari},
     }
+    chart_data["yogas"] = detect_yogas(chart_data)
+    return chart_data
 
 
 def build_placeholder_chart(name, birth_date, birth_time, birth_place):

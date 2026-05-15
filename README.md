@@ -23,6 +23,23 @@ python manage.py runserver
 
 If Python's `venv` fails because of local `ensurepip` permissions, install Python 3.12 or 3.13 from python.org and create the venv with that version. Django and astrology packages are typically better tested on 3.12/3.13 than brand-new Python 3.14.
 
+## PDF report generation
+
+The report download feature uses server-side PDF generation. Install Python dependencies with:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+On Linux servers, WeasyPrint also needs system libraries. For Ubuntu/Debian, install:
+
+```bash
+sudo apt update
+sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 libjpeg-dev libopenjp2-7-dev
+```
+
+For local development only, the app can fall back to Chrome/Edge if WeasyPrint is unavailable. Do not rely on that fallback for production hosting.
+
 ## SQLite now, PostgreSQL later
 
 For the MVP, leave `DATABASE_URL` empty and Django will use `db.sqlite3`.
