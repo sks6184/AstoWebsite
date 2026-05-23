@@ -36,6 +36,8 @@ CATEGORY_RULES = {
     "marriage": {
         "keywords": [
             "marriage",
+            "married",
+            "marry",
             "spouse",
             "relationship",
             "partner",
@@ -115,6 +117,33 @@ CATEGORY_RULES = {
         "houses": [2, 5, 9, 11],
         "divisional_charts": ["d1", "d7"],
     },
+    "property": {
+        "keywords": [
+            "property",
+            "home",
+            "house",
+            "land",
+            "real estate",
+            "vehicle",
+            "comfort",
+            "residence",
+        ],
+        "houses": [4, 9, 11, 12],
+        "divisional_charts": ["d1", "d4", "d16"],
+    },
+    "family": {
+        "keywords": [
+            "family",
+            "parents",
+            "father",
+            "mother",
+            "lineage",
+            "ancestry",
+            "grandparents",
+        ],
+        "houses": [1, 4, 9, 12],
+        "divisional_charts": ["d1", "d12"],
+    },
     "foreign_travel": {
         "keywords": [
             "foreign",
@@ -140,9 +169,36 @@ CATEGORY_RULES = {
             "work permit",
             "citizenship",
             "country",
+            # Return / repatriation keywords
+            "return to",
+            "return back",
+            "return home",
+            "go back",
+            "go home",
+            "move back",
+            "move home",
+            "come back",
+            "coming back",
+            "back to india",
+            "back to home",
+            "back to my country",
+            "homeland",
+            "hometown",
+            "native place",
+            "native country",
+            "native land",
+            "repatriate",
+            "repatriation",
+            "permanently settle",
+            "permanent return",
+            "permanent settlement",
+            "forever",
+            "for good",
+            "settle back",
+            "shift back",
         ],
-        "houses": [3, 4, 7, 9, 10, 12],
-        "divisional_charts": ["d1", "d4", "d9", "d10"],
+        "houses": [3, 4, 7, 9, 12],
+        "divisional_charts": ["d1", "d4", "d9"],
     },
     "legal_and_enemies": {
         "keywords": [
@@ -176,8 +232,30 @@ CATEGORY_RULES = {
 }
 
 
+# Phrases that unambiguously signal foreign_travel/relocation regardless of which
+# other category keyword fires first (e.g. "work" → career, "home" → property).
+_FOREIGN_TRAVEL_OVERRIDES = frozenset({
+    "return to", "return back", "return home",
+    "returning to", "returning back", "returning home",
+    "go back to", "go home to",
+    "move back", "move home", "come back to", "coming back to",
+    "back to india", "back to my country", "back to home country",
+    "native place", "native country", "native land",
+    "homeland", "hometown",
+    "repatriate", "repatriation",
+    "settle back", "shift back",
+    "permanent return", "permanently return", "return permanently",
+    "forever in india", "forever back", "return for good",
+    "go back for good", "move back for good",
+})
+
+
 def classify_question(question):
     lowered = question.lower()
+    # Foreign travel / relocation phrases take priority — they overlap with career
+    # ("working abroad") and property ("home") keywords that would otherwise win.
+    if any(phrase in lowered for phrase in _FOREIGN_TRAVEL_OVERRIDES):
+        return "foreign_travel"
     for category, rules in CATEGORY_RULES.items():
         if any(keyword in lowered for keyword in rules["keywords"]):
             return category
@@ -297,6 +375,131 @@ def _time_scope(question, target_date):
         "is_default": True,
         "instruction": "No explicit time phrase was found; scan the next 5 years using dasha, transit, and Jaimini confirmation.",
     }
+
+
+# ── Temporal intent classification ───────────────────────────────────────────
+
+_FUTURE_INTENT_PHRASES = frozenset({
+    "will i", "when will", "can i", "should i", "when should",
+    "is there a chance", "any chance", "chances of", "chance of",
+    "do you see", "do u see", "any possibility", "possibility of",
+    "when would", "will there be", "when can", "what are my chances",
+    "will ever", "will i ever", "is it possible", "could i", "would i",
+    "is there hope", "any hope", "shall i", "when shall",
+    "will i get", "will i be", "will i return", "will i come back",
+    "ever return", "ever come back", "ever move", "any scope",
+})
+
+_PAST_INTENT_PHRASES = frozenset({
+    "why did", "what happened in", "why was i", "how was my",
+    "why i lost", "what went wrong", "why did i fail", "was my",
+    "what was my", "how did i", "what caused", "why did i",
+    "how was that", "was that period", "was it good",
+})
+
+
+def _temporal_intent(question: str) -> str:
+    """Return 'future', 'past', or 'general' based on question phrasing."""
+    lowered = question.lower()
+    if any(phrase in lowered for phrase in _FUTURE_INTENT_PHRASES):
+        return "future"
+    if any(phrase in lowered for phrase in _PAST_INTENT_PHRASES):
+        return "past"
+    return "general"
+
+
+def detect_question_scope(question: str, target_date: date | None = None) -> dict:
+    """
+    Detect whether the user has pinned a specific period or wants a forward scan.
+
+    Returns a dict with: start, end, months, phrase, instruction, is_fixed, temporal_intent.
+    is_fixed=True  → user named a specific period; analyse only that window.
+    is_fixed=False → user wants the best window found within [start, end].
+
+    Temporal intent is classified FIRST so that past reference years ("since 2014",
+    "working there from 2018") are not mistaken for target dates when the question
+    is clearly future-oriented ("any chance of returning?").
+    """
+    from calendar import monthrange
+
+    target_date = target_date or date.today()
+    lowered = question.lower()
+    intent = _temporal_intent(question)
+
+    def _scope(phrase, start, end, months, is_fixed, instruction):
+        return {
+            "phrase": phrase,
+            "start": start,
+            "end": end,
+            "months": months,
+            "is_fixed": is_fixed,
+            "temporal_intent": intent,
+            "instruction": instruction,
+        }
+
+    # Present-tense anchor always wins regardless of intent
+    if any(term in lowered for term in {"now", "currently", "today", "right now", "at present", "these days"}):
+        end = _add_months(target_date, 3)
+        return _scope("now", target_date, end, 3, True,
+                      f"Analyse only the current period: {target_date.isoformat()} to {end.isoformat()}.")
+
+    # Month + year: "June 2025", "Sep 2014", etc.
+    month_year = re.search(
+        r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?"
+        r"|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+        r"\s+(20\d{2})\b",
+        lowered,
+    )
+    if month_year:
+        _abbr_to_num = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        }
+        month_num = _abbr_to_num.get(month_year.group(1)[:3])
+        year_num = int(month_year.group(2))
+        # Future-intent questions must not anchor on past month/year references
+        if month_num and (intent != "future" or year_num >= target_date.year):
+            last_day = monthrange(year_num, month_num)[1]
+            start = date(year_num, month_num, 1)
+            end = date(year_num, month_num, last_day)
+            phrase = f"{month_year.group(1).capitalize()} {year_num}"
+            return _scope(phrase, start, end, None, True,
+                          f"Analyse only {phrase}: {start.isoformat()} to {end.isoformat()}.")
+
+    # Future-intent: handle relative phrases, then future-year only, then default forward scan.
+    # Never anchor on a past year — "Since 2014", "from 2018", etc. are background context.
+    if intent == "future":
+        if "next year" in lowered:
+            year = target_date.year + 1
+            return _scope("next year", date(year, 1, 1), date(year, 12, 31), None, True,
+                          f"Only consider next calendar year: 01-Jan-{year} to 31-Dec-{year}.")
+        if "this year" in lowered or "current year" in lowered:
+            return _scope("this year", target_date, date(target_date.year, 12, 31), None, True,
+                          f"Only consider the remaining current year: {target_date.isoformat()} to {target_date.year}-12-31.")
+        if "next 12 months" in lowered or "coming 12 months" in lowered:
+            end = _add_months(target_date, 12)
+            return _scope("next 12 months", target_date, end, 12, False,
+                          "Only consider the next 12 months from current_date.")
+        if "this month" in lowered or "current month" in lowered:
+            end = date(target_date.year, target_date.month, 28)
+            return _scope("this month", target_date, end, None, True,
+                          "Only consider the current calendar month.")
+        # Accept only future year references; ignore past years (context years)
+        for m in re.finditer(r"\b(20\d{2})\b", lowered):
+            year = int(m.group(1))
+            if year >= target_date.year:
+                return _scope(str(year), date(year, 1, 1), date(year, 12, 31), None, True,
+                              f"Only consider {year}: 01-Jan-{year} to 31-Dec-{year}.")
+        # No specific future date found — scan 5 years forward
+        end = _add_months(target_date, 60)
+        return _scope("default_next_5_years", target_date, end, 60, False,
+                      "Future question with no specific target date; scan the next 5 years.")
+
+    # Past or general intent: delegate to existing relative/year detection
+    scope = _time_scope(question, target_date)
+    scope["is_fixed"] = not scope.get("is_default", True)
+    scope["temporal_intent"] = intent
+    return scope
 
 
 def _parse_date(value):

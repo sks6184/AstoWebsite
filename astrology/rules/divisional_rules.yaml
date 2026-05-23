@@ -1,0 +1,1680 @@
+- rule_id: D10_CAREER_10TH_LORD_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.key_lord_placements.10_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D10 10th lord has strong dignity.
+  interpretation: A strong D10 10th lord supports professional rise, authority, and clearer career direction.
+  outcomes:
+    promotion_score: 3
+    authority_score: 4
+    income_growth_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_CAREER_10TH_LORD_002
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.key_lord_placements.10_lord.placed_house
+    operator: in
+    value: [2, 6, 10, 11]
+  reason: D10 10th lord is placed in a career/income house.
+  interpretation: D10 10th lord placement in work and gains houses supports practical career outcomes.
+  outcomes:
+    promotion_score: 2
+    job_change_score: 2
+    authority_score: 2
+    income_growth_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_CAREER_LAGNA_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.lagna.sign_number
+    operator: exists
+    value: true
+  reason: D10 chart is available for career judgment.
+  interpretation: Career answers should include D10 evidence when a D10 chart is calculated.
+  outcomes:
+    authority_score: 1
+  weight: 3
+  polarity: positive
+  confidence: high
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D9_STRENGTH_CONFIRMATION_001
+  system: Divisional
+  chart: D9
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d9.key_lord_placements.10_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D9 confirms strength of the career lord.
+  interpretation: D9 dignity can strengthen confidence that the planet can sustain its promised result.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    delay_score: -1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_BUSINESS_7TH_LORD_001
+  system: Divisional
+  chart: D10
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d10.key_lord_placements.7_lord.placed_house
+    operator: in
+    value: [2, 7, 10, 11]
+  reason: D10 7th lord connects to business houses.
+  interpretation: D10 7th lord links can support trade, clients, partnership, and public-facing work.
+  outcomes:
+    business_success_score: 3
+    partnership_score: 3
+    market_visibility_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_BUSINESS_10TH_LORD_001
+  system: Divisional
+  chart: D10
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d10.key_lord_placements.10_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D10 10th lord has strong dignity for business execution.
+  interpretation: Strong D10 professional lordship improves the ability to execute and sustain business work.
+  outcomes:
+    business_success_score: 3
+    execution_pressure_score: -1
+    long_term_sustainability_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: VARGA_CAREER_STATUS_001
+  system: Divisional
+  chart: D9/D10
+  category: career
+  condition:
+    path: varga.status
+    operator: equals
+    value: supports
+  reason: Varga assessment supports the career question.
+  interpretation: When D9 and D10 findings repeat career support, divisional confirmation improves confidence.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    income_growth_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: VARGA_CROSS_CONFIRMATION_001
+  system: Divisional
+  chart: D9/D10
+  category: career
+  condition:
+    path: varga.cross_chart_confirmations.score
+    operator: gte
+    value: 6
+  reason: D9 and D10 both confirm a relevant career factor.
+  interpretation: Cross-chart confirmation makes the same result more reliable than a single-chart indication.
+  outcomes:
+    promotion_score: 2
+    authority_score: 3
+    delay_score: -1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_CAREER_10TH_LORD_WEAK_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.key_lord_placements.10_lord.dignity
+    operator: equals
+    value: debilitated
+  reason: D10 10th lord is debilitated.
+  interpretation: Weak D10 10th lord dignity can show pressure, delay, or weaker professional stability.
+  outcomes:
+    risk_score: 3
+    delay_score: 3
+    promotion_score: -2
+  weight: 7
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: VARGA_BUSINESS_STATUS_001
+  system: Divisional
+  chart: D9/D10
+  category: business
+  condition:
+    path: varga.status
+    operator: equals
+    value: supports
+  reason: Varga assessment supports business execution.
+  interpretation: Divisional support improves confidence for business when trade, profession, and gains houses are activated.
+  outcomes:
+    business_success_score: 2
+    market_visibility_score: 2
+    long_term_sustainability_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction"
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: D10_LAGNA_LORD_STRENGTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D10 Lagna lord is strong.
+  interpretation: A strong D10 Lagna lord supports dedication to work, right professional direction, and resilience against career disturbances.
+  outcomes:
+    authority_score: 2
+    promotion_score: 1
+    delay_score: -1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7771-7774"
+
+- rule_id: D10_LAGNA_LORD_WEAK_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.1_lord.dignity
+    operator: equals
+    value: debilitated
+  reason: D10 Lagna lord is weak.
+  interpretation: Weakness of D10 Lagna lord can reduce career growth and increase professional obstacles.
+  outcomes:
+    risk_score: 2
+    delay_score: 3
+    promotion_score: -1
+  weight: 7
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7771-7774"
+
+- rule_id: D10_10TH_LORD_DUSTHANA_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D10 10th lord is linked with a dusthana house.
+  interpretation: D10 10th lord connected with 6th, 8th, or 12th can indicate career problems, sudden changes, transfers, or work pressure.
+  outcomes:
+    job_change_score: 3
+    risk_score: 3
+    delay_score: 2
+    promotion_score: -1
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7775, 7784-7785"
+
+- rule_id: D10_SUN_ANGLE_STRONG_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    all:
+      - path: chart_facts.varga.charts.d10.planet_lookup.Su.house
+        operator: in
+        value: [1, 4, 7, 10]
+      - path: chart_facts.varga.charts.d10.planet_lookup.Su.dignity
+        operator: not_equals
+        value: debilitated
+  reason: Sun is strong enough in an angle in D10.
+  interpretation: Sun in angles in D10 can support authority, administration, government-linked work, status, and career rise when not weakened.
+  outcomes:
+    authority_score: 4
+    promotion_score: 2
+    income_growth_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7776"
+
+- rule_id: D10_SUN_DUSTHANA_WEAK_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planet_lookup.Su.house
+    operator: in
+    value: [6, 8, 12]
+  reason: Sun is placed in a difficult D10 house.
+  interpretation: Sun in 6th, 8th, or 12th in D10 can show problems with government, authority, or confidence in career decisions.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+    authority_score: -1
+  weight: 6
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7776"
+
+- rule_id: D10_SATURN_SUPPORT_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planet_lookup.Sa.house
+    operator: in
+    value: [1, 4, 7, 10, 11]
+  reason: Saturn is placed in a career-supporting D10 house.
+  interpretation: Strong Saturn in D10 can support workers, subordinates, responsibility, organization, and Saturn-related professions.
+  outcomes:
+    authority_score: 2
+    income_growth_score: 1
+    delay_score: 1
+  weight: 5
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7777-7778"
+
+- rule_id: D10_DASHA_LORD_10TH_001
+  system: Divisional
+  chart: D10
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d10.house
+    operator: equals
+    value: 10
+  reason: Active Vimshottari dasha lord is placed in D10 10th house.
+  interpretation: Dasha of a planet connected to the D10 10th house can deliver promotion or major career results.
+  outcomes:
+    promotion_score: 4
+    authority_score: 3
+    income_growth_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7781"
+
+- rule_id: D10_DASHA_LORD_TRANSFER_001
+  system: Divisional
+  chart: D10
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d10.house
+    operator: in
+    value: [6, 8, 12]
+  reason: Active Vimshottari dasha lord is placed in D10 6th, 8th, or 12th.
+  interpretation: Dasha relationship with D10 6th, 8th, or 12th can indicate transfer, change, pressure, or forced movement.
+  outcomes:
+    job_change_score: 4
+    risk_score: 2
+    delay_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7782-7785"
+
+- rule_id: D10_PLANET_IN_ANGLE_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planets.house
+    operator: in
+    value: [1, 4, 7, 10]
+  reason: A planet occupies an angle in D10.
+  interpretation: Planets in D10 angles are powerful for delivering career results, with the 10th, 7th, 4th, and 1st emphasized.
+  outcomes:
+    authority_score: 1
+    promotion_score: 1
+  weight: 4
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7789-7790"
+
+- rule_id: D10_PLANET_IN_UPACHAYA_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planets.house
+    operator: in
+    value: [3, 6, 10, 11]
+  reason: A planet occupies an upachaya house in D10.
+  interpretation: Planets in D10 upachaya houses can give good results through effort, hard work, and gradual growth.
+  outcomes:
+    income_growth_score: 1
+    authority_score: 1
+    delay_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7791-7793"
+
+- rule_id: D10_10TH_LORD_FIRST_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 1
+  reason: D10 10th lord is placed in D10 Lagna.
+  interpretation: The D10 10th lord in Lagna supports visibility, learning, fame, wealth, and career self-direction.
+  outcomes:
+    authority_score: 3
+    promotion_score: 2
+    income_growth_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7796"
+
+- rule_id: D10_10TH_LORD_SECOND_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 2
+  reason: D10 10th lord is placed in D10 second house.
+  interpretation: The D10 10th lord in the second house emphasizes wealth-building, speech, family business, food, or resource-based work.
+  outcomes:
+    income_growth_score: 3
+    business_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7797"
+
+- rule_id: D10_10TH_LORD_THIRD_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 3
+  reason: D10 10th lord is placed in D10 third house.
+  interpretation: The D10 10th lord in the third house supports self-made work, communication, writing, travel, effort, and transferable jobs.
+  outcomes:
+    job_change_score: 2
+    authority_score: 1
+    delay_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7798"
+
+- rule_id: D10_10TH_LORD_FOURTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 4
+  reason: D10 10th lord is placed in D10 fourth house.
+  interpretation: The D10 10th lord in the fourth house supports authority, own-land success, generosity, and possible public or political role when supported.
+  outcomes:
+    authority_score: 3
+    promotion_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7799"
+
+- rule_id: D10_10TH_LORD_FIFTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 5
+  reason: D10 10th lord is placed in D10 fifth house.
+  interpretation: The D10 10th lord in the fifth house supports intelligence and fame, but can also show job instability when afflicted.
+  outcomes:
+    authority_score: 2
+    job_change_score: 2
+    risk_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7800-7801"
+
+- rule_id: D10_10TH_LORD_SEVENTH_001
+  system: Divisional
+  chart: D10
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 7
+  reason: D10 10th lord is placed in D10 seventh house.
+  interpretation: The D10 10th lord in the seventh house supports business skill, partnerships, corporate associations, foreign links, or travel in profession.
+  outcomes:
+    business_success_score: 3
+    partnership_score: 3
+    market_visibility_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7804-7805"
+
+- rule_id: D10_10TH_LORD_NINTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 9
+  reason: D10 10th lord is placed in D10 ninth house.
+  interpretation: The D10 10th lord in the ninth house can act like a Rajyoga for high position, luck, and status, though it can also show job changes.
+  outcomes:
+    promotion_score: 3
+    authority_score: 3
+    job_change_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7807-7808"
+
+- rule_id: D10_10TH_LORD_TENTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 10
+  reason: D10 10th lord is placed in D10 10th house.
+  interpretation: The D10 10th lord in the tenth house supports distinction, honour, and fame in work unless badly afflicted.
+  outcomes:
+    promotion_score: 4
+    authority_score: 4
+    income_growth_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraphs 7809-7810"
+
+- rule_id: D10_10TH_LORD_ELEVENTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 11
+  reason: D10 10th lord is placed in D10 eleventh house.
+  interpretation: The D10 10th lord in the eleventh house supports success, gains, employment of others, and multiple professions.
+  outcomes:
+    income_growth_score: 4
+    promotion_score: 2
+    authority_score: 2
+    business_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7811"
+
+- rule_id: D10_10TH_LORD_TWELFTH_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 12
+  reason: D10 10th lord is placed in D10 twelfth house.
+  interpretation: The D10 10th lord in the twelfth house can show foreign, hospital, jail, solitary, or secluded work; with affliction it can harm career success.
+  outcomes:
+    foreign_opportunity_score: 3
+    job_change_score: 2
+    risk_score: 2
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10"
+  source_page: "OCR paragraph 7812"
+
+- rule_id: D2_WEALTH_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D2
+  category: money
+  condition:
+    path: chart_facts.varga.charts.d2.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D2 Lagna lord is strong.
+  interpretation: D2/Hora is used for wealth, family resources, and speech; a strong D2 Lagna lord supports wealth capacity.
+  outcomes:
+    wealth_score: 3
+    income_growth_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Different Divisions and their application"
+  source_page: "OCR paragraphs 281-283"
+
+- rule_id: D3_COURAGE_THIRD_LORD_STRONG_001
+  system: Divisional
+  chart: D3
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d3.all_lord_placements.3_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D3 third lord is strong.
+  interpretation: D3/Drekkana is used for coborns, courage, effort, communication, and power; strength here supports initiative.
+  outcomes:
+    effort_score: 3
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Drekkana / D3"
+  source_page: "OCR paragraphs 2955-2959"
+
+- rule_id: D4_PROPERTY_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D4
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d4.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D4 Lagna lord is strong.
+  interpretation: D4/Chaturthamsha is used for home, property, comforts, and destiny connected to residence.
+  outcomes:
+    property_score: 3
+    comfort_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturthamsha / D4"
+  source_page: "OCR paragraphs 4186-4195"
+
+- rule_id: D7_CHILDREN_FIFTH_LORD_STRONG_001
+  system: Divisional
+  chart: D7
+  category: children
+  condition:
+    path: chart_facts.varga.charts.d7.all_lord_placements.5_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D7 fifth lord is strong.
+  interpretation: D7/Saptamsha is used for children, grandchildren, creativity, fulfilment, and the results of the fifth-house domain.
+  outcomes:
+    children_score: 3
+    fulfilment_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptamsha / D7"
+  source_page: "OCR paragraphs 4767-4774"
+
+- rule_id: D9_MARRIAGE_SEVENTH_LORD_STRONG_001
+  system: Divisional
+  chart: D9
+  category: marriage
+  condition:
+    path: chart_facts.varga.charts.d9.all_lord_placements.7_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D9 seventh lord is strong.
+  interpretation: D9/Navamsha is used for spouse, married life, partners, and strength confirmation.
+  outcomes:
+    marriage_score: 3
+    partnership_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Different Divisions and their application"
+  source_page: "OCR paragraphs 294-296"
+
+- rule_id: D12_PARENTAL_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D12
+  category: family
+  condition:
+    path: chart_facts.varga.charts.d12.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D12 Lagna lord is strong.
+  interpretation: D12/Dwadashamsha is used for parents, grandparents, lineage, and prenatal influences.
+  outcomes:
+    family_support_score: 3
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dwadashamsha / D12"
+  source_page: "OCR paragraphs 8191-8194"
+
+- rule_id: D16_COMFORT_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D16
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d16.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D16 Lagna lord is strong.
+  interpretation: D16/Shodashamsha is used for movable assets, vehicles, comforts, and general happiness.
+  outcomes:
+    comfort_score: 3
+    movable_assets_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Shodashamsha / D16"
+  source_page: "OCR paragraphs 10221-10227"
+
+- rule_id: D20_SPIRITUAL_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D20
+  category: spirituality
+  condition:
+    path: chart_facts.varga.charts.d20.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D20 Lagna lord is strong.
+  interpretation: D20/Vimshamsha is used for spiritual pursuits, worship, and devotional results.
+  outcomes:
+    spiritual_practice_score: 3
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Vimshamsha / D20"
+  source_page: "OCR paragraphs 11981-11985"
+
+- rule_id: D24_EDUCATION_FIFTH_LORD_STRONG_001
+  system: Divisional
+  chart: D24
+  category: education
+  condition:
+    path: chart_facts.varga.charts.d24.all_lord_placements.5_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D24 fifth lord is strong.
+  interpretation: D24/Siddhamsha is used for learning, academic achievement, education quality, and knowledge.
+  outcomes:
+    education_score: 3
+    academic_success_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturvimshamsha / D24"
+  source_page: "OCR paragraphs 12759-12763, 13721-13729"
+
+- rule_id: D27_STRENGTH_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D27
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d27.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D27 Lagna lord is strong.
+  interpretation: D27/Bhamsha is used for physical, mental, and spiritual strength or weakness; a strong Lagna improves endurance.
+  outcomes:
+    vitality_score: 3
+    risk_score: -1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptavimshamsha / D27"
+  source_page: "OCR paragraphs 14635-14643"
+
+- rule_id: D30_RISK_LAGNA_LORD_WEAK_001
+  system: Divisional
+  chart: D30
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d30.all_lord_placements.1_lord.dignity
+    operator: equals
+    value: debilitated
+  reason: D30 Lagna lord is weak.
+  interpretation: D30/Trimshamsha is used for miseries, evils, arishta, and sources of difficulty; weakness here raises caution.
+  outcomes:
+    risk_score: 3
+    health_pressure_score: 2
+  weight: 6
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Trimshamsha / D30"
+  source_page: "OCR paragraphs 316-318, 15491-15493"
+
+- rule_id: D40_AUSPICIOUS_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D40
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d40.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D40 Lagna lord is strong.
+  interpretation: D40/Khavedamsha is used for general auspicious effects.
+  outcomes:
+    auspicious_support_score: 3
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Khavedamsha / D40"
+  source_page: "OCR paragraphs 319-321, 15494-15498"
+
+- rule_id: D45_CHARACTER_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D45
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d45.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D45 Lagna lord is strong.
+  interpretation: D45/Akshavedamsha is used for character and conduct.
+  outcomes:
+    character_support_score: 3
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Akshavedamsha / D45"
+  source_page: "OCR paragraphs 322-324, 16769-16773"
+
+- rule_id: D60_DEEP_KARMA_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D60
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d60.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D60 Lagna lord is strong.
+  interpretation: D60/Shashtiamsha is used for deep benefic/malefic effects and should be applied only when birth time is reliable.
+  outcomes:
+    deep_karmic_support_score: 3
+  weight: 4
+  polarity: positive
+  confidence: low
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Shashtiamsha / D60"
+  source_page: "OCR paragraphs 17807-17831"
+
+- rule_id: D10_SIXTH_HOUSE_SERVICE_PRESSURE_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planet_lookup.Sa.house
+    operator: equals
+    value: 6
+  reason: Saturn occupies the D10 sixth house of service, rivalry, and obstacles.
+  interpretation: The D10 sixth house shows service conditions, rivalries, and obstacles; Saturn here can make career progress effort-heavy but durable when supported elsewhere.
+  outcomes:
+    delay_score: 2
+    risk_score: 1
+    authority_score: 1
+  weight: 5
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 house meanings"
+  source_page: "OCR paragraphs 7566-7567"
+
+- rule_id: D10_SEVENTH_HOUSE_BUSINESS_OCCUPIED_001
+  system: Divisional
+  chart: D10
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.7_lord.placed_house
+    operator: in
+    value: [1, 7, 10, 11]
+  reason: D10 seventh lord is strongly placed for associates, clients, or business partners.
+  interpretation: The D10 seventh house represents associates and business partners; strength of its lord supports client-facing or partnership-based professional activity.
+  outcomes:
+    partnership_score: 3
+    business_success_score: 2
+    market_visibility_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 house meanings"
+  source_page: "OCR paragraph 7568"
+
+- rule_id: D10_EIGHTH_HOUSE_CAREER_DISRUPTION_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 8
+  reason: D10 10th lord is placed in the D10 eighth house.
+  interpretation: The D10 eighth house indicates hidden activity, problems, abrupt changes, and possible breaks in career; the 10th lord there increases job-change and risk signals.
+  outcomes:
+    job_change_score: 4
+    risk_score: 3
+    delay_score: 2
+    promotion_score: -2
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 house meanings"
+  source_page: "OCR paragraph 7569"
+
+- rule_id: D10_NINTH_TENTH_EXCHANGE_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    all:
+      - path: chart_facts.varga.charts.d10.all_lord_placements.9_lord.placed_house
+        operator: equals
+        value: 10
+      - path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+        operator: equals
+        value: 9
+  reason: D10 ninth and tenth lords exchange houses.
+  interpretation: A D10 ninth-tenth lord exchange is treated as a strong professional Rajyoga pattern, supporting rise, right guidance, and status when dasha activates it.
+  outcomes:
+    promotion_score: 4
+    authority_score: 4
+    income_growth_score: 2
+    delay_score: -1
+  weight: 9
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 examples"
+  source_page: "OCR paragraphs 7872-7873"
+
+- rule_id: D10_ELEVENTH_GAINS_OCCUPIED_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.planets.house
+    operator: equals
+    value: 11
+  reason: A planet occupies the D10 eleventh house of professional gains.
+  interpretation: The D10 eleventh house indicates gains in career; occupation of this house can increase result delivery, especially when the occupying planet is tied to dasha or career lords.
+  outcomes:
+    income_growth_score: 2
+    promotion_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 house meanings"
+  source_page: "OCR paragraph 7573"
+
+- rule_id: D10_TWELFTH_HOUSE_CAREER_ENDINGS_001
+  system: Divisional
+  chart: D10
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d10.all_lord_placements.10_lord.placed_house
+    operator: equals
+    value: 12
+  reason: D10 10th lord is placed in the D10 twelfth house.
+  interpretation: The D10 twelfth house can show end of a career phase, secret activity, isolation, foreign environments, or loss; this must be treated as mixed rather than purely negative.
+  outcomes:
+    job_change_score: 3
+    foreign_opportunity_score: 2
+    risk_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dashamsha / D10 house meanings"
+  source_page: "OCR paragraph 7574"
+
+- rule_id: D9_LAGNA_LORD_STRENGTH_CONFIRMATION_001
+  system: Divisional
+  chart: D9
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d9.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D9 Lagna lord is strong.
+  interpretation: Navamsha confirms the deeper strength of planets and promises seen in the birth chart; a strong D9 Lagna lord improves sustainability of results.
+  outcomes:
+    promotion_score: 1
+    authority_score: 1
+    delay_score: -1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Navamsha / D9"
+  source_page: "OCR paragraphs 7131-7154"
+
+- rule_id: D9_SEVENTH_LORD_UPACHAYA_MARRIAGE_001
+  system: Divisional
+  chart: D9
+  category: marriage
+  condition:
+    path: chart_facts.varga.charts.d9.all_lord_placements.7_lord.placed_house
+    operator: in
+    value: [3, 6, 10, 11]
+  reason: D9 seventh lord is placed in an upachaya house.
+  interpretation: The source notes D9 seventh-lord upachaya links in marriage judgment; final interpretation must also check affliction and D1 promise before drawing conclusions.
+  outcomes:
+    marriage_score: 1
+    delay_score: 1
+    partnership_score: 1
+  weight: 5
+  polarity: mixed
+  confidence: low
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Navamsha / D9 marriage"
+  source_page: "OCR paragraphs 6784-6798"
+
+- rule_id: D9_VENUS_STRONG_SPOUSE_SUPPORT_001
+  system: Divisional
+  chart: D9
+  category: marriage
+  condition:
+    path: chart_facts.varga.charts.d9.planet_lookup.Ve.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Venus is strong in Navamsha.
+  interpretation: The source treats Venus as a prime factor in spouse and marital indications; strength supports smoother relationship promise when D1 and dasha agree.
+  outcomes:
+    marriage_score: 3
+    partnership_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Navamsha / spouse factors"
+  source_page: "OCR paragraphs 6841-6848"
+
+- rule_id: D9_JUPITER_STRONG_SPOUSE_SUPPORT_001
+  system: Divisional
+  chart: D9
+  category: marriage
+  condition:
+    path: chart_facts.varga.charts.d9.planet_lookup.Ju.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Jupiter is strong in Navamsha.
+  interpretation: The source treats Jupiter as a prime factor for spouse quality, especially in husband-related judgment; strength is supportive when D1 and dasha also agree.
+  outcomes:
+    marriage_score: 2
+    partnership_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Navamsha / spouse factors"
+  source_page: "OCR paragraphs 6841-6848"
+
+- rule_id: D24_EDUCATION_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D24
+  category: education
+  condition:
+    path: chart_facts.varga.charts.d24.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D24 Lagna lord is strong.
+  interpretation: D24/Siddhamsha judges learning and education; strength of the D24 Lagna lord supports capacity to sustain studies.
+  outcomes:
+    education_score: 3
+    academic_success_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturvimshamsha / D24"
+  source_page: "OCR paragraphs 12759-12763, 13721-13729"
+
+- rule_id: D24_EDUCATION_NINTH_LORD_STRONG_001
+  system: Divisional
+  chart: D24
+  category: education
+  condition:
+    path: chart_facts.varga.charts.d24.all_lord_placements.9_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D24 ninth lord is strong.
+  interpretation: In education questions, the ninth lord in D24 supports higher learning, guidance, teachers, and advanced study when dasha agrees.
+  outcomes:
+    higher_studies_score: 3
+    education_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturvimshamsha / D24"
+  source_page: "OCR paragraphs 12759-12763, 13721-13729"
+
+- rule_id: D24_EDUCATION_DUSTHANA_PRESSURE_001
+  system: Divisional
+  chart: D24
+  category: education
+  condition:
+    path: chart_facts.varga.charts.d24.all_lord_placements.5_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D24 fifth lord is placed in a difficult house.
+  interpretation: The fifth lord connected to D24 dusthana houses can show interruption, pressure, or non-linear educational progress.
+  outcomes:
+    education_delay_score: 3
+    academic_success_score: -1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturvimshamsha / D24"
+  source_page: "OCR paragraphs 12759-12763, 13721-13729"
+
+- rule_id: D4_PROPERTY_FOURTH_LORD_STRONG_001
+  system: Divisional
+  chart: D4
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d4.all_lord_placements.4_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D4 fourth lord is strong.
+  interpretation: D4/Chaturthamsha is the property and residence chart; a strong fourth lord supports home, land, residence, and comfort outcomes.
+  outcomes:
+    property_score: 4
+    comfort_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturthamsha / D4"
+  source_page: "OCR paragraphs 4186-4195"
+
+- rule_id: D4_PROPERTY_FOURTH_LORD_DUSTHANA_001
+  system: Divisional
+  chart: D4
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d4.all_lord_placements.4_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D4 fourth lord is linked with a difficult house.
+  interpretation: D4 fourth lord in 6th, 8th, or 12th can show disputes, repairs, displacement, loss, or pressure around property/residence matters.
+  outcomes:
+    property_risk_score: 3
+    delay_score: 2
+    comfort_score: -1
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturthamsha / D4"
+  source_page: "OCR paragraphs 4186-4195"
+
+- rule_id: D4_PROPERTY_MARS_STRONG_001
+  system: Divisional
+  chart: D4
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d4.planet_lookup.Ma.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Mars is strong in D4.
+  interpretation: Mars is a practical significator for land, construction, and immovable assets; strength in D4 supports property action when the chart promise agrees.
+  outcomes:
+    property_score: 2
+    execution_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Chaturthamsha / D4"
+  source_page: "OCR paragraphs 4186-4195"
+
+- rule_id: D7_CHILDREN_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D7
+  category: children
+  condition:
+    path: chart_facts.varga.charts.d7.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D7 Lagna lord is strong.
+  interpretation: D7/Saptamsha judges children and fulfilment from the fifth-house domain; a strong D7 Lagna lord supports the chart's ability to deliver that promise.
+  outcomes:
+    children_score: 3
+    fulfilment_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptamsha / D7"
+  source_page: "OCR paragraphs 4767-4774"
+
+- rule_id: D7_CHILDREN_JUPITER_STRONG_001
+  system: Divisional
+  chart: D7
+  category: children
+  condition:
+    path: chart_facts.varga.charts.d7.planet_lookup.Ju.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Jupiter is strong in D7.
+  interpretation: Jupiter is a key natural significator for children; strength in D7 is supportive, especially when D1 and dasha also agree.
+  outcomes:
+    children_score: 3
+    fulfilment_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptamsha / D7"
+  source_page: "OCR paragraphs 4767-4774"
+
+- rule_id: D7_CHILDREN_FIFTH_LORD_DUSTHANA_001
+  system: Divisional
+  chart: D7
+  category: children
+  condition:
+    path: chart_facts.varga.charts.d7.all_lord_placements.5_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D7 fifth lord is linked with a difficult house.
+  interpretation: D7 fifth lord connection to 6th, 8th, or 12th can show delay, medical pressure, anxiety, or interruption around children matters.
+  outcomes:
+    children_delay_score: 3
+    risk_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptamsha / D7"
+  source_page: "OCR paragraphs 4767-4774"
+
+- rule_id: D12_PARENTAL_FOURTH_LORD_STRONG_001
+  system: Divisional
+  chart: D12
+  category: family
+  condition:
+    path: chart_facts.varga.charts.d12.all_lord_placements.4_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D12 fourth lord is strong.
+  interpretation: D12/Dwadashamsha is used for parents and lineage; the fourth lord supports mother, family roots, and domestic lineage factors.
+  outcomes:
+    family_support_score: 3
+    mother_support_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dwadashamsha / D12"
+  source_page: "OCR paragraphs 8191-8194"
+
+- rule_id: D12_PARENTAL_NINTH_LORD_STRONG_001
+  system: Divisional
+  chart: D12
+  category: family
+  condition:
+    path: chart_facts.varga.charts.d12.all_lord_placements.9_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D12 ninth lord is strong.
+  interpretation: D12 ninth-lord strength supports father, ancestry, blessings, and lineage support when D1 and dasha agree.
+  outcomes:
+    family_support_score: 3
+    father_support_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dwadashamsha / D12"
+  source_page: "OCR paragraphs 8191-8194"
+
+- rule_id: D12_PARENTAL_DUSTHANA_PRESSURE_001
+  system: Divisional
+  chart: D12
+  category: family
+  condition:
+    path: chart_facts.varga.charts.d12.all_lord_placements.4_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D12 fourth lord is linked with a difficult house.
+  interpretation: D12 fourth-lord pressure can show strain, distance, duty, or unresolved issues around parental/family roots.
+  outcomes:
+    family_pressure_score: 3
+    delay_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Dwadashamsha / D12"
+  source_page: "OCR paragraphs 8191-8194"
+
+- rule_id: D27_STRENGTH_SIXTH_LORD_PRESSURE_001
+  system: Divisional
+  chart: D27
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d27.all_lord_placements.6_lord.placed_house
+    operator: in
+    value: [1, 6, 8, 12]
+  reason: D27 sixth lord is active in a pressure house.
+  interpretation: D27/Bhamsha judges strength and weakness; sixth-lord pressure can show physical or mental strain that needs corroboration from D1 and dasha.
+  outcomes:
+    health_pressure_score: 3
+    risk_score: 2
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptavimshamsha / D27"
+  source_page: "OCR paragraphs 14635-14643"
+
+- rule_id: D27_STRENGTH_MARS_STRONG_001
+  system: Divisional
+  chart: D27
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d27.planet_lookup.Ma.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Mars is strong in D27.
+  interpretation: Mars can indicate vitality and physical drive; strength in D27 supports endurance when not contradicted by risk factors.
+  outcomes:
+    vitality_score: 3
+    risk_score: -1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Saptavimshamsha / D27"
+  source_page: "OCR paragraphs 14635-14643"
+
+- rule_id: D30_RISK_EIGHTH_LORD_PRESSURE_001
+  system: Divisional
+  chart: D30
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d30.all_lord_placements.8_lord.placed_house
+    operator: in
+    value: [1, 6, 8, 12]
+  reason: D30 eighth lord is active in a pressure house.
+  interpretation: D30/Trimshamsha is used for miseries and difficulties; eighth-lord pressure increases risk signals and should be handled cautiously.
+  outcomes:
+    risk_score: 4
+    health_pressure_score: 3
+  weight: 7
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Trimshamsha / D30"
+  source_page: "OCR paragraphs 316-318, 15491-15493"
+
+- rule_id: D30_RISK_TWELFTH_LORD_PRESSURE_001
+  system: Divisional
+  chart: D30
+  category: health
+  condition:
+    path: chart_facts.varga.charts.d30.all_lord_placements.12_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D30 twelfth lord is linked with a difficult house.
+  interpretation: D30 twelfth-lord pressure can show loss, isolation, hospitalization themes, or hidden stress; it requires corroboration and careful wording.
+  outcomes:
+    risk_score: 3
+    health_pressure_score: 2
+  weight: 6
+  polarity: negative
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Trimshamsha / D30"
+  source_page: "OCR paragraphs 316-318, 15491-15493"
+
+- rule_id: D2_WEALTH_SECOND_LORD_STRONG_001
+  system: Divisional
+  chart: D2
+  category: money
+  condition:
+    path: chart_facts.varga.charts.d2.all_lord_placements.2_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D2 second lord is strong.
+  interpretation: D2/Hora supports wealth, family resources, and speech; second-lord strength improves wealth-storage indications.
+  outcomes:
+    wealth_score: 3
+    income_growth_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Hora / D2"
+  source_page: "OCR paragraphs 281-283"
+
+- rule_id: D2_WEALTH_ELEVENTH_LORD_STRONG_001
+  system: Divisional
+  chart: D2
+  category: money
+  condition:
+    path: chart_facts.varga.charts.d2.all_lord_placements.11_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D2 eleventh lord is strong.
+  interpretation: Eleventh-lord strength in D2 supports gains and fulfilment of wealth potential when D1/dasha agree.
+  outcomes:
+    wealth_score: 2
+    income_growth_score: 3
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Hora / D2"
+  source_page: "OCR paragraphs 281-283"
+
+- rule_id: D2_WEALTH_DUSTHANA_PRESSURE_001
+  system: Divisional
+  chart: D2
+  category: money
+  condition:
+    path: chart_facts.varga.charts.d2.all_lord_placements.2_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D2 second lord is under dusthana pressure.
+  interpretation: D2 second-lord dusthana placement can show saving pressure, family-resource strain, or uneven wealth retention.
+  outcomes:
+    financial_risk_score: 2
+    wealth_score: -1
+    delay_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Hora / D2"
+  source_page: "OCR paragraphs 281-283"
+
+- rule_id: D3_EFFORT_LAGNA_LORD_STRONG_001
+  system: Divisional
+  chart: D3
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d3.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D3 Lagna lord is strong.
+  interpretation: D3/Drekkana supports courage, initiative, siblings, and effort; Lagna-lord strength improves self-effort indicators.
+  outcomes:
+    effort_score: 3
+    execution_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Drekkana / D3"
+  source_page: "OCR paragraphs 2955-2959"
+
+- rule_id: D3_EFFORT_MARS_STRONG_001
+  system: Divisional
+  chart: D3
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d3.planet_lookup.Ma.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Mars is strong in D3.
+  interpretation: Mars supports courage and initiative; strength in D3 improves effort and execution indicators.
+  outcomes:
+    effort_score: 2
+    execution_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Drekkana / D3"
+  source_page: "OCR paragraphs 2955-2959"
+
+- rule_id: D16_COMFORT_FOURTH_LORD_STRONG_001
+  system: Divisional
+  chart: D16
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d16.all_lord_placements.4_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D16 fourth lord is strong.
+  interpretation: D16/Shodashamsha supports vehicles, movable assets, comforts, and happiness; fourth-lord strength supports comfort outcomes.
+  outcomes:
+    comfort_score: 3
+    movable_assets_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Shodashamsha / D16"
+  source_page: "OCR paragraphs 10221-10227"
+
+- rule_id: D16_COMFORT_VENUS_STRONG_001
+  system: Divisional
+  chart: D16
+  category: property
+  condition:
+    path: chart_facts.varga.charts.d16.planet_lookup.Ve.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Venus is strong in D16.
+  interpretation: Venus can support comforts, vehicles, and enjoyment; strength in D16 is a positive movable-asset and comfort indicator.
+  outcomes:
+    comfort_score: 3
+    movable_assets_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Shodashamsha / D16"
+  source_page: "OCR paragraphs 10221-10227"
+
+- rule_id: D20_SPIRITUAL_NINTH_LORD_STRONG_001
+  system: Divisional
+  chart: D20
+  category: spirituality
+  condition:
+    path: chart_facts.varga.charts.d20.all_lord_placements.9_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D20 ninth lord is strong.
+  interpretation: D20/Vimshamsha supports worship, sadhana, and spiritual pursuit; ninth-lord strength supports guidance, dharma, and practice.
+  outcomes:
+    spiritual_practice_score: 3
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Vimshamsha / D20"
+  source_page: "OCR paragraphs 11981-11985"
+
+- rule_id: D20_SPIRITUAL_JUPITER_STRONG_001
+  system: Divisional
+  chart: D20
+  category: spirituality
+  condition:
+    path: chart_facts.varga.charts.d20.planet_lookup.Ju.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Jupiter is strong in D20.
+  interpretation: Jupiter supports teachers, wisdom, and spiritual guidance; strength in D20 reinforces spiritual direction when dasha agrees.
+  outcomes:
+    spiritual_practice_score: 3
+    education_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Vimshamsha / D20"
+  source_page: "OCR paragraphs 11981-11985"
+
+- rule_id: D40_AUSPICIOUS_TRIKONA_LORD_STRONG_001
+  system: Divisional
+  chart: D40
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d40.all_lord_placements.9_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D40 ninth lord is strong.
+  interpretation: D40/Khavedamsha supports auspicious effects; ninth-lord strength adds general protective and fortunate support.
+  outcomes:
+    auspicious_support_score: 3
+    delay_score: -1
+  weight: 5
+  polarity: positive
+  confidence: low
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Khavedamsha / D40"
+  source_page: "OCR paragraphs 319-321, 15494-15498"
+
+- rule_id: D45_CHARACTER_NINTH_LORD_STRONG_001
+  system: Divisional
+  chart: D45
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d45.all_lord_placements.9_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D45 ninth lord is strong.
+  interpretation: D45/Akshavedamsha supports character and conduct; ninth-lord strength supports principled action and conduct.
+  outcomes:
+    character_support_score: 3
+  weight: 5
+  polarity: positive
+  confidence: low
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Akshavedamsha / D45"
+  source_page: "OCR paragraphs 322-324, 16769-16773"
+
+- rule_id: D60_DEEP_KARMA_DUSTHANA_PRESSURE_001
+  system: Divisional
+  chart: D60
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d60.all_lord_placements.8_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D60 eighth lord is under dusthana pressure.
+  interpretation: D60 is a deep-karma chart and should be used only with reliable birth time; eighth-lord pressure adds a low-confidence caution signal.
+  outcomes:
+    deep_karmic_pressure_score: 2
+    risk_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: low
+  source_book: "Comprehensive Prediction by Divisional Charts"
+  source_chapter: "Shashtiamsha / D60"
+  source_page: "OCR paragraphs 17807-17831"

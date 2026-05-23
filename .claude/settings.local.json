@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"from chat.timing_windows import build_timing_windows; from charts.yogini_alignment import build_yogini_alignment; from astrology.calculations.transit_facts import build_transit_facts; print\\('imports OK'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"from astrology.validation.specificity_checker import check_specificity; from astrology.validation.validator import validate_answer; from astrology.validation.repair_instruction_builder import build_repair_instruction; print\\('validation imports OK'\\)\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

@@ -106,6 +106,7 @@ def _refresh_chart_calculation(chart):
         or "d30" not in chart.chart_data
         or "ashtakavarga" not in chart.chart_data
         or "jaimini" not in chart.chart_data
+        or "yogini" not in chart.chart_data.get("dashas", {})
         or "yogas" not in chart.chart_data
         or "sign_lord" not in first_planet
         or "jaimini_karaka" not in first_planet

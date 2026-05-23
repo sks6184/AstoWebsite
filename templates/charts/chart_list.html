@@ -227,6 +227,79 @@
 
             </section>
 
+            {% if chart.chart_data.dashas.yogini %}
+              <section class="chart-panel" data-dasha-section>
+                <h2>Yogini Dasha</h2>
+                <p class="chart-note">
+                  Moon nakshatra: {{ chart.chart_data.dashas.yogini.moon_nakshatra.name }}.
+                  Birth Yogini: {{ chart.chart_data.dashas.yogini.moon_nakshatra.birth_yogini }}.
+                </p>
+                <div class="dasha-layout">
+                  <div class="table-wrap">
+                    <table class="data-table dasha-table">
+                      <thead>
+                        <tr>
+                          <th>Yogini</th>
+                          <th>Lord</th>
+                          <th>Years</th>
+                          <th>Start</th>
+                          <th>End</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for period in chart.chart_data.dashas.yogini.periods %}
+                          <tr
+                            class="dasha-row"
+                            tabindex="0"
+                            data-target="yogini-subperiod-{{ chart.id }}-{{ forloop.counter }}"
+                          >
+                            <td>{{ period.yogini }}{% if period.balance %} balance{% endif %}</td>
+                            <td>{{ period.lord_name }} ({{ period.lord }})</td>
+                            <td>{{ period.nominal_years }}</td>
+                            <td>{{ period.start_display }}</td>
+                            <td>{{ period.end_display }}</td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <aside class="antardasha-panel" data-antardasha-panel>
+                    <h3>Yogini Sub-period</h3>
+                    <p class="chart-note">Select a Yogini row to view sub-period dates.</p>
+                  </aside>
+                </div>
+
+                {% for period in chart.chart_data.dashas.yogini.periods %}
+                  <template id="yogini-subperiod-{{ chart.id }}-{{ forloop.counter }}">
+                    <h3>{{ period.yogini }} Sub-periods</h3>
+                    <div class="table-wrap">
+                      <table class="data-table data-table--compact">
+                        <thead>
+                          <tr>
+                            <th>Sub-period</th>
+                            <th>Lord</th>
+                            <th>Start</th>
+                            <th>End</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for subperiod in period.subperiods %}
+                            <tr>
+                              <td>{{ period.yogini }}/{{ subperiod.yogini }}</td>
+                              <td>{{ subperiod.lord_name }} ({{ subperiod.lord }})</td>
+                              <td>{{ subperiod.start_display }}</td>
+                              <td>{{ subperiod.end_display }}</td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </template>
+                {% endfor %}
+              </section>
+            {% endif %}
+
             <section class="chart-panel" data-dasha-section>
               <h2>Jaimini Chara Dasha</h2>
               <div class="dasha-layout">

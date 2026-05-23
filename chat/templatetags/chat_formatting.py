@@ -23,11 +23,11 @@ def _is_remedy_heading(text):
 def _is_collapsed_heading(text):
     normalized = (text or "").strip().lower()
     return normalized in {
-        "timing",
-        "why this is indicated",
         "remedy",
         "remedies",
         "practical guidance",
+        "why we advise that",
+        "why we advise that?",
     }
 
 

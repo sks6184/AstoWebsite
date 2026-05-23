@@ -1,14 +1,19 @@
 import hashlib
 import json
+import logging
 
 from django.conf import settings
 from django.core.cache import cache
 from openai import OpenAI, OpenAIError
 
-from .prediction_context import build_prediction_context
+from astrology.services.prediction_service import build_prediction_evidence
+from astrology.synthesis.answer_schema import REQUIRED_SECTIONS
+from astrology.validation.validator import validate_answer
+from charts.remedies import remedies_for_dasha
 
 
-ANSWER_CACHE_VERSION = "v13-time-scope-window-jaimini"
+ANSWER_CACHE_VERSION = "v20-period-match-verdict-relocation"
+logger = logging.getLogger(__name__)
 
 
 def model_for_depth(depth_level):
@@ -29,105 +34,208 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
     if answer_style.strip():
         style_note = f"\nUser answer-style instruction: {answer_style.strip()}"
     return (
-        "You are AstroGPT, a careful Vedic astrology interpretation assistant.\n"
-        "Write in the tone of a traditional Vedic astrologer: calm, precise, respectful, practical, "
-        "and rooted in dasha, bhava, transit, and Ashtakavarga reasoning. "
-        "Use terms such as Mahadasha, Antardasha, Lagna, bhava, transit, Nakshatra, and Sarvashtakavarga naturally, "
-        "but keep the wording understandable for a normal user. "
-        "Do not sound generic, overly modern, or motivational. "
-        "For health, be cautious and practical; do not create fear and do not give medical advice. "
-        "For career, speak in terms of effort, responsibility, opportunity, and timing. "
-        "For relationships, speak with maturity and avoid absolute promises.\n"
-        "You are answering a user's question, not merely writing a report. "
-        "Before explaining, convert the computed factors into a clear judgment, but make it sound human and astrological, not like an AI template.\n"
-        "Follow computed_context.answer_contract strictly. "
-        "For yes/no, stay/move, job, marriage, visa, settlement, or similar decision questions, "
-        "internally decide one of: Likely yes, Likely no, Mixed leaning yes, or Mixed leaning no. "
-        "Do not print these as labels unless the sentence needs them naturally. "
-        "Start with one direct sentence that borrows the user's subject and states the probability in natural language. "
-        "Example: if the user asks about staying in a foreign country, begin like "
-        "'Your stay in the foreign country looks likely to continue for a longer period, though there may be pressure during Saturn-related periods.' "
-        "Example: if the answer is weaker, begin like "
-        "'Your stay in the foreign country may continue for now, but the chart shows a stronger chance of change after the next dasha shift.' "
-        "Do not start with Current Mahadasha, Current Antardasha, confidence labels, or a list of facts. "
-        "Do not use AI-looking headings named Short Answer, Confidence, Prediction, Reason, or Astrological Reason. "
-        "Do not write a standalone confidence heading. If needed, include confidence naturally in the opening paragraph, "
-        "such as 'The confidence is moderate because the dasha supports staying but the transit shows pressure.' "
-        "For non-binary questions, still begin with a plain-language outcome such as strong, moderate, challenging, or improving.\n"
-        "After the natural opening paragraph, use only helpful human headings such as ### Timing, ### Why this is indicated, "
-        "### Remedy, and ### Practical guidance. Keep headings short and not mechanical.\n"
-        "Use the OpenAI file-search/RAG knowledge and the provided computed JSON only.\n"
-        "Do not calculate or invent planetary positions, divisional charts, dashas, transits, "
-        "ashtakavarga bindus, houses, signs, nakshatras, or timing windows.\n"
-        "For timing questions, lead with the provided candidate_timing_windows. "
-        "Do not create dates outside those windows unless you explicitly say the app did not calculate them. "
-        "Obey computed_context.temporal_policy.time_scope strictly. "
-        "If the user says this year/current year, mention only windows inside that year. "
-        "If no explicit time phrase is found, the app scans the next 5 years.\n"
-        "Important: computed_context.dasha is the dasha active on current_date only. "
-        "For any future candidate_timing_windows, use that window's active_dasha, mahadasha_lord, "
-        "and antardasha_lord fields. Do not carry the current Antardasha into future windows after it ends.\n"
-        "For every timing window you mention, explicitly name the window's Mahadasha and Antardasha. "
-        "Then explain the transit of the Mahadasha lord and the transit of the Antardasha lord using "
-        "that window's dasha_lord_transit_checks, including Sarvashtakavarga points. "
-        "Use each window's required_explanation as the factual basis for the Reason section. "
-        "If a window includes transit_segments, explain the segment changes instead of treating the whole period "
-        "as one fixed transit. Mention any date where the Mahadasha or Antardasha lord changes sign/house.\n"
-        "Do not mention another transit planet as the main reason unless it is the Mahadasha lord or Antardasha lord "
-        "for that exact window.\n"
-        "Use computed_context.transit_priority as the deterministic transit formula. "
-        "For weekly questions, Moon transit may be considered along with fast planets and slow background planets. "
-        "For monthly questions, Moon is excluded; use Dasha/Antardasha lords first, then other planets by priority. "
-        "When explaining events, connect the Mahadasha/Antardasha lord's natal placed house, owned houses, "
-        "and transit house to likely life areas. Use RAG knowledge for house significations, but do not invent placements. "
-        "If transit_priority marks low Sarvashtakavarga, describe it as pressure, delay, or care needed rather than support.\n"
-        "Always use computed_context.jaimini_confirmation as a confirmation layer. "
-        "For selected future timing windows, prefer each candidate window's jaimini_confirmation over the current-date Jaimini check. "
-        "Do not let Jaimini override Vimshottari by itself; use it to raise or lower confidence. "
-        "If Jaimini status is supports, say naturally that Jaimini also confirms the same direction and mention the Chara Dasha, "
-        "Antardasha, relevant Karakas, and activated houses from the provided JSON. "
-        "If status is mixed, weak, or not_confirmed, say the confirmation is limited and keep confidence moderate or cautious. "
-        "Use OpenAI file-search/RAG only to explain Jaimini principles and house meanings; do not invent Jaimini placements.\n"
-        "When you give predicted timing, include a ### Remedy section before ### Practical Guidance. "
-        "Use the provided remedies/remedial mantra data for that exact window's Mahadasha and Antardasha lords. "
-        "Include both planetary Beej mantra and deity mantra when present, in the provided answer language when available. "
-        "Format both mantras consistently as separate bullets: "
-        "'Beej Mantra: <mantra> (<transliteration>)' and "
-        "'Deity Mantra: <mantra> (<transliteration>)'. "
-        "After Beej Mantra, add 'Beej Meaning: <meaning>' when provided. "
-        "After Deity Mantra, add 'Deity Meaning: <meaning>' when provided. "
-        "Clearly say the mantra should be recited, not the meaning. "
-        "For Mars or Saturn remedies, include the provided extra guidance such as Hanuman Chalisa; "
-        "for Saturn include the mustard-oil lamp guidance when provided. "
-        "Mention mustard-oil lamp only when Saturn is the Mahadasha lord or Antardasha lord for that exact timing window, "
-        "and only if the provided remedy data includes it. "
-        "Do not invent mantras, deity days, remedy days, counts, rituals, or remedies. "
-        "Do not write the devotion note yourself; the app renders that note deterministically after the answer.\n"
-        "Keep remedies out of ### Practical Guidance. Practical Guidance should contain ordinary behavioral guidance only, "
-        "such as planning, patience, health routines, communication, study discipline, or career follow-through.\n"
-        "Use computed_context.temporal_policy.current_date as today's date. "
-        "Never describe any date before current_date as upcoming, future, or pending. "
-        "If past periods are relevant, label them explicitly as past context. "
-        "For prediction questions, separate past context, current indications, and future windows when applicable.\n"
-        "When candidate windows span months or a year, explain the Mahadasha lord and Antardasha lord transit checks "
-        "and their Sarvashtakavarga support from the computed JSON.\n"
-        "If a required calculation is absent from the JSON, say the app must calculate it first.\n"
-        "Format the answer as Markdown using H3 headings and bullet points. "
-        "Do not use headings named ### Short Answer, ### Confidence, ### Prediction, ### Reason, or ### Astrological Reason. "
-        "Prefer this flow: opening judgment paragraph, ### Timing, ### Why this is indicated, ### Remedy, ### Practical guidance. "
-        "If a section truly does not apply, omit it rather than filling it mechanically.\n"
+        "You are AstroGPT, a careful Vedic astrology synthesis assistant.\n"
+        "Use the provided hybrid evidence payload as the authority. The software calculates, "
+        "the deterministic rules judge, RAG supports, and you only explain.\n"
+        "Never calculate or invent planetary positions, divisional chart placements, dashas, "
+        "transits, Sarvashtakavarga points, houses, signs, nakshatras, yogas, or timing windows.\n"
+        "Use only: evidence_payload, evidence_ledger, summary_scores, triggered_rules, "
+        "contradictions, and retrieved RAG/file-search context.\n\n"
+
+        "═══ FOUR REQUIRED SECTIONS — in this exact order ═══\n"
+        "### Jyotish Analysis\n"
+        "### Why We Advise That\n"
+        "### Remedy\n"
+        "### Practical Guidance\n"
+        "Do not add any other ### headings. Do not create sub-headings inside sections.\n\n"
+
+        "═══ QUESTION TYPE DETECTION ═══\n"
+        "Check evidence_payload.question.time_scope.is_fixed.\n\n"
+
+        "IF is_fixed = false  (timing scan — user asked 'when', 'best period', 'which year', 'any chance'):\n"
+        "  ### Jyotish Analysis — write EXACTLY this structure:\n"
+        "    Paragraph 1 (2-3 sentences): Direct verdict on the overall chart readiness for this topic.\n"
+        "    **Option 1 — [Bold date range]**: One sentence on why this is the top window (its core strength).\n"
+        "    **Option 2 — [Bold date range]**: One sentence on the character of this alternative period.\n"
+        "    If no strong window exists, say so plainly and name the least difficult period anyway.\n"
+        "  ### Why We Advise That — explain the evidence behind BOTH options, one paragraph per system.\n"
+        "  ⚠ CRITICAL PERIOD MATCH RULE: For each option you recommend (e.g., Oct 2028–Aug 2029),\n"
+        "    ALL lords and periods cited in 'Why We Advise That' for that option MUST come from that\n"
+        "    option's own entry in evidence_payload.transits.future_timing.windows[].\n"
+        "    Use the window's: mahadasha_lord, antardasha_lord, jaimini_active_sign,\n"
+        "    jaimini_active_sub_sign, yogini_name, sub_yogini_name, jaimini_confirmation,\n"
+        "    yogini_alignment, and transit_segments.\n"
+        "    DO NOT use evidence_payload.parashari_vimshottari.current_mahadasha or\n"
+        "    current_antardasha for future-window explanations — those reflect TODAY's running dasha,\n"
+        "    not the dasha active in the recommended window.\n"
+        "    Para 1 — Vimshottari/Parashari: 'During Option 1 (Oct 2028–Aug 2029), the active dasha is\n"
+        "      [window.mahadasha_lord] Mahadasha / [window.antardasha_lord] Antardasha...'\n"
+        "    Para 2 — Jaimini/Chara: 'In Option 1, the Chara Dasha is [window.jaimini_active_sign] sign...'\n"
+        "    Para 3 — Yogini: 'In Option 1, the Yogini is [window.yogini_name] / [window.sub_yogini_name]...'\n"
+        "    Para 4 — Divisional Charts: What the relevant D-chart (D4/D9/D10 per topic) shows for\n"
+        "      the antardasha lords of each option.\n"
+        "    Para 5 — Transit & Ashtakavarga: SAV-based transit quality for each option.\n"
+        "    End with one sentence explaining why Option 1 is ranked above Option 2.\n\n"
+
+        "IF is_fixed = true  (specific period — user named a date, month, year, or said 'now'/'currently'):\n"
+        "  ### Jyotish Analysis — write EXACTLY this structure:\n"
+        "    Line 1 (bold): A human-language verdict phrase — NOT a label like 'Verdict: Yes'. Instead:\n"
+        "      • If chart clearly supports: **Clearly supported — [one-line reason]**\n"
+        "      • If mixed but leaning yes: **Possible, though conditions must align — [one-line reason]**\n"
+        "      • If not confirmed: **Possible, but not cleanly confirmed — [one-line reason]**\n"
+        "      • If unlikely: **Unlikely in the near term — [one-line reason]**\n"
+        "      Choose the phrase that fits — do not default to 'Verdict: Partially'.\n"
+        "    Then 3-5 sentences of plain-language explanation covering the overall picture.\n"
+        "    Do NOT give timing options. The user asked about a fixed period; answer that period only.\n"
+        "  ### Why We Advise That — explain the verdict system by system:\n"
+        "    Para 1 — Vimshottari: Name Mahadasha and Antardasha lord active in this period and their stance.\n"
+        "    Para 2 — Jaimini/Chara: Active Chara sign, which house from lagna, whether it supports the topic.\n"
+        "    Para 3 — Yogini: Active Yogini and sub-Yogini names, whether auspicious/challenging for this topic.\n"
+        "    Para 4 — Divisional & Transit: D-chart confirmation (or denial) and transit quality in this period.\n"
+        "    Close with one sentence on overall confidence level.\n\n"
+
+        "═══ MANDATORY SPECIFICITY ═══\n"
+        "Naming a system without its active lords is a validation failure:\n"
+        "• Vimshottari: NEVER 'current Mahadasha'. ALWAYS 'Sun Mahadasha / Rahu Antardasha (Jan 2024 – Oct 2026)'.\n"
+        "• Jaimini: NEVER 'Jaimini indicates'. ALWAYS 'In Capricorn Chara Dasha, Mercury as Amatyakaraka...'.\n"
+        "• Yogini: NEVER 'Yogini shows mixed'. ALWAYS 'Pingala Yogini major / Bhramari sub-period shows...'.\n"
+        "• D-charts: NEVER 'D10 is weak'. ALWAYS 'In D10, Mercury as 10th lord is in the 8th house, weakening...'.\n\n"
+
+        "═══ GENERAL RULES ═══\n"
+        "Treat Parashari/Vimshottari, Jaimini, Yogini, Varga/Divisional charts, and Transits as first-class systems.\n"
+        "Vimshottari is part of Parashari timing — do not write 'Parashari, Vimshottari, and Jaimini' as three separate systems.\n"
+        "Chara is a Jaimini dasha. Do not call it a separate system.\n"
+        "Every timing window you recommend must be bold in Markdown: '**October 2028 to August 2029**'.\n"
+        "For transits, mention Sarvashtakavarga points only as one supporting layer. Never call a transit unfavorable "
+        "unless the payload shows the planet, house, SAV points, and a weak/challenging score.\n"
+        "Do not expose internal score phrases ('composite score is low'). Translate to user language ('preparation "
+        "is supported more than immediate results').\n"
+        "Do not write checklist labels: 'Timing:', 'Parashari:', 'Confidence:', 'Transits:'.\n"
+        "If muhurta data is missing, say: 'Exact muhurta requires tithi, nakshatra, yoga, karana, weekday, and lagna "
+        "calculation — this is a preliminary timing recommendation only.'\n"
+        "If judgment is cautious or negative, describe windows as pressure/watch periods, not opportunities.\n\n"
+
+        "═══ TOPIC-SPECIFIC RULES ═══\n"
+        "RELOCATION / RETURN TO HOMELAND questions (category = foreign_travel, keywords: return, forever, go back, "
+        "native place, homeland, settle back, come back):\n"
+        "  • The primary houses are 4th (homeland/roots), 12th (foreign land/settlement abroad), 9th (long-distance "
+        "travel), 7th (change of residence/place). Do NOT default to 2nd/6th/10th/11th career houses.\n"
+        "  • D4 (Chaturthamsha) is the key divisional chart for land, residence, and property — always mention it.\n"
+        "  • If the question uses 'forever', 'permanently', 'for good', 'never come back', 'settle permanently', "
+        "or 'permanent return': MANDATORY — explicitly distinguish:\n"
+        "    (a) Temporary return/visit vs (b) Permanent resettlement/change of base.\n"
+        "    Temporary return: 4th/9th house transits active but 12th house still strong (Rahu in 12th or 12th lord "
+        "strong in a foreign sign).\n"
+        "    Permanent resettlement: 4th lord strong in D1 + D4, 12th house weakening, Ketu supporting separation "
+        "from foreign land, 4th Chara sign active in Jaimini.\n"
+        "  • Rahu naturally pulls toward the foreign/unfamiliar; Ketu toward roots/homeland. When relevant, "
+        "state which is currently dominant.\n"
+        "  • If chart shows return is possible but NOT permanent settlement, say that plainly:\n"
+        "    'Your chart shows windows for a temporary return, but permanent resettlement is less clearly supported "
+        "in the near term.'\n"
+        "  • Never use career/authority/financial indicators (10th lord, D10) as the primary evidence for "
+        "a relocation question — these are only secondary context.\n\n"
+
+        "═══ SECTION RULES ═══\n"
+        "### Remedy — bullet points only, from remedy_context in payload. "
+        "Name the Mahadasha/Antardasha lord. Include Beej Mantra, deity mantra, and practical observance from the payload. "
+        "If no remedy data: 'No deterministic remedy was calculated.'\n"
+        "### Why We Advise That — this section is collapsed in the UI (user taps 'View' to open). "
+        "It must be substantive — do not repeat Jyotish Analysis prose. Write the technical evidence basis only.\n"
+        "### Practical Guidance — ordinary practical guidance only, not a repeated astrology summary.\n\n"
+
+        "Write in a calm, precise traditional Jyotish tone. Avoid generic motivation, absolute guarantees, "
+        "fear, medical certainty, legal advice, or financial promises.\n"
         f"Answer language: {answer_language}. "
-        "Keep terms like Mahadasha, Antardasha, Lagna, Dasha, Nakshatra, and Ashtakavarga transliterated.\n"
-        "Explain the locally calculated factors in plain language and cite uncertainty responsibly.\n"
-        "Astrology is interpretive and not a substitute for professional, medical, legal, or financial advice.\n"
+        "Keep Mahadasha, Antardasha, Lagna, Dasha, Nakshatra, Ashtakavarga transliterated.\n"
+        "Astrology is interpretive guidance, not professional, medical, legal, or financial advice.\n"
         f"Target answer length: {_target_length(depth_level)}."
         f"{style_note}"
     )
 
 
+def _compact_transits(transits: dict) -> dict:
+    """Strip large repeated fields from the transit object before sending to the LLM."""
+    future = transits.get("future_timing", {})
+    return {
+        "score": transits.get("score"),
+        "horizon": transits.get("horizon"),
+        "target_date": transits.get("target_date"),
+        "dasha_lord_transits": transits.get("dasha_lord_transits", [])[:4],
+        "future_timing": {
+            "scan_months": future.get("scan_months"),
+            "scan_years": future.get("scan_years"),
+            "start": future.get("start"),
+            "end": future.get("end"),
+            "windows": future.get("windows", []),
+        },
+    }
+
+
+def _compact_live_evidence(evidence, answer_language="English"):
+    synthesis_payload = evidence.get("synthesis", {}).get("prompt_payload", {})
+    system_evidence = synthesis_payload.get("system_evidence", {})
+    vimshottari = system_evidence.get("parashari_vimshottari", evidence.get("parashari_vimshottari", {}))
+    mahadasha_lord = (vimshottari.get("current_mahadasha") or {}).get("lord")
+    antardasha_lord = (vimshottari.get("current_antardasha") or {}).get("lord")
+    return {
+        "question": evidence.get("question", {}),
+        "summary_scores": evidence.get("summary_scores", {}),
+        "evidence_ledger": evidence.get("evidence_ledger", []),
+        "contradictions": evidence.get("contradictions", {}),
+        "triggered_rules": synthesis_payload.get("triggered_rules", evidence.get("triggered_rules", [])[:24]),
+        "parashari": system_evidence.get("parashari", evidence.get("parashari", {})),
+        "parashari_vimshottari": system_evidence.get(
+            "parashari_vimshottari",
+            evidence.get("parashari_vimshottari", {}),
+        ),
+        "jaimini": system_evidence.get("jaimini", evidence.get("jaimini", {})),
+        "yogini": system_evidence.get("yogini", evidence.get("yogini", {})),
+        "varga": system_evidence.get("varga", evidence.get("varga", {})),
+        "transits": _compact_transits(system_evidence.get("transits", evidence.get("transits", {}))),
+        "remedy_context": remedies_for_dasha(mahadasha_lord, antardasha_lord, answer_language),
+        "rag_context_request": evidence.get("rag", {}),
+        "rule_engine": evidence.get("rule_engine", {}),
+        "required_output_sections": REQUIRED_SECTIONS,
+        "format_contract": {
+            "sections": REQUIRED_SECTIONS,
+            "open_sections": ["Jyotish Analysis"],
+            "collapsed_sections": ["Why We Advise That", "Remedy", "Practical Guidance"],
+            "no_extra_system_headings": True,
+            "section_style": "traditional_jyotish_prose_with_remedy_bullets",
+            "temporal_intent": (
+                (evidence.get("question") or {}).get("time_scope") or {}
+            ).get("temporal_intent", "general"),
+            "temporal_framing_rule": (
+                "If temporal_intent is 'future': write in forward-looking language — "
+                "'your chart shows...', 'the coming period...', 'you are likely to...'. "
+                "If temporal_intent is 'past': write in retrospective language — "
+                "'in that period your chart showed...', 'the dasha active then was...'. "
+                "If temporal_intent is 'general': use neutral language."
+            ),
+            "specificity_required": [
+                "Vimshottari Mahadasha/Antardasha names and dates when present",
+                "Jaimini Chara Dasha sign and relevant karakas when present",
+                "Yogini major/sub-period and lords when present",
+                "D-chart names and concrete findings when present",
+                "Transit timing windows and Sarvashtakavarga as timing support only",
+                "Bold Markdown for all timing windows",
+            ],
+        },
+        "validation_gate": {
+            "must_mention_available_jaimini": evidence.get("jaimini", {}).get("calculation_status") == "active",
+            "must_mention_available_yogini": evidence.get("yogini", {}).get("calculation_status") == "active",
+            "must_mention_available_parashari": evidence.get("parashari", {}).get("calculation_status") == "active",
+            "must_mention_divisional_when_available": evidence.get("varga", {}).get("status") not in {None, "missing"},
+            "must_explain_contradictions": bool(evidence.get("contradictions", {}).get("issues")),
+            "must_not_present_pressure_windows_as_opportunities": True,
+        },
+    }
+
+
 def build_prompt_payload(question, chart_data, depth_level, answer_style="", answer_language="English"):
     answer_style = answer_style or settings.ASTROGPT_ANSWER_STYLE
-    prediction_context = build_prediction_context(question, chart_data, answer_language=answer_language)
+    evidence = build_prediction_evidence(question, chart_data or {})
     return {
         "user_question": question,
         "depth_level": depth_level,
@@ -138,7 +246,7 @@ def build_prompt_payload(question, chart_data, depth_level, answer_style="", ans
             "do_not_send_full_chart_unless_needed": True,
             "cacheable": True,
         },
-        "computed_context": prediction_context,
+        "evidence_payload": _compact_live_evidence(evidence, answer_language),
     }
 
 
@@ -166,41 +274,136 @@ def _usage_counts(response):
 
 
 def _fallback_answer(question, payload, model, reason):
-    windows = payload["computed_context"].get("candidate_timing_windows", [])
-    window_lines = "\n".join(
-        f"- {window.get('start_display', window['start'])} to {window.get('end_display', window['end'])} "
-        f"| score {window['score']} | {window['label']} "
-        f"| active dasha {window.get('active_dasha', {}).get('label', 'n/a')} "
-        f"| transit checks {window.get('dasha_lord_transit_checks', [])}"
-        for window in windows[:5]
-    )
+    evidence = payload.get("evidence_payload", {})
+    systems = evidence.get("system_evidence", {})
+    future_timing = systems.get("transits", {}).get("future_timing", {})
+    windows = future_timing.get("windows", [])
+
+    def _window_line(w):
+        vim = w.get("label", "?")
+        jai = w.get("jaimini_active_sign") or "?"
+        jai_sub = w.get("jaimini_active_sub_sign") or "?"
+        yog = w.get("yogini_name") or "?"
+        yog_sub = w.get("sub_yogini_name") or "?"
+        score = w.get("composite_score") or w.get("score", "n/a")
+        return (
+            f"- {w.get('start_display') or w.get('start')} to {w.get('end_display') or w.get('end')} "
+            f"| Vim: {vim} | Jaimini: {jai}/{jai_sub} | Yogini: {yog}/{yog_sub} | score {score}"
+        )
+
+    window_lines = "\n".join(_window_line(w) for w in windows[:5])
     if not window_lines:
         window_lines = "- No candidate windows were calculated for this question category."
+    ledger_lines = "\n".join(
+        f"- {item.get('system')}: {item.get('claim')} ({item.get('direction')}, {item.get('strength')})"
+        for item in evidence.get("evidence_ledger", [])[:8]
+    )
+    if not ledger_lines:
+        ledger_lines = "- Evidence ledger was not populated."
     return {
         "model": model,
         "prompt": json.dumps(payload, indent=2, default=str),
         "answer": (
             "The local astrology computation pipeline is ready, but the OpenAI RAG call did not run.\n\n"
             f"Reason: {reason}\n\n"
-            "A clear yes-or-no leaning could not be finalized because the RAG/LLM interpretation did not run. "
-            "The deterministic astrology context is ready, but the final reading still needs the interpretation step.\n\n"
-            "### Timing\n"
-            f"- Candidate timing windows:\n{window_lines}\n\n"
-            "### Why this is indicated\n"
-            "- Computed context prepared for GPT interpretation:\n"
-            f"Category: {payload['computed_context']['category']}\n"
-            f"Mahadasha lord: {payload['computed_context']['dasha'].get('mahadasha', {}).get('lord', 'n/a')}\n"
-            f"Antardasha lord: {payload['computed_context']['dasha'].get('antardasha', {}).get('lord', 'n/a')}\n"
-            f"Transit checks: {len(payload['computed_context']['transit_lords'])}\n\n"
-            f"Current date for future/past separation: "
-            f"{payload['computed_context'].get('temporal_policy', {}).get('current_date', 'n/a')}\n\n"
-            "### Practical guidance\n"
-            "- Re-run after OpenAI configuration is available to receive the final interpretive answer.\n\n"
+            "### Jyotish Analysis\n"
+            "The deterministic evidence payload is ready, but the OpenAI RAG interpretation did not run. "
+            "The prepared evidence includes Parashari dasha timing, Jaimini, Yogini, divisional charts, transit checks, "
+            f"and the following timing windows: {window_lines}. Evidence ledger: {ledger_lines}\n\n"
+            "### Remedy\n"
+            "No deterministic remedy was generated because the OpenAI RAG call did not run.\n\n"
+            "### Practical Guidance\n"
+            "Re-run after OpenAI configuration is available to receive the final interpretive answer.\n\n"
             f"Question: {question}"
         ),
         "prompt_tokens": 0,
         "completion_tokens": 0,
     }
+
+
+def _repair_answer(client, model, depth_level, answer_style, answer_language, payload, draft_answer, validation_result):
+    repair_payload = {
+        "original_payload": payload,
+        "draft_answer": draft_answer,
+        "validation_result": validation_result,
+        "task": "Repair the answer so it satisfies the validation result using only the provided evidence payload.",
+    }
+    response = client.responses.create(
+        model=model,
+        instructions=_system_instructions(depth_level, answer_style, answer_language),
+        input=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": json.dumps(repair_payload, ensure_ascii=False, default=str),
+                    }
+                ],
+            }
+        ],
+        tools=[
+            {
+                "type": "file_search",
+                "vector_store_ids": [settings.OPENAI_VECTOR_STORE_ID],
+                "max_num_results": 8,
+            }
+        ],
+    )
+    return response
+
+
+def _remedy_lines(remedy_context):
+    remedies = remedy_context.get("remedies", [])
+    if not remedies:
+        return []
+    lines = []
+    for remedy in remedies:
+        role = remedy.get("role", "Dasha lord")
+        planet = remedy.get("planet") or remedy.get("lord")
+        lines.append(f"- For the current {role} {planet}, recite the provided mantra with steadiness and devotion.")
+        beej = remedy.get("beej", {})
+        deity = remedy.get("deity_specific", {})
+        if beej.get("mantra"):
+            text = f"  - Beej Mantra: {beej['mantra']}"
+            if beej.get("transliteration") and beej["transliteration"] != beej["mantra"]:
+                text += f" ({beej['transliteration']})"
+            lines.append(text)
+            if beej.get("meaning"):
+                lines.append(f"  - Beej Meaning: {beej['meaning']}")
+        if deity.get("mantra"):
+            text = f"  - Deity Mantra: {deity['mantra']}"
+            if deity.get("transliteration"):
+                text += f" ({deity['transliteration']})"
+            lines.append(text)
+            if deity.get("meaning"):
+                lines.append(f"  - Deity Meaning: {deity['meaning']}")
+        for item in remedy.get("extra_guidance", []):
+            lines.append(f"  - {item}")
+    note = remedy_context.get("devotion_note")
+    if note:
+        lines.append(f"- {note}")
+    return lines
+
+
+def _replace_section(markdown_text, heading, body):
+    marker = f"### {heading}"
+    start = markdown_text.find(marker)
+    replacement = marker + "\n" + body.strip() + "\n"
+    if start == -1:
+        return markdown_text.rstrip() + "\n\n" + replacement
+    next_start = markdown_text.find("\n### ", start + len(marker))
+    if next_start == -1:
+        return markdown_text[:start].rstrip() + "\n\n" + replacement
+    return markdown_text[:start].rstrip() + "\n\n" + replacement + "\n" + markdown_text[next_start:].lstrip()
+
+
+def _apply_deterministic_remedy(answer_text, payload):
+    remedy_context = payload.get("evidence_payload", {}).get("remedy_context", {})
+    lines = _remedy_lines(remedy_context)
+    if not lines:
+        return answer_text
+    return _replace_section(answer_text, "Remedy", "\n".join(lines))
 
 
 def generate_answer(question, chart_data, depth_level, answer_style="", answer_language="English"):
@@ -255,12 +458,51 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
         return _fallback_answer(question, payload, model, f"OpenAI API error: {exc}")
 
     prompt_tokens, completion_tokens = _usage_counts(response)
+    answer_text = response.output_text
+    validation_result = validate_answer(answer_text, payload.get("evidence_payload", {}))
+    logger.info(
+        "Astrology answer validation score=%s passed=%s issues=%s",
+        validation_result.get("score"),
+        validation_result.get("passed"),
+        validation_result.get("issues"),
+    )
+    if not validation_result["passed"]:
+        try:
+            repair_response = _repair_answer(
+                client,
+                model,
+                depth_level,
+                answer_style,
+                answer_language,
+                payload,
+                answer_text,
+                validation_result,
+            )
+            repair_prompt_tokens, repair_completion_tokens = _usage_counts(repair_response)
+            answer_text = repair_response.output_text
+            prompt_tokens += repair_prompt_tokens
+            completion_tokens += repair_completion_tokens
+            validation_result = validate_answer(answer_text, payload.get("evidence_payload", {}))
+            logger.info(
+                "Astrology repaired answer validation score=%s passed=%s issues=%s",
+                validation_result.get("score"),
+                validation_result.get("passed"),
+                validation_result.get("issues"),
+            )
+        except OpenAIError:
+            answer_text = (
+                answer_text
+                + "\n\n### Validation Note\n"
+                + validation_result["repair_instruction"]
+            )
+    answer_text = _apply_deterministic_remedy(answer_text, payload)
     result = {
         "model": model,
         "prompt": prompt,
-        "answer": response.output_text,
+        "answer": answer_text,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
+        "validation_result": validation_result,
     }
     cache.set(cache_key, result, 60 * 60 * 24 * 30)
     return result

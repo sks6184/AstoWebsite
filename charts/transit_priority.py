@@ -36,10 +36,10 @@ def _planet_speed_weight(planet_code, horizon):
 def _samples_for_horizon(start_date, horizon):
     if horizon == "weekly":
         return [
-            datetime.combine(start_date + timedelta(days=offset), datetime.min.time(), tzinfo=ZoneInfo("UTC"))
+            datetime.combine(start_date + timedelta(days=offset), datetime.min.time(), tzinfo=ZoneInfo("UTC")).replace(hour=12)
             for offset in range(7)
         ]
-    return [datetime(start_date.year, start_date.month, 15, tzinfo=ZoneInfo("UTC"))]
+    return [datetime(start_date.year, start_date.month, 15, 12, tzinfo=ZoneInfo("UTC"))]
 
 
 def _sample_label(sample_dt, horizon):

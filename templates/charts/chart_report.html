@@ -202,6 +202,47 @@
     </div>
   </details>
 
+  {% if report.yogini %}
+  <details class="report-section">
+    <summary>Yogini Dasha <span>View</span></summary>
+    <div class="report-section__body">
+    <p class="chart-note">
+      Moon nakshatra: {{ report.yogini.moon_nakshatra.name }}.
+      Birth Yogini: {{ report.yogini.moon_nakshatra.birth_yogini }}.
+    </p>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Yogini</th>
+            <th>Lord</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Sub-periods</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for period in report.yogini.periods %}
+            <tr>
+              <td>{{ period.yogini }}{% if period.balance %} balance{% endif %}</td>
+              <td>{{ period.lord_name }} ({{ period.lord }})</td>
+              <td>{{ period.start_display }}</td>
+              <td>{{ period.end_display }}</td>
+              <td>
+                {% for subperiod in period.subperiods %}
+                  {{ period.yogini }}/{{ subperiod.yogini }}:
+                  {{ subperiod.start_display }} to {{ subperiod.end_display }}{% if not forloop.last %}<br>{% endif %}
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </details>
+  {% endif %}
+
   <details class="report-section">
     <summary>Jaimini Chara Dasha <span>View</span></summary>
     <div class="report-section__body">

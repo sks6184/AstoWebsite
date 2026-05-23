@@ -55,6 +55,7 @@ def build_chart_report_context(chart, report_language="English"):
         "planet_details": planets,
         "ashtakavarga": chart_data.get("ashtakavarga", {}),
         "vimshottari": chart_data.get("dashas", {}).get("vimshottari", {}),
+        "yogini": chart_data.get("dashas", {}).get("yogini", {}),
         "jaimini": chart_data.get("jaimini", {}),
         "yogas": chart_data.get("yogas", []),
     }

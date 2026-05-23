@@ -1,0 +1,773 @@
+- rule_id: PARASHARI_CAREER_DASHA_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.connected_to_category
+    operator: equals
+    value: true
+  reason: Current Vimshottari dasha lord connects to career houses.
+  interpretation: Career timing gains relevance when the active dasha lord owns or occupies career/income houses.
+  outcomes:
+    promotion_score: 3
+    job_change_score: 2
+    income_growth_score: 2
+    authority_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_CAREER_DASHA_002
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.status
+    operator: equals
+    value: supports
+  reason: Vimshottari dasha assessment supports the question category.
+  interpretation: When multiple active dasha lords connect to the question, timing strength improves.
+  outcomes:
+    promotion_score: 2
+    job_change_score: 2
+    authority_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_BUSINESS_DASHA_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: business
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.connected_to_category
+    operator: equals
+    value: true
+  reason: Current dasha lord connects to business houses.
+  interpretation: Business movement is more plausible when active dasha lords connect with wealth, trade, profession, or gains.
+  outcomes:
+    business_success_score: 3
+    market_visibility_score: 2
+    execution_pressure_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_CAREER_MD_10TH_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: equals
+    value: 10
+  reason: Active dasha lord connects to the 10th house.
+  interpretation: A direct 10th-house dasha connection supports professional action, visibility, and career decisions.
+  outcomes:
+    promotion_score: 3
+    authority_score: 3
+    job_change_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_CAREER_INCOME_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: equals
+    value: 11
+  reason: Active dasha lord connects to the 11th house.
+  interpretation: A dasha connection to the 11th house supports gains, networks, and income growth.
+  outcomes:
+    income_growth_score: 3
+    promotion_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_BUSINESS_7TH_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: business
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: equals
+    value: 7
+  reason: Active dasha lord connects to the 7th house of trade and clients.
+  interpretation: A 7th-house dasha connection can support business dealings, clients, contracts, and partnership matters.
+  outcomes:
+    business_success_score: 2
+    partnership_score: 3
+    market_visibility_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: PARASHARI_LAGNA_LORD_STRONG_001
+  system: Parashari
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.1_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D1 Lagna lord is strong.
+  interpretation: Classical Parashari judgment begins with Lagna and Lagna lord; strength here improves the native's ability to carry promised results.
+  outcomes:
+    authority_score: 1
+    income_growth_score: 1
+    business_success_score: 1
+    education_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Bhava Chinta / Tanu Bhava and Bhavesh results"
+  source_page: "Phal Dipika OCR chapter index around Bhava Chinta; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_LAGNA_LORD_DUSTHANA_001
+  system: Parashari
+  category: general
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.1_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D1 Lagna lord is placed in a dusthana house.
+  interpretation: Lagna lord in 6th, 8th, or 12th can reduce ease and increase pressure; positive predictions should be moderated unless other systems strongly support.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+  weight: 5
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Bhava Chinta / Tanu Bhava and Bhavesh results"
+  source_page: "Phal Dipika OCR chapter index around Bhava Chinta; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CAREER_10TH_LORD_STRONG_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.10_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D1 10th lord is strong.
+  interpretation: The 10th house and 10th lord are central for profession, status, and actions; strength of the 10th lord supports career growth.
+  outcomes:
+    promotion_score: 3
+    authority_score: 3
+    income_growth_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Dashama Bhava / Karma Bhava results"
+  source_page: "Phal Dipika OCR chapter index: Dashama Bhava; BPHS OCR table of contents: Dashama Bhava Phalam"
+
+- rule_id: PARASHARI_CAREER_10TH_LORD_KENDRA_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.10_lord.placed_house
+    operator: in
+    value: [1, 4, 7, 10]
+  reason: D1 10th lord is placed in a kendra.
+  interpretation: Kendra placement of the professional lord supports visible activity, authority, and capacity to deliver career results.
+  outcomes:
+    promotion_score: 2
+    authority_score: 3
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Bhavesh results / Dashama Bhava"
+  source_page: "Phal Dipika OCR chapter index around Dwadasha Bhava Phala; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CAREER_10TH_LORD_TRIKONA_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.10_lord.placed_house
+    operator: in
+    value: [1, 5, 9]
+  reason: D1 10th lord is connected with a trikona.
+  interpretation: Trikona connection of the 10th lord supports merit, fortune, counsel, and smoother professional rise when dasha agrees.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    delay_score: -1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Rajayoga and Bhavesh results"
+  source_page: "Phal Dipika OCR chapter index: Bhava Chinta and Rajayoga; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CAREER_10TH_LORD_DUSTHANA_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.10_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D1 10th lord is linked with a dusthana house.
+  interpretation: 10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work; the final answer should not overstate smooth promotion.
+  outcomes:
+    job_change_score: 3
+    risk_score: 2
+    delay_score: 2
+    promotion_score: -1
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Dashama Bhava / Bhavesh and Dusthana principles"
+  source_page: "Phal Dipika OCR chapter index: Bhava Chinta; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CAREER_9TH_10TH_EXCHANGE_001
+  system: Parashari
+  category: career
+  condition:
+    all:
+      - path: chart_facts.varga.charts.d1.all_lord_placements.9_lord.placed_house
+        operator: equals
+        value: 10
+      - path: chart_facts.varga.charts.d1.all_lord_placements.10_lord.placed_house
+        operator: equals
+        value: 9
+  reason: D1 ninth and tenth lords exchange houses.
+  interpretation: Ninth-tenth lord exchange is a dharma-karma style support, linking fortune, guidance, and profession for rise when dasha activates the pattern.
+  outcomes:
+    promotion_score: 4
+    authority_score: 4
+    income_growth_score: 2
+    delay_score: -1
+  weight: 9
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Rajayoga / Rajayoga Phala"
+  source_page: "Phal Dipika OCR chapter index: Rajayoga; BPHS OCR table of contents: Rajayoga chapters"
+
+- rule_id: PARASHARI_CAREER_2ND_LORD_SUPPORT_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.2_lord.placed_house
+    operator: in
+    value: [2, 6, 10, 11]
+  reason: D1 second lord connects with work or gains houses.
+  interpretation: The second house supports income, speech, and resources; its link to work and gains houses improves earning relevance in career questions.
+  outcomes:
+    income_growth_score: 3
+    promotion_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Dhana Bhava / Dhanayoga"
+  source_page: "Phal Dipika OCR chapter index: Dhana Bhava and Dhanayoga; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CAREER_11TH_LORD_SUPPORT_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.11_lord.placed_house
+    operator: in
+    value: [2, 6, 10, 11]
+  reason: D1 eleventh lord connects with work or income houses.
+  interpretation: The eleventh house supports gains, fulfilment, and networks; its connection to work houses improves income and promotion support.
+  outcomes:
+    income_growth_score: 3
+    promotion_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Labha Bhava / Dhanayoga"
+  source_page: "Phal Dipika OCR chapter index: Labha Bhava and Dhanayoga; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_SERVICE_6TH_10TH_LINK_001
+  system: Parashari
+  category: career
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.6_lord.placed_house
+    operator: in
+    value: [10, 11]
+  reason: D1 sixth lord links service/competition with career or gains houses.
+  interpretation: The sixth house can indicate service, competition, workload, and disputes; connection to the 10th or 11th supports employment movement but may bring pressure.
+  outcomes:
+    job_change_score: 2
+    income_growth_score: 1
+    delay_score: 1
+    risk_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Shashtha Bhava and Dashama Bhava"
+  source_page: "Phal Dipika OCR chapter index: sixth and tenth house results"
+
+- rule_id: PARASHARI_BUSINESS_7TH_LORD_STRONG_001
+  system: Parashari
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.7_lord.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: D1 seventh lord is strong.
+  interpretation: The seventh house supports trade, clients, contracts, public dealing, and partnerships; a strong seventh lord supports business when dasha agrees.
+  outcomes:
+    business_success_score: 3
+    partnership_score: 3
+    market_visibility_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Saptama Bhava / business and partnership indications"
+  source_page: "Phal Dipika OCR chapter index: Saptama Bhava; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_BUSINESS_7TH_10TH_LINK_001
+  system: Parashari
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.7_lord.placed_house
+    operator: in
+    value: [2, 7, 10, 11]
+  reason: D1 seventh lord connects with business, profession, or gains houses.
+  interpretation: Seventh-lord links to wealth, profession, and gains houses support client-facing business activity and trade outcomes.
+  outcomes:
+    business_success_score: 3
+    partnership_score: 2
+    market_visibility_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Saptama, Dhana, Dashama, and Labha Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_BUSINESS_7TH_LORD_DUSTHANA_001
+  system: Parashari
+  category: business
+  condition:
+    path: chart_facts.varga.charts.d1.all_lord_placements.7_lord.placed_house
+    operator: in
+    value: [6, 8, 12]
+  reason: D1 seventh lord is linked with a dusthana house.
+  interpretation: Seventh-lord dusthana links can show client friction, partnership pressure, dispute, hidden risk, or foreign/remote business conditions.
+  outcomes:
+    financial_risk_score: 2
+    execution_pressure_score: 2
+    partnership_score: -1
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Saptama Bhava and Dusthana principles"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_DASHA_10TH_LORD_ACTIVE_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.owned_houses
+    operator: equals
+    value: 10
+  reason: Active Vimshottari dasha lord owns the 10th house.
+  interpretation: Vimshottari periods of a relevant house lord can deliver that house's results; the 10th lord period is important for profession, authority, and career decisions.
+  outcomes:
+    promotion_score: 4
+    authority_score: 3
+    job_change_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Vimshottari Dasha / Dasha Phala and Bhavesh results"
+  source_page: "BPHS OCR table of contents: Vimshottari Dasha and Dasha Phala; Phal Dipika OCR Dasha Phala chapter"
+
+- rule_id: PARASHARI_DASHA_11TH_LORD_ACTIVE_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: career
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.owned_houses
+    operator: equals
+    value: 11
+  reason: Active Vimshottari dasha lord owns the 11th house.
+  interpretation: Dasha of the gains lord can support fulfilment, network gains, salary growth, and realization of desired career outcomes.
+  outcomes:
+    income_growth_score: 4
+    promotion_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Vimshottari Dasha / Labha Bhava"
+  source_page: "BPHS OCR table of contents; Phal Dipika OCR Dasha Phala chapter"
+
+- rule_id: PARASHARI_DASHA_DIGNITY_STRONG_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d1.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Active Vimshottari dasha lord has strong D1 dignity.
+  interpretation: A well-placed active dasha lord is more capable of delivering its promised results, subject to house ownership and divisional confirmation.
+  outcomes:
+    promotion_score: 1
+    income_growth_score: 1
+    business_success_score: 1
+    education_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Dasha Phala and planetary strength principles"
+  source_page: "BPHS OCR table of contents: Graha Avastha/Dasha Phala; Phal Dipika OCR Bhava Chinta"
+
+- rule_id: PARASHARI_DASHA_DIGNITY_WEAK_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d1.dignity
+    operator: equals
+    value: debilitated
+  reason: Active Vimshottari dasha lord is debilitated in D1.
+  interpretation: A debilitated active dasha lord can weaken or complicate delivery of its results; final synthesis should state pressure or reduced confidence.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+    execution_pressure_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Dasha Phala and planetary strength principles"
+  source_page: "BPHS OCR table of contents: Graha Avastha/Dasha Phala; Phal Dipika OCR Bhava Chinta"
+
+- rule_id: PARASHARI_RAJA_YOGA_FACTOR_001
+  system: Parashari
+  category: general
+  condition:
+    path: parashari.rajayoga_factors.related
+    operator: equals
+    value: true
+  reason: A kendra-trikona lord relationship is present.
+  interpretation: Kendra-trikona lord relationships are classical Parashari rise/status factors, but they must be judged with dasha and divisional confirmation.
+  outcomes:
+    authority_score: 2
+    promotion_score: 2
+    business_success_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Rajayoga / Rajayoga Phala"
+  source_page: "Phal Dipika OCR chapter index: Rajayoga; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_DHARMA_KARMA_RELATION_001
+  system: Parashari
+  category: career
+  condition:
+    path: parashari.dharma_karma_relation.related
+    operator: equals
+    value: true
+  reason: Ninth and tenth lords are related.
+  interpretation: Dharma-karma relation links fortune, guidance, and professional action, supporting career rise when dasha activates it.
+  outcomes:
+    promotion_score: 3
+    authority_score: 3
+    income_growth_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Rajayoga / Dashama and Navama Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_DHANA_YOGA_FACTOR_001
+  system: Parashari
+  category: money
+  condition:
+    path: parashari.dhana_yoga_factors.related
+    operator: equals
+    value: true
+  reason: Wealth-house lords are related.
+  interpretation: Links among 2nd, 5th, 9th, and 11th lords support wealth and gains when dasha and transit permit delivery.
+  outcomes:
+    income_growth_score: 3
+    wealth_score: 3
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Dhanayoga / Dhana and Labha Bhava"
+  source_page: "Phal Dipika OCR chapter index: Dhanayoga; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CATEGORY_LORD_RELATION_001
+  system: Parashari
+  category: general
+  condition:
+    path: parashari.category_lord_relations.related
+    operator: equals
+    value: true
+  reason: Primary topic lord connects with supporting topic houses.
+  interpretation: A relationship between the primary house lord and supporting category lords strengthens the question topic across categories such as career, business, relationship, children, education, property, or family.
+  outcomes:
+    promotion_score: 1
+    business_success_score: 1
+    partnership_score: 1
+    children_score: 1
+    education_score: 1
+    property_score: 1
+    family_support_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Bhavesh results / Bhava Chinta"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_DASHA_ACTIVATES_RAJA_YOGA_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari.dasha_activation.activates_raja_yoga
+    operator: equals
+    value: true
+  reason: Active Vimshottari dasha lord participates in a calculated Rajayoga factor.
+  interpretation: A yoga becomes more relevant when the running dasha activates one of its participating lords.
+  outcomes:
+    promotion_score: 3
+    authority_score: 3
+    business_success_score: 1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Vimshottari Dasha and Rajayoga Phala"
+  source_page: "BPHS OCR table of contents; Phal Dipika OCR Dasha Phala chapter"
+
+- rule_id: PARASHARI_DASHA_ACTIVATES_DHANA_YOGA_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari.dasha_activation.activates_dhana_yoga
+    operator: equals
+    value: true
+  reason: Active Vimshottari dasha lord participates in a calculated Dhana yoga factor.
+  interpretation: Wealth combinations are more deliverable when the running dasha activates a participating lord.
+  outcomes:
+    income_growth_score: 3
+    wealth_score: 2
+    business_success_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Vimshottari Dasha and Dhanayoga"
+  source_page: "BPHS OCR table of contents; Phal Dipika OCR Dasha Phala chapter"
+
+- rule_id: PARASHARI_DASHA_ACTIVATES_DUSTHANA_PRESSURE_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari.dasha_activation.activates_dusthana_pressure
+    operator: equals
+    value: true
+  reason: Active Vimshottari dasha lord activates a dusthana-pressured factor.
+  interpretation: Results can arrive with stress, delay, conflict, loss, or transformation when dasha activates a dusthana-pressured topic lord.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+    execution_pressure_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Brihat Parashar Hora Shastra / Phal Dipika"
+  source_chapter: "Vimshottari Dasha and Dusthana/Bhavesh principles"
+  source_page: "BPHS OCR table of contents; Phal Dipika OCR Bhava Chinta"
+
+- rule_id: PARASHARI_MARRIAGE_7TH_LORD_STRONG_001
+  system: Parashari
+  category: marriage
+  condition:
+    path: parashari.lord_factors.7_lord.is_strong
+    operator: equals
+    value: true
+  reason: Seventh lord is strong in D1.
+  interpretation: The seventh lord is a primary marriage/relationship indicator; strength supports relationship promise when D9 and dasha agree.
+  outcomes:
+    marriage_score: 3
+    partnership_score: 3
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Saptama Bhava / Bhavesh results"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_MARRIAGE_7TH_LORD_DUSTHANA_001
+  system: Parashari
+  category: marriage
+  condition:
+    path: parashari.lord_factors.7_lord.in_dusthana
+    operator: equals
+    value: true
+  reason: Seventh lord is under dusthana pressure.
+  interpretation: Seventh-lord dusthana placement can show delay, distance, conflict, or adjustment in relationships; final answer should avoid overconfidence.
+  outcomes:
+    relationship_pressure_score: 3
+    delay_score: 2
+    partnership_score: -1
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Saptama Bhava / Dusthana principles"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CHILDREN_5TH_LORD_STRONG_001
+  system: Parashari
+  category: children
+  condition:
+    path: parashari.lord_factors.5_lord.is_strong
+    operator: equals
+    value: true
+  reason: Fifth lord is strong in D1.
+  interpretation: The fifth house and fifth lord are primary factors for children and childbirth; strength supports promise when D7 and dasha agree.
+  outcomes:
+    children_score: 4
+    fulfilment_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Putra Bhava / fifth house results"
+  source_page: "Phal Dipika OCR chapter index: Putra Bhava; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_CHILDREN_5TH_LORD_DUSTHANA_001
+  system: Parashari
+  category: children
+  condition:
+    path: parashari.lord_factors.5_lord.in_dusthana
+    operator: equals
+    value: true
+  reason: Fifth lord is under dusthana pressure.
+  interpretation: Fifth-lord dusthana pressure can show delay, anxiety, medical concern, or interruption around children matters; D7 and dasha must confirm before concluding.
+  outcomes:
+    children_delay_score: 3
+    risk_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Putra Bhava / fifth house results"
+  source_page: "Phal Dipika OCR chapter index: Putra Bhava; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_EDUCATION_4TH_5TH_SUPPORT_001
+  system: Parashari
+  category: education
+  condition:
+    path: parashari.category_lord_relations.related
+    operator: equals
+    value: true
+  reason: Primary education lords connect with supporting study houses.
+  interpretation: Connection among education houses supports learning, academic effort, and successful study when D24 and dasha agree.
+  outcomes:
+    education_score: 3
+    academic_success_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Chaturtha, Panchama, and Navama Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_PROPERTY_4TH_LORD_STRONG_001
+  system: Parashari
+  category: property
+  condition:
+    path: parashari.lord_factors.4_lord.is_strong
+    operator: equals
+    value: true
+  reason: Fourth lord is strong in D1.
+  interpretation: The fourth house supports home, property, vehicles, residence, and comforts; fourth-lord strength supports property promise with D4 confirmation.
+  outcomes:
+    property_score: 4
+    comfort_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Chaturtha Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_FAMILY_4TH_9TH_SUPPORT_001
+  system: Parashari
+  category: family
+  condition:
+    path: parashari.category_lord_relations.related
+    operator: equals
+    value: true
+  reason: Family/parental lords are related.
+  interpretation: Relationship among family and parent houses supports family/lineage matters when D12 and dasha agree.
+  outcomes:
+    family_support_score: 3
+    mother_support_score: 1
+    father_support_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Chaturtha and Navama Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"
+
+- rule_id: PARASHARI_HEALTH_DUSTHANA_PRESSURE_001
+  system: Parashari
+  category: health
+  condition:
+    path: parashari.dusthana_pressure_factors.in_dusthana
+    operator: equals
+    value: true
+  reason: Health-category lords are under dusthana pressure.
+  interpretation: Health/risk questions require caution when relevant lords connect with 6th, 8th, or 12th houses; final answers must avoid medical certainty.
+  outcomes:
+    health_pressure_score: 3
+    risk_score: 3
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Phal Dipika / Brihat Parashar Hora Shastra"
+  source_chapter: "Roga, Shashtha, Ashtama, and Vyaya Bhava"
+  source_page: "Phal Dipika OCR chapter index; BPHS OCR table of contents"

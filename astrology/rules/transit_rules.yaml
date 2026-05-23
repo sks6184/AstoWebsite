@@ -1,0 +1,76 @@
+- rule_id: TRANSIT_PIPELINE_001
+  system: Transit
+  category: general
+  condition:
+    path: transits.status
+    operator: equals
+    value: active
+  reason: Transit priority context is available.
+  interpretation: Transit confirmation is available as a timing support layer after dasha and chart evidence.
+  outcomes:
+    delay_score: 0
+  weight: 1
+  polarity: positive
+  confidence: high
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: TRANSIT_CAREER_SUPPORT_001
+  system: Transit
+  category: career
+  condition:
+    path: transits.supporting_windows.score
+    operator: gte
+    value: 25
+  reason: At least one current priority transit supports the career houses.
+  interpretation: Supportive transit events strengthen timing when the dasha and chart also show career activation.
+  outcomes:
+    promotion_score: 2
+    job_change_score: 1
+    income_growth_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: TRANSIT_CAREER_DASHA_LORD_001
+  system: Transit
+  category: career
+  condition:
+    path: transits.dasha_lord_transits.score
+    operator: gte
+    value: 25
+  reason: A Mahadasha or Antardasha lord has supportive transit priority.
+  interpretation: Dasha lord transit support is stronger than generic transit support for timing career outcomes.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    income_growth_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""
+
+- rule_id: TRANSIT_PRESSURE_001
+  system: Transit
+  category: general
+  condition:
+    path: transits.pressure_windows.score
+    operator: lt
+    value: 0
+  reason: One or more priority transits show pressure.
+  interpretation: Transit pressure should be disclosed as delay, stress, or caution rather than hidden.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: ""
+  source_chapter: ""
+  source_page: ""

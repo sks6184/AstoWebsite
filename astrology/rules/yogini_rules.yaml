@@ -1,0 +1,124 @@
+- rule_id: YOGINI_ACTIVE_001
+  system: Yogini
+  dasha: Yogini
+  category: general
+  condition:
+    path: yogini.calculation_status
+    operator: equals
+    value: active
+  reason: Yogini Dasha calculation is active.
+  interpretation: Yogini can now be used as a fourth timing-verification system along with Vimshottari, Jaimini, and Varga evidence.
+  outcomes:
+    delay_score: 0
+  weight: 1
+  polarity: positive
+  confidence: high
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Calculation of Yogini Dasha"
+  source_page: "pp. 8-21 / PDF pages 16-29"
+
+- rule_id: YOGINI_CAREER_SUPPORT_001
+  system: Yogini
+  dasha: Yogini
+  category: career
+  condition:
+    path: yogini.status
+    operator: equals
+    value: supports
+  reason: Current Yogini timing supports the question category.
+  interpretation: Yogini timing increases confidence when the current major or subperiod lord connects to the relevant houses.
+  outcomes:
+    promotion_score: 2
+    job_change_score: 1
+    income_growth_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Calculation of Yogini Dasha"
+  source_page: "pp. 8-21 / PDF pages 16-29"
+
+- rule_id: YOGINI_BUSINESS_SUPPORT_001
+  system: Yogini
+  dasha: Yogini
+  category: business
+  condition:
+    path: yogini.status
+    operator: equals
+    value: supports
+  reason: Current Yogini timing supports the business question.
+  interpretation: Yogini timing increases confidence when the current major or subperiod lord connects to business houses.
+  outcomes:
+    business_success_score: 2
+    market_visibility_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Calculation of Yogini Dasha"
+  source_page: "pp. 8-21 / PDF pages 16-29"
+
+- rule_id: YOGINI_CAREER_D10_001
+  system: Yogini
+  chart: D10
+  dasha: Yogini
+  category: career
+  condition:
+    path: yogini.yogini_lord_facts.d10.house
+    operator: in
+    value: [2, 6, 10, 11]
+  reason: Current Yogini lord connects to career/income houses in D10.
+  interpretation: Yogini lord placement in D10 career houses supports professional timing when other systems agree.
+  outcomes:
+    promotion_score: 2
+    job_change_score: 1
+    authority_score: 1
+    income_growth_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Examples and event timing"
+  source_page: ""
+
+- rule_id: YOGINI_BUSINESS_D10_001
+  system: Yogini
+  chart: D10
+  dasha: Yogini
+  category: business
+  condition:
+    path: yogini.yogini_lord_facts.d10.house
+    operator: in
+    value: [2, 7, 10, 11]
+  reason: Current Yogini lord connects to business houses in D10.
+  interpretation: Yogini lord placement in D10 business houses supports business timing when other systems agree.
+  outcomes:
+    business_success_score: 2
+    partnership_score: 1
+    market_visibility_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Examples and event timing"
+  source_page: ""
+
+- rule_id: YOGINI_MIXED_001
+  system: Yogini
+  dasha: Yogini
+  category: general
+  condition:
+    path: yogini.status
+    operator: equals
+    value: mixed
+  reason: Yogini gives only partial confirmation.
+  interpretation: Mixed Yogini timing should reduce certainty or be described as partial support rather than a strong confirmation.
+  outcomes:
+    risk_score: 1
+    delay_score: 1
+  weight: 3
+  polarity: mixed
+  confidence: medium
+  source_book: "Applications of Yogini Dasha for Brilliant Predictions"
+  source_chapter: "Calculation of Yogini Dasha"
+  source_page: "pp. 8-21 / PDF pages 16-29"

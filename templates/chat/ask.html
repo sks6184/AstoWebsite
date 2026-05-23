@@ -47,7 +47,7 @@
 
   <section class="panel answer-panel">
     <div class="answer-panel__header">
-      <h2>Generated answer</h2>
+      <h2>Jyotish Reading</h2>
       {% if conversation %}
         <span>{{ conversation.get_depth_level_display }}</span>
         <a class="button secondary" href="{% url 'ask_question' %}">Ask another question</a>
@@ -58,7 +58,9 @@
       <div class="answer-thread">
         {% for message in conversation.messages.all %}
           <article class="message {{ message.role }}">
-            <strong>{% if message.role == "assistant" %}Jyotish Analysis{% else %}{{ message.get_role_display }}{% endif %}</strong>
+            {% if message.role != "assistant" %}
+              <strong>{{ message.get_role_display }}</strong>
+            {% endif %}
             <div class="message-content">
               {% if message.role == "assistant" %}
                 {{ message.content|astro_answer:remedy_note }}
@@ -76,7 +78,7 @@
       </div>
     {% else %}
       <div class="answer-empty">
-        <h3>Your answer will appear here.</h3>
+        <h3>Your Jyotish reading will appear here.</h3>
         <p>Select a chart, choose the depth and language, then ask your question.</p>
       </div>
     {% endif %}
@@ -88,8 +90,8 @@
 <div class="loading-overlay" data-loading-overlay hidden>
   <div class="loading-card" role="status" aria-live="polite">
     <div class="loading-spinner" aria-hidden="true"></div>
-    <h2>Preparing your answer</h2>
-    <p>Gathering chart calculations and reading from the astrology knowledge base...</p>
+    <h2>Preparing Jyotish reading</h2>
+    <p>Drawing charts, calculating dashas, and confirming transits...</p>
   </div>
 </div>
 

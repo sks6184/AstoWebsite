@@ -6,6 +6,7 @@ import swisseph as swe
 from .ashtakavarga import build_ashtakavarga
 from .jaimini import build_chara_dasha
 from .yogas import detect_yogas
+from astrology.calculations.yogini import build_yogini_periods
 
 
 SIGNS = [
@@ -214,6 +215,15 @@ def _saptamsa_longitude(longitude):
     return _varga_longitude(longitude, 7, start_sign_index)
 
 
+def _drekkana_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    sign_degree = longitude % 30
+    part = int(sign_degree // 10)
+    drekkana_sign_index = (sign_index + part * 4) % 12
+    drekkana_degree = (sign_degree % 10) * 3
+    return drekkana_sign_index * 30 + drekkana_degree
+
+
 def _chaturthamsha_longitude(longitude):
     sign_index = _sign_index(longitude)
     sign_degree = longitude % 30
@@ -253,6 +263,22 @@ def _dasamsa_longitude(longitude):
     return dasamsa_sign_index * 30 + dasamsa_degree
 
 
+def _dwadasamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    return _varga_longitude(longitude, 12, sign_index)
+
+
+def _shodashamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    if sign_index in [0, 3, 6, 9]:
+        start_sign_index = 0
+    elif sign_index in [1, 4, 7, 10]:
+        start_sign_index = 4
+    else:
+        start_sign_index = 8
+    return _varga_longitude(longitude, 16, start_sign_index)
+
+
 def _vimshamsa_longitude(longitude):
     sign_index = _sign_index(longitude)
     if sign_index in [0, 3, 6, 9]:
@@ -269,6 +295,19 @@ def _chaturvimshamsa_longitude(longitude):
     is_odd_sign = (sign_index + 1) % 2 == 1
     start_sign_index = 4 if is_odd_sign else 3
     return _varga_longitude(longitude, 24, start_sign_index)
+
+
+def _saptavimshamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    if sign_index in [0, 4, 8]:
+        start_sign_index = 0
+    elif sign_index in [1, 5, 9]:
+        start_sign_index = 3
+    elif sign_index in [2, 6, 10]:
+        start_sign_index = 6
+    else:
+        start_sign_index = 9
+    return _varga_longitude(longitude, 27, start_sign_index)
 
 
 def _trimsamsa_longitude(longitude):
@@ -301,6 +340,29 @@ def _trimsamsa_longitude(longitude):
             return trimsamsa_sign_index * 30 + degree
         previous_limit = limit
     return ranges[-1][1] * 30
+
+
+def _khavedamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    is_odd_sign = (sign_index + 1) % 2 == 1
+    start_sign_index = 0 if is_odd_sign else 6
+    return _varga_longitude(longitude, 40, start_sign_index)
+
+
+def _akshavedamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    if sign_index in [0, 3, 6, 9]:
+        start_sign_index = 0
+    elif sign_index in [1, 4, 7, 10]:
+        start_sign_index = 4
+    else:
+        start_sign_index = 8
+    return _varga_longitude(longitude, 45, start_sign_index)
+
+
+def _shashtiamsa_longitude(longitude):
+    sign_index = _sign_index(longitude)
+    return _varga_longitude(longitude, 60, sign_index)
 
 
 def _build_divisional_chart(asc_longitude, planets, longitude_func):
@@ -458,14 +520,21 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
     planets = _assign_jaimini_karakas(planets)
 
     houses = _build_houses(asc_sign_index, planets)
+    d3 = _build_divisional_chart(asc_longitude, planets, _drekkana_longitude)
     d2 = _build_divisional_chart(asc_longitude, planets, _hora_longitude)
     d4 = _build_divisional_chart(asc_longitude, planets, _chaturthamsha_longitude)
     d7 = _build_divisional_chart(asc_longitude, planets, _saptamsa_longitude)
     d9 = _build_divisional_chart(asc_longitude, planets, _navamsha_longitude)
     d10 = _build_divisional_chart(asc_longitude, planets, _dasamsa_longitude)
+    d12 = _build_divisional_chart(asc_longitude, planets, _dwadasamsa_longitude)
+    d16 = _build_divisional_chart(asc_longitude, planets, _shodashamsa_longitude)
     d20 = _build_divisional_chart(asc_longitude, planets, _vimshamsa_longitude)
     d24 = _build_divisional_chart(asc_longitude, planets, _chaturvimshamsa_longitude)
+    d27 = _build_divisional_chart(asc_longitude, planets, _saptavimshamsa_longitude)
     d30 = _build_divisional_chart(asc_longitude, planets, _trimsamsa_longitude)
+    d40 = _build_divisional_chart(asc_longitude, planets, _khavedamsa_longitude)
+    d45 = _build_divisional_chart(asc_longitude, planets, _akshavedamsa_longitude)
+    d60 = _build_divisional_chart(asc_longitude, planets, _shashtiamsa_longitude)
 
     moon = next(planet for planet in planets if planet["code"] == "Mo")
     vimshottari = _dasha_periods(birth_date, moon["longitude"])
@@ -481,22 +550,30 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         "timezone": timezone,
         "system": "vedic_lahiri",
         "ayanamsa": "Lahiri",
-        "chart_template": "north_indian_clear_sign_positions_v9_d4_extra_vargas",
+        "chart_template": "north_indian_clear_sign_positions_v10_shodashvarga",
         "julian_day_ut": jd_ut,
         "ascendant": ascendant,
         "d1": {"houses": houses, "planets": [ascendant] + planets},
         "d2": d2,
+        "d3": d3,
         "d4": d4,
         "d7": d7,
         "d9": d9,
         "d10": d10,
+        "d12": d12,
+        "d16": d16,
         "d20": d20,
         "d24": d24,
+        "d27": d27,
         "d30": d30,
+        "d40": d40,
+        "d45": d45,
+        "d60": d60,
         "ashtakavarga": build_ashtakavarga(ascendant, planets),
         "jaimini": {"chara_dasha": build_chara_dasha(birth_date, ascendant, planets)},
         "dashas": {"vimshottari": vimshottari},
     }
+    chart_data["dashas"]["yogini"] = build_yogini_periods(chart_data)
     chart_data["yogas"] = detect_yogas(chart_data)
     return chart_data
 
