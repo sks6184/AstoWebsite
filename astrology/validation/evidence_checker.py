@@ -22,24 +22,32 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
 
     if not any(word in lowered for word in score_words):
         issues.append("Answer does not discuss scores or confidence.")
-    if evidence.get("question", {}).get("category") == "career" and "d10" not in lowered:
-        issues.append("Career answer does not mention D10 evidence.")
+    if evidence.get("question", {}).get("category") in {"career", "job"} and "d10" not in lowered:
+        issues.append("Career/job answer does not mention D10 evidence.")
     if evidence.get("parashari_vimshottari", {}).get("current_mahadasha") and not all(
         word in lowered for word in ["mahadasha", "antardasha"]
     ):
         issues.append("Answer does not name Vimshottari Mahadasha and Antardasha evidence.")
-    if evidence.get("jaimini", {}).get("calculation_status") == "active" and "jaimini" not in lowered:
-        issues.append("Answer ignores available Jaimini facts.")
-    if evidence.get("jaimini", {}).get("calculation_status") == "active" and not any(
-        word in lowered for word in ["chara", "atmakaraka", "amatyakaraka", "arudha", "karakamsha", "upapada"]
+    # Use data-presence checks — calculation_status is stripped from the compact evidence payload
+    windows = (evidence.get("transits") or {}).get("future_timing", {}).get("windows", [])
+    jaimini_present = (
+        any(w.get("jaimini_active_sign") for w in windows)
+        or bool((evidence.get("jaimini") or {}).get("active_chara_dasha"))
+    )
+    yogini_present = (
+        any(w.get("yogini_name") for w in windows)
+        or bool((evidence.get("yogini") or {}).get("current_yogini"))
+    )
+    if jaimini_present and not any(w in lowered for w in ["jaimini", "chara"]):
+        issues.append(
+            "Answer ignores available Jaimini/Chara Dasha data — must name the active Chara sign and its house from Lagna."
+        )
+    if jaimini_present and any(w in lowered for w in ["jaimini", "chara"]) and not any(
+        word in lowered for word in ["chara", "atmakaraka", "amatyakaraka", "karakamsha"]
     ):
-        issues.append("Answer mentions Jaimini but not specific Jaimini factors.")
-    if evidence.get("yogini", {}).get("calculation_status") == "active" and "yogini" not in lowered:
-        issues.append("Answer ignores available Yogini facts.")
-    if evidence.get("yogini", {}).get("calculation_status") == "active" and not any(
-        word in lowered for word in ["sub-period", "sub period", "lord"]
-    ):
-        issues.append("Answer mentions Yogini but not its period/lord details.")
+        issues.append("Answer mentions Jaimini but not specific Jaimini factors (Chara sign, Atmakaraka, etc.).")
+    if yogini_present and "yogini" not in lowered:
+        issues.append("Answer ignores available Yogini data — must name the active Yogini and sub-Yogini.")
     remedy_context = evidence.get("remedy_context", {})
     if remedy_context.get("remedies"):
         if "no deterministic remedy was calculated" in lowered:

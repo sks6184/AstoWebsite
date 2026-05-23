@@ -24,7 +24,9 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "status": jai.get("status"),
         "score": jai.get("score", 0),
         "mahadasha_sign": (jai_chara.get("mahadasha") or {}).get("sign"),
+        "mahadasha_sign_house_from_lagna": jai_chara.get("mahadasha_house_from_lagna"),
         "antardasha_sign": (jai_chara.get("antardasha") or {}).get("sign"),
+        "antardasha_sign_house_from_lagna": jai_chara.get("antardasha_house_from_lagna"),
         "reasons": jai.get("reasons", [])[:2],
     }
 
@@ -62,7 +64,9 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "mahadasha_lord": window.get("mahadasha_lord"),
         "antardasha_lord": window.get("antardasha_lord"),
         "jaimini_active_sign": window.get("jaimini_active_sign"),
+        "jaimini_active_sign_house_from_lagna": window.get("jaimini_active_sign_house_from_lagna"),
         "jaimini_active_sub_sign": window.get("jaimini_active_sub_sign"),
+        "jaimini_active_sub_sign_house_from_lagna": window.get("jaimini_active_sub_sign_house_from_lagna"),
         "yogini_name": window.get("yogini_name"),
         "sub_yogini_name": window.get("sub_yogini_name"),
         "reasons": window.get("reasons", [])[:4],
@@ -145,6 +149,7 @@ def build_transit_facts(
         "status": "active",
         "horizon": horizon,
         "target_date": target_date.isoformat(),
+        "relevant_transits": events[:12],
         "dasha_lord_transits": dasha_lord_events[:6],
         "future_timing": future_timing,
         "score": score,

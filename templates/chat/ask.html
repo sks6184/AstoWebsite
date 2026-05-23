@@ -26,14 +26,15 @@
       <form method="post" action="{% url 'ask_question' %}" data-ask-form autocomplete="off">
         {% csrf_token %}
         <label for="chart-select">Chart</label>
-        <select id="chart-select" name="chart_id">
-          <option value="">No chart selected</option>
+        <select id="chart-select" name="chart_id" required>
+          <option value="">— Select a chart —</option>
           {% for chart in charts %}
             <option value="{{ chart.id }}" {% if selected_chart_id == chart.id %}selected{% endif %}>
               {{ chart.name }} - {{ chart.birth_place }}
             </option>
           {% endfor %}
         </select>
+        <p id="chart-select-error" class="form-error" hidden></p>
         {{ form.depth_level.label_tag }}
         {{ form.depth_level }}
         {{ form.answer_language.label_tag }}
@@ -103,7 +104,31 @@
       return;
     }
 
-    form.addEventListener("submit", () => {
+    const chartSelect = form.querySelector("#chart-select");
+    const chartError = form.querySelector("#chart-select-error");
+    const hasCharts = chartSelect && chartSelect.options.length > 1;
+
+    form.addEventListener("submit", (e) => {
+      // Clear previous error
+      if (chartError) {
+        chartError.hidden = true;
+        chartError.textContent = "";
+      }
+
+      if (chartSelect && !chartSelect.value) {
+        e.preventDefault();
+        if (chartError) {
+          if (hasCharts) {
+            chartError.textContent = "Please select a chart before asking a question.";
+          } else {
+            chartError.innerHTML = 'You don\'t have any charts yet. <a href="{% url "chart_create" %}">Create a chart</a> first, then come back to ask a question.';
+          }
+          chartError.hidden = false;
+        }
+        chartSelect.focus();
+        return;
+      }
+
       overlay.hidden = false;
       document.body.classList.add("is-loading");
 

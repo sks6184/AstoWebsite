@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any
 
-from chat.prediction_context import CATEGORY_RULES, classify_question, detect_question_scope
+from chat.prediction_context import CATEGORY_RULES, build_location_verdict, build_natural_karaka_assessment, classify_question, detect_question_scope
 
 from astrology.calculations.dasha_facts import build_dasha_facts
 from astrology.calculations.parashari import build_parashari_facts
@@ -62,7 +62,7 @@ def build_prediction_evidence(
     target_date: date | None = None,
 ) -> dict[str, Any]:
     category = _engine_category(user_question)
-    category_houses = CATEGORY_RULES.get(category, CATEGORY_RULES.get("career", {})).get("houses", [2, 6, 10, 11])
+    category_houses = CATEGORY_RULES.get(category, CATEGORY_RULES.get("job", {})).get("houses", [6, 2, 10, 11])
     if category == "business":
         category_houses = [2, 7, 10, 11]
 
@@ -88,6 +88,9 @@ def build_prediction_evidence(
         end_date=effective_end,
     )
 
+    _div_charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", ["d1"])
+    _primary_chart = _div_charts[1] if len(_div_charts) > 1 else _div_charts[0]
+
     evidence = PredictionEvidence(
         question=QuestionContext(
             text=user_question,
@@ -100,6 +103,8 @@ def build_prediction_evidence(
                 "is_fixed": scope.get("is_fixed", False),
                 "instruction": scope.get("instruction", ""),
             },
+            primary_divisional_chart=_primary_chart,
+            all_divisional_charts=_div_charts,
         ),
         chart_facts=chart_facts,
         parashari=parashari_facts,
@@ -117,8 +122,8 @@ def build_prediction_evidence(
         },
         validation={
             "passed": False,
-            "issues": ["Validation layer not implemented yet."],
-            "confidence": "low",
+            "issues": [],
+            "confidence": "pending",
         },
     )
     evidence_json = evidence.to_dict()
@@ -139,4 +144,10 @@ def build_prediction_evidence(
     }
     if rule_result["load_errors"]:
         evidence_json["validation"]["issues"].extend(rule_result["load_errors"])
+    evidence_json["natural_karakas_assessment"] = build_natural_karaka_assessment(chart_data, category)
+    if category == "property":
+        jaimini_active = evidence_json.get("jaimini", {}).get("active_chara_dasha")
+        evidence_json["location_verdict"] = build_location_verdict(
+            user_question, chart_data, jaimini_data={"active_chara_dasha": jaimini_active} if jaimini_active else None
+        )
     return evidence_json

@@ -601,6 +601,12 @@ main {
   margin-bottom: 18px;
 }
 
+.page-heading__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .page-heading h1,
 .panel h1,
 .panel h2,

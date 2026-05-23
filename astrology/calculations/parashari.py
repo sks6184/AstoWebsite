@@ -15,8 +15,14 @@ from charts.vedic_utils import (
 
 
 CATEGORY_CONFIG = {
+    "job": {
+        "houses": [6, 2, 10, 11],
+        "primary_houses": [6],
+        "support_houses": [2, 10, 11],
+        "scores": {"income": 2, "delay": -1},
+    },
     "career": {
-        "houses": [2, 6, 10, 11],
+        "houses": [10, 2, 6, 11],
         "primary_houses": [10],
         "support_houses": [2, 6, 11],
         "scores": {"authority": 3, "income": 2, "delay": -1},

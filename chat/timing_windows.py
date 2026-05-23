@@ -12,6 +12,7 @@ SLOW_TRANSIT_LORDS = ["Ju", "Sa", "Ra", "Ke"]
 
 # Maps question category to the primary divisional chart for period-lord validation.
 _CATEGORY_PRIMARY_VARGA = {
+    "job": "d10",
     "career": "d10",
     "business": "d10",
     "money": "d2",
@@ -64,7 +65,7 @@ def _varga_score_for_window_lord(
                 f"(kendra/trikona/upachaya strength)."
             )
 
-    if category in {"career", "business"} and primary_varga != "d9":
+    if category in {"career", "job", "business"} and primary_varga != "d9":
         d9_planet = _planet_in_varga(chart_data, "d9", lord_code)
         d9_house = d9_planet.get("house")
         if d9_house in {1, 5, 9, 10}:
@@ -458,6 +459,9 @@ def _build_convergence_window(group):
     jaimini_chara = best.get("jaimini_confirmation", {}).get("active_chara_dasha", {})
     jaimini_active_sign = (jaimini_chara.get("mahadasha") or {}).get("sign") or best.get("jaimini_sign")
     jaimini_active_sub_sign = (jaimini_chara.get("antardasha") or {}).get("sign") or best.get("jaimini_sub_sign")
+    # house_from_lagna already computed in jaimini_confirmation — surface it flat so LLM never guesses
+    jaimini_active_sign_house = jaimini_chara.get("mahadasha_house_from_lagna")
+    jaimini_active_sub_sign_house = jaimini_chara.get("antardasha_house_from_lagna")
     yogini_name = best.get("yogini_alignment", {}).get("yogini") or best.get("yogini")
     sub_yogini_name = best.get("yogini_alignment", {}).get("sub_yogini") or best.get("sub_yogini")
 
@@ -487,7 +491,9 @@ def _build_convergence_window(group):
         "mahadasha_lord": md_lord,
         "antardasha_lord": ad_lord,
         "jaimini_active_sign": jaimini_active_sign,
+        "jaimini_active_sign_house_from_lagna": jaimini_active_sign_house,
         "jaimini_active_sub_sign": jaimini_active_sub_sign,
+        "jaimini_active_sub_sign_house_from_lagna": jaimini_active_sub_sign_house,
         "yogini_name": yogini_name,
         "sub_yogini_name": sub_yogini_name,
         "active_dasha": {

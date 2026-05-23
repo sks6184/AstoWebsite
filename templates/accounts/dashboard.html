@@ -5,7 +5,14 @@
 {% block content %}
 <section class="page-heading">
   <h1>Dashboard</h1>
-  <a class="button icon-new" href="{% url 'chart_create' %}">New chart</a>
+  <div class="page-heading__actions">
+    {% if charts %}
+      <a class="button icon-ask" href="{% url 'ask_question' %}">Ask question</a>
+    {% else %}
+      <button class="button icon-ask" type="button" data-requires-chart>Ask question</button>
+    {% endif %}
+    <a class="button icon-new" href="{% url 'chart_create' %}">New chart</a>
+  </div>
 </section>
 
 <section class="grid two">

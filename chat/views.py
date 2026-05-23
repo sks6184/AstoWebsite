@@ -28,7 +28,23 @@ def ask_question(request):
                     "You have used all your question credits. Please buy more credits or upgrade your plan.",
                 )
                 return redirect(f"{reverse('home')}#pricing")
-            chart = charts.filter(id=form.cleaned_data.get("chart_id")).first()
+            chart_id = form.cleaned_data.get("chart_id")
+            if not chart_id:
+                if charts.exists():
+                    messages.error(request, "Please select a chart before asking a question.")
+                else:
+                    messages.error(
+                        request,
+                        "You don't have any charts yet. Please create a chart first.",
+                    )
+                return render(request, "chat/ask.html", {
+                    "form": form,
+                    "charts": charts,
+                    "conversation": None,
+                    "credit_status": credit_status,
+                    "remedy_note": remedy_devotion_note("English"),
+                })
+            chart = charts.filter(id=chart_id).first()
             depth_level = int(form.cleaned_data["depth_level"])
             answer_language = form.cleaned_data["answer_language"]
             question = form.cleaned_data["question"]

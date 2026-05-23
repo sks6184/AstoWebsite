@@ -2,6 +2,7 @@ from .vedic_utils import PLANET_NAMES, get_planets, house_from_sign
 
 
 CATEGORY_KARAKAS = {
+    "job": {"Atmakaraka", "Amatyakaraka"},
     "career": {"Atmakaraka", "Amatyakaraka"},
     "education": {"Atmakaraka", "Amatyakaraka", "Putrakaraka"},
     "money": {"Atmakaraka", "Amatyakaraka"},

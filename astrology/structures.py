@@ -7,6 +7,8 @@ class QuestionContext:
     text: str
     category: str = "general"
     time_scope: dict[str, Any] = field(default_factory=dict)
+    primary_divisional_chart: str = "d1"
+    all_divisional_charts: list[str] = field(default_factory=lambda: ["d1"])
 
 
 @dataclass

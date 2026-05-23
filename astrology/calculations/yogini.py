@@ -276,7 +276,7 @@ def build_yogini_facts(
                     "score": 12 if role == "Yogini Mahadasha" else 8,
                 }
             )
-        if category in {"career", "business"} and facts.get("d10", {}).get("house") in category_houses:
+        if category in {"career", "job", "business"} and facts.get("d10", {}).get("house") in category_houses:
             findings.append(
                 {
                     "factor": f"{role} in D10",

@@ -96,6 +96,98 @@ DUSTHANA_HOUSES = {6, 8, 12}
 BENEFIC_PLANETS = {"Ju", "Ve", "Me", "Mo"}
 MALEFIC_PLANETS = {"Su", "Ma", "Sa", "Ra", "Ke"}
 
+# Vedic special aspects (offsets in houses from planet's house, 1-indexed).
+# All planets have 7th aspect. Jupiter adds 5th+9th, Saturn adds 3rd+10th, Mars adds 4th+8th.
+# Rahu/Ketu: 7th only (tradition varies; we use conservative 7th-only).
+PLANET_ASPECTS = {
+    "Su": [7],
+    "Mo": [7],
+    "Ma": [4, 7, 8],
+    "Me": [7],
+    "Ju": [5, 7, 9],
+    "Ve": [7],
+    "Sa": [3, 7, 10],
+    "Ra": [7],
+    "Ke": [7],
+}
+
+
+def aspected_houses(planet_code, from_house):
+    """Return list of houses aspected by planet_code when placed in from_house."""
+    if not from_house:
+        return []
+    offsets = PLANET_ASPECTS.get(planet_code, [7])
+    return [((int(from_house) + offset - 2) % 12) + 1 for offset in offsets]
+
+
+def natal_planet_aspects_on_house(chart_data, house_number):
+    """
+    Return list of (planet_code, planet_name) tuples whose natal position aspects house_number.
+    Used to detect inbound natal aspects — e.g. natal Jupiter in 3rd aspects house 7 (3+4=7).
+    """
+    from_chart = chart_data.get("d1", {}).get("planets", [])
+    aspecting = []
+    for p in from_chart:
+        code = p.get("code")
+        natal_house = p.get("house")
+        if not code or not natal_house or code == "Asc":
+            continue
+        if house_number in aspected_houses(code, natal_house):
+            aspecting.append((code, PLANET_NAMES.get(code, code)))
+    return aspecting
+
+
+def natal_mutual_aspects(chart_data):
+    """
+    Find all planet pairs in mutual aspect (parasparika drishti) in the natal D1 chart.
+    A mutual aspect exists when planet A aspects B's house AND B aspects A's house.
+    Returns list sorted so pairs involving Jupiter or Sun appear first.
+    """
+    planets = [p for p in get_planets(chart_data, "d1") if p.get("house")]
+    pairs = []
+    seen = set()
+
+    for i, p1 in enumerate(planets):
+        code1 = p1.get("code")
+        house1 = p1.get("house")
+        if not code1 or not house1:
+            continue
+        asp1 = set(aspected_houses(code1, house1))
+
+        for p2 in planets[i + 1:]:
+            code2 = p2.get("code")
+            house2 = p2.get("house")
+            if not code2 or not house2 or house1 == house2:
+                continue
+            asp2 = set(aspected_houses(code2, house2))
+
+            if house2 in asp1 and house1 in asp2:
+                key = tuple(sorted([code1, code2]))
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                owned1 = get_owned_houses(chart_data, code1)
+                owned2 = get_owned_houses(chart_data, code2)
+                linked = sorted(set([house1, house2] + owned1 + owned2))
+                involves_karaka = code1 in {"Ju", "Su"} or code2 in {"Ju", "Su"}
+
+                pairs.append({
+                    "planet_a": code1,
+                    "planet_a_name": PLANET_NAMES.get(code1, code1),
+                    "house_a": house1,
+                    "owned_houses_a": owned1,
+                    "planet_b": code2,
+                    "planet_b_name": PLANET_NAMES.get(code2, code2),
+                    "house_b": house2,
+                    "owned_houses_b": owned2,
+                    "linked_houses": linked,
+                    "involves_karaka": involves_karaka,
+                })
+
+    pairs.sort(key=lambda p: not p["involves_karaka"])
+    return pairs
+
 
 def normalize_sign_number(sign_number):
     if not sign_number:
@@ -267,6 +359,7 @@ def transit_context_for_lord(chart_data, planet_code, target_dt):
     return {
         "lord": planet_code,
         "lord_name": PLANET_NAMES.get(planet_code, planet_code),
+        "transit_longitude": longitude,
         "transit_sign_number": sign_number,
         "transit_sign": SIGN_NAMES.get(sign_number),
         "transit_house_from_lagna": house,
@@ -274,6 +367,7 @@ def transit_context_for_lord(chart_data, planet_code, target_dt):
         "ashtakavarga_threshold": 28,
         "can_deliver_owned_or_placed_house_results": sav > 28,
         "natal_placed_house": natal_planet.get("house"),
+        "natal_longitude": natal_planet.get("longitude"),
         "owned_houses": get_owned_houses(chart_data, planet_code),
     }
 

@@ -7,31 +7,59 @@ from django.utils import timezone
 from charts.jaimini_confirmation import build_jaimini_confirmation
 from charts.remedies import remedies_for_dasha
 from charts.transit_priority import build_transit_priority_context
-from charts.vedic_utils import PLANET_IDS, get_planets, parse_iso_date, transit_context_for_lord
+from charts.vedic_utils import (
+    PLANET_IDS, PLANET_NAMES, SIGN_NAMES,
+    get_house_lord, get_house_lord_planet,
+    get_planet, get_planet_dignity, get_planets, get_sarvashtakavarga_points,
+    parse_iso_date, transit_context_for_lord,
+)
 
 CATEGORY_RULES = {
-    "career": {
+    "job": {
         "keywords": [
             "job",
+            "work",
+            "employment",
+            "employed",
+            "unemployed",
+            "hire",
+            "hired",
+            "hiring",
+            "interview",
+            "resignation",
+            "transfer",
+            "fired",
+            "layoff",
+            "retrenchment",
+            "job change",
+            "job switch",
+            "switch job",
+            "change job",
+            "find work",
+            "get work",
+            "find a job",
+            "get a job",
+            "joining",
+            "onboarding",
+        ],
+        "houses": [6, 2, 10, 11],  # 6th-led: service/employment, then income, career context, gains
+        "divisional_charts": ["d1", "d10"],
+        "natural_karakas": ["Sa", "Me"],  # Saturn=service/labour, Mercury=profession/intellect
+    },
+    "career": {
+        "keywords": [
             "career",
             "profession",
-            "work",
+            "professional",
             "promotion",
-            "business",
+            "promoted",
+            "authority",
+            "leadership",
             "income",
-            "transfer",
-            "resignation",
-            "startup",
-            "client",
-            "contract",
-            "website",
-            "launch",
-            "launching",
-            "venture",
-            "entrepreneur",
         ],
-        "houses": [2, 6, 7, 10, 11],
+        "houses": [10, 2, 6, 11],  # 10th-led: karma/authority, then income, service context, gains
         "divisional_charts": ["d1", "d10"],
+        "natural_karakas": ["Su", "Me", "Sa"],  # Sun=authority, Mercury=trade/profession, Saturn=service
     },
     "marriage": {
         "keywords": [
@@ -49,6 +77,7 @@ CATEGORY_RULES = {
         ],
         "houses": [2, 7, 8, 11],
         "divisional_charts": ["d1", "d9"],
+        "natural_karakas": ["Ve", "Ju"],  # Venus=spouse/love, Jupiter=wisdom/partner
     },
     "money": {
         "keywords": [
@@ -66,6 +95,7 @@ CATEGORY_RULES = {
         ],
         "houses": [2, 6, 8, 9, 11],
         "divisional_charts": ["d1", "d2"],
+        "natural_karakas": ["Ju", "Ve"],  # Jupiter=wealth/abundance, Venus=luxury/comforts
     },
     "health": {
         "keywords": [
@@ -84,6 +114,7 @@ CATEGORY_RULES = {
         ],
         "houses": [1, 6, 8, 12],
         "divisional_charts": ["d1", "d30"],
+        "natural_karakas": ["Su", "Ma"],  # Sun=vitality/constitution, Mars=energy/accidents
     },
     "education": {
         "keywords": [
@@ -100,6 +131,7 @@ CATEGORY_RULES = {
         ],
         "houses": [4, 5, 9, 11],
         "divisional_charts": ["d1", "d24"],
+        "natural_karakas": ["Me", "Ju"],  # Mercury=intellect/learning, Jupiter=higher wisdom
     },
     "children": {
         "keywords": [
@@ -116,6 +148,7 @@ CATEGORY_RULES = {
         ],
         "houses": [2, 5, 9, 11],
         "divisional_charts": ["d1", "d7"],
+        "natural_karakas": ["Ju"],  # Jupiter=primary karaka for children/progeny
     },
     "property": {
         "keywords": [
@@ -125,11 +158,17 @@ CATEGORY_RULES = {
             "land",
             "real estate",
             "vehicle",
+            "buy",
+            "purchase",
+            "apartment",
+            "flat",
+            "plot",
             "comfort",
             "residence",
         ],
-        "houses": [4, 9, 11, 12],
+        "houses": [2, 4, 6, 9, 11, 12],  # 2=assets/savings, 4=home/property, 6=loan/EMI, 9=fortune, 11=gains, 12=foreign property
         "divisional_charts": ["d1", "d4", "d16"],
+        "natural_karakas": ["Ma", "Mo", "Ve"],  # Mars=land/real estate, Moon=home/domestic comfort, Venus=vehicles/comforts
     },
     "family": {
         "keywords": [
@@ -143,6 +182,7 @@ CATEGORY_RULES = {
         ],
         "houses": [1, 4, 9, 12],
         "divisional_charts": ["d1", "d12"],
+        "natural_karakas": ["Mo", "Su"],  # Moon=mother/family, Sun=father/lineage
     },
     "foreign_travel": {
         "keywords": [
@@ -199,6 +239,7 @@ CATEGORY_RULES = {
         ],
         "houses": [3, 4, 7, 9, 12],
         "divisional_charts": ["d1", "d4", "d9"],
+        "natural_karakas": ["Ra", "Sa"],  # Rahu=foreign/unfamiliar, Saturn=long-distance/hardship
     },
     "legal_and_enemies": {
         "keywords": [
@@ -214,6 +255,7 @@ CATEGORY_RULES = {
         ],
         "houses": [6, 8, 12],
         "divisional_charts": ["d1", "d30"],
+        "natural_karakas": ["Sa", "Ma"],  # Saturn=litigation/enemies, Mars=conflicts/accidents
     },
     "spirituality": {
         "keywords": [
@@ -228,6 +270,7 @@ CATEGORY_RULES = {
         ],
         "houses": [4, 8, 9, 12],
         "divisional_charts": ["d1", "d9", "d20"],
+        "natural_karakas": ["Ju", "Ke"],  # Jupiter=dharma/wisdom, Ketu=moksha/liberation
     },
 }
 
@@ -248,6 +291,248 @@ _FOREIGN_TRAVEL_OVERRIDES = frozenset({
     "forever in india", "forever back", "return for good",
     "go back for good", "move back for good",
 })
+
+
+def build_natural_karaka_assessment(chart_data: dict, category: str) -> dict:
+    """
+    Assess the strength and D1/primary-D-chart position of the natural significator
+    (naisargika karaka) planets for this question category.
+    Surfaces Mars for property, Venus/Jupiter for marriage, etc.
+    """
+    rules = CATEGORY_RULES.get(category, {})
+    karaka_codes = rules.get("natural_karakas", [])
+    if not karaka_codes:
+        return {}
+
+    div_charts = rules.get("divisional_charts", ["d1"])
+    primary_d = div_charts[1] if len(div_charts) > 1 else "d1"
+    category_houses = rules.get("houses", [])
+
+    assessments = []
+    for code in karaka_codes:
+        d1_p = get_planet(chart_data, code, "d1")
+        if not d1_p:
+            continue
+        house = d1_p.get("house")
+        sign_num = d1_p.get("sign_number")
+        dignity = get_planet_dignity(chart_data, code)
+        sav = get_sarvashtakavarga_points(chart_data, house) if house else 0
+
+        primary_d_house = None
+        primary_d_sign = None
+        if primary_d != "d1":
+            d_p = get_planet(chart_data, code, primary_d)
+            if d_p:
+                primary_d_house = d_p.get("house")
+                primary_d_sign = SIGN_NAMES.get(d_p.get("sign_number"))
+
+        assessments.append({
+            "planet": code,
+            "planet_name": PLANET_NAMES.get(code, code),
+            "d1_house": house,
+            "d1_sign": SIGN_NAMES.get(sign_num) if sign_num else None,
+            "dignity": dignity,
+            "natal_house_sav": sav,
+            "sav_strong": sav > 28,
+            "in_category_house": house in category_houses,
+            f"{primary_d}_house": primary_d_house,
+            f"{primary_d}_sign": primary_d_sign,
+        })
+
+    return {
+        "category": category,
+        "primary_divisional_chart": primary_d.upper(),
+        "natural_karakas": assessments,
+        "note": (
+            "Natural significators (naisargika karakas) for this category. "
+            "Their dignity, house position, and SAV in both D1 and the primary divisional chart "
+            "indicate how strongly the chart supports the topic."
+        ),
+    }
+
+
+_KNOWN_LOCATIONS = {
+    # South / Southeast Asia
+    "india", "malaysia", "singapore", "indonesia", "thailand", "philippines",
+    "vietnam", "myanmar", "bangladesh", "sri lanka", "nepal", "pakistan",
+    # Middle East
+    "uae", "dubai", "abu dhabi", "qatar", "bahrain", "kuwait", "oman",
+    "saudi arabia", "saudi", "riyadh",
+    # East Asia
+    "china", "japan", "south korea", "korea", "hong kong", "taiwan",
+    # Oceania
+    "australia", "new zealand",
+    # Europe
+    "uk", "united kingdom", "england", "london", "germany", "france",
+    "netherlands", "canada", "ireland", "switzerland",
+    # Americas
+    "usa", "united states", "america", "us", "new york", "california",
+    "canada",
+    # Generic homeland
+    "hometown", "native place", "home country", "home town",
+}
+
+_DIGNITY_SCORE = {
+    "exalted": 4,
+    "own_sign": 3,
+    "ordinary": 1,
+    "debilitated": -2,
+    "unknown": 0,
+}
+
+_GOOD_HOUSES = {1, 2, 4, 5, 7, 9, 10, 11}
+_BAD_HOUSES = {6, 8, 12}
+
+
+def _score_house_axis(chart_data: dict, house_num: int) -> tuple[int, list[str]]:
+    """Score the overall strength of a house axis (D1 lord + SAV + D4 lord)."""
+    score = 0
+    reasons = []
+
+    lord_code = get_house_lord(chart_data, house_num)
+    if not lord_code:
+        return score, reasons
+
+    # D1 lord dignity
+    dignity = get_planet_dignity(chart_data, lord_code)
+    d_score = _DIGNITY_SCORE.get(dignity, 0)
+    score += d_score
+    if d_score >= 3:
+        reasons.append(f"{PLANET_NAMES.get(lord_code, lord_code)} ({house_num}th lord) is {dignity.replace('_', ' ')}")
+    elif d_score < 0:
+        reasons.append(f"{PLANET_NAMES.get(lord_code, lord_code)} ({house_num}th lord) is debilitated — weakened")
+
+    # D1 lord placement quality
+    lord_planet = get_house_lord_planet(chart_data, house_num, "d1")
+    lord_house = lord_planet.get("house") if lord_planet else None
+    if lord_house in _GOOD_HOUSES:
+        score += 2
+        reasons.append(f"{PLANET_NAMES.get(lord_code, lord_code)} placed in house {lord_house} (beneficial)")
+    elif lord_house in _BAD_HOUSES:
+        score -= 1
+        reasons.append(f"{PLANET_NAMES.get(lord_code, lord_code)} placed in house {lord_house} (challenging)")
+
+    # House SAV
+    sav = get_sarvashtakavarga_points(chart_data, house_num)
+    if sav > 28:
+        score += 3
+        reasons.append(f"House {house_num} SAV {sav} — strong delivery capacity")
+    elif sav >= 25:
+        score += 1
+        reasons.append(f"House {house_num} SAV {sav} — moderate")
+    elif sav > 0 and sav < 22:
+        score -= 1
+        reasons.append(f"House {house_num} SAV {sav} — below average")
+
+    # D4 lord placement (same lord code, check in d4)
+    d4_lord = get_house_lord_planet(chart_data, house_num, "d4")
+    if d4_lord:
+        d4_house = d4_lord.get("house")
+        if d4_house in _GOOD_HOUSES:
+            score += 2
+            reasons.append(f"D4: {house_num}th lord in house {d4_house} — confirms {house_num}th house promise")
+        elif d4_house in _BAD_HOUSES:
+            score -= 1
+            reasons.append(f"D4: {house_num}th lord in house {d4_house} — D4 weakens promise")
+
+    return score, reasons
+
+
+def _detect_two_locations(question: str) -> list[str]:
+    """Return up to two location names found in the question text."""
+    lowered = question.lower()
+    found = []
+    for loc in sorted(_KNOWN_LOCATIONS, key=len, reverse=True):
+        if loc in lowered and loc not in found:
+            found.append(loc)
+            if len(found) == 2:
+                break
+    return found
+
+
+def build_location_verdict(question: str, chart_data: dict, jaimini_data: dict | None = None) -> dict:
+    """
+    When a property question names two countries/cities, score 4th house (homeland)
+    vs 12th house (foreign) axis strength and return an explicit location verdict.
+
+    Returns {} if fewer than two locations are detected in the question.
+    """
+    locations = _detect_two_locations(question)
+    if len(locations) < 2:
+        return {}
+
+    homeland_score, homeland_reasons = _score_house_axis(chart_data, 4)
+    foreign_score, foreign_reasons = _score_house_axis(chart_data, 12)
+
+    # Rahu pulls toward foreign, Ketu pulls toward homeland
+    rahu = get_planet(chart_data, "Ra", "d1")
+    ketu = get_planet(chart_data, "Ke", "d1")
+    rahu_house = rahu.get("house") if rahu else None
+    ketu_house = ketu.get("house") if ketu else None
+
+    if rahu_house in {1, 9, 12}:
+        foreign_score += 2
+        foreign_reasons.append(f"Rahu in house {rahu_house} — strong foreign pull")
+    elif rahu_house == 4:
+        homeland_score -= 1
+        foreign_score += 1
+        foreign_reasons.append("Rahu in 4th — foreign element invades homeland house")
+
+    if ketu_house == 12:
+        homeland_score += 2
+        homeland_reasons.append("Ketu in 12th — separating from foreign settlement, homeland favored")
+    elif ketu_house == 4:
+        foreign_score += 1
+        homeland_score -= 1
+        homeland_reasons.append("Ketu in 4th — some detachment from homeland anchor")
+
+    # Jaimini active Chara dasha house confirmation
+    if jaimini_data:
+        active_chara = jaimini_data.get("active_chara_dasha", {})
+        md_house = (active_chara.get("mahadasha") or {}).get("house_from_lagna")
+        ad_house = (active_chara.get("antardasha") or {}).get("house_from_lagna")
+        for h in (md_house, ad_house):
+            if h == 4:
+                homeland_score += 3
+                homeland_reasons.append(f"Jaimini Chara Dasha active in 4th house sign — homeland strongly activated")
+            elif h == 12:
+                foreign_score += 3
+                foreign_reasons.append(f"Jaimini Chara Dasha active in 12th house sign — foreign activation confirmed")
+            elif h == 9:
+                foreign_score += 1
+                foreign_reasons.append(f"Jaimini Chara in 9th house — long-distance/fortune angle active")
+
+    gap = homeland_score - foreign_score
+    if gap >= 4:
+        lean = "homeland"
+        confidence = "strong"
+    elif gap >= 2:
+        lean = "homeland"
+        confidence = "moderate"
+    elif gap <= -4:
+        lean = "foreign"
+        confidence = "strong"
+    elif gap <= -2:
+        lean = "foreign"
+        confidence = "moderate"
+    else:
+        lean = "balanced"
+        confidence = "low"
+
+    return {
+        "detected_locations": locations,
+        "homeland_score": homeland_score,
+        "foreign_score": foreign_score,
+        "verdict_lean": lean,
+        "confidence": confidence,
+        "homeland_reasons": homeland_reasons,
+        "foreign_reasons": foreign_reasons,
+        "note": (
+            "4th house = homeland/native land. 12th house = foreign/abroad. "
+            "Higher score indicates which axis the chart favors. "
+            "LLM must give an explicit location probability lean using these scores."
+        ),
+    }
 
 
 def classify_question(question):

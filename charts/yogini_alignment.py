@@ -70,7 +70,7 @@ def _lord_category_score(
             f"category house(s) {category_connected}."
         )
 
-    if category in {"career", "business"}:
+    if category in {"career", "job", "business"}:
         d10_house = _lord_d10_house(chart_data, lord_code)
         if d10_house and d10_house in category_houses:
             score += 10
