@@ -1,7 +1,10 @@
 import json
+from collections import defaultdict
 from typing import Any
 
 from .answer_schema import ANSWER_SCHEMA, REQUIRED_SECTIONS
+from chat.prediction_context import CATEGORY_RULES
+from astrology.calculations.varga import VARGA_PURPOSES
 
 
 SYSTEM_INSTRUCTIONS = """You are an astrology synthesis engine.
@@ -52,31 +55,86 @@ Do not give generic spiritual or motivational advice.
 Do not make absolute guarantees.
 Give a practical conclusion.
 Astrology is interpretive guidance, not professional, medical, legal, or financial advice.
+You MUST discuss every chart listed in required_divisional_charts using the triggered rules provided for that chart.
 """
 
 
-def _compact_rules(triggered_rules: list[dict[str, Any]], limit: int = 24) -> list[dict[str, Any]]:
+def _format_rule(rule: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "rule_id": rule.get("rule_id"),
+        "system": rule.get("system"),
+        "chart": rule.get("chart"),
+        "dasha": rule.get("dasha"),
+        "reason": rule.get("reason"),
+        "interpretation": rule.get("interpretation"),
+        "outcomes": rule.get("outcomes"),
+        "polarity": rule.get("polarity"),
+        "confidence": rule.get("confidence"),
+        "source_book": rule.get("source_book"),
+        "source_chapter": rule.get("source_chapter"),
+        "source_page": rule.get("source_page"),
+    }
+
+
+def _select_rules(
+    triggered_rules: list[dict[str, Any]],
+    category_charts: list[str],
+    per_chart_min: int = 4,
+    total_limit: int = 40,
+) -> list[dict[str, Any]]:
+    """Guarantee representation for every divisional chart in the category, then fill by weight."""
+    by_chart: dict[str, list] = defaultdict(list)
+    for rule in triggered_rules:
+        chart_key = (rule.get("chart") or "other").upper()
+        by_chart[chart_key].append(rule)
+
+    for chart_key in by_chart:
+        by_chart[chart_key].sort(key=lambda r: r.get("weight", 0), reverse=True)
+
+    selected: list[dict[str, Any]] = []
+    selected_ids: set[str] = set()
+
+    # Guaranteed slots for each divisional chart in the category (skip d1 — always implied)
+    priority_charts = [c for c in category_charts if c != "d1"]
+    for chart in priority_charts:
+        for rule in by_chart.get(chart.upper(), [])[:per_chart_min]:
+            rid = rule.get("rule_id", "")
+            if rid not in selected_ids:
+                selected.append(rule)
+                selected_ids.add(rid)
+
+    # Fill remaining slots with the highest-weight rules from any system
+    remaining = sorted(
+        [r for r in triggered_rules if r.get("rule_id", "") not in selected_ids],
+        key=lambda r: r.get("weight", 0),
+        reverse=True,
+    )
+    for rule in remaining:
+        if len(selected) >= total_limit:
+            break
+        rid = rule.get("rule_id", "")
+        if rid not in selected_ids:
+            selected.append(rule)
+            selected_ids.add(rid)
+
+    return [_format_rule(r) for r in selected]
+
+
+def _required_divisional_charts(category: str) -> list[dict[str, str]]:
+    """Return the non-D1 divisional charts required for this category, with their purpose."""
+    charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", [])
     return [
-        {
-            "rule_id": rule.get("rule_id"),
-            "system": rule.get("system"),
-            "chart": rule.get("chart"),
-            "dasha": rule.get("dasha"),
-            "reason": rule.get("reason"),
-            "interpretation": rule.get("interpretation"),
-            "outcomes": rule.get("outcomes"),
-            "polarity": rule.get("polarity"),
-            "confidence": rule.get("confidence"),
-            "source_book": rule.get("source_book"),
-            "source_chapter": rule.get("source_chapter"),
-            "source_page": rule.get("source_page"),
-        }
-        for rule in triggered_rules[:limit]
+        {"chart": c.upper(), "purpose": VARGA_PURPOSES.get(c, "")}
+        for c in charts
+        if c != "d1"
     ]
 
 
 def build_prompt_payload(evidence: dict[str, Any], rag_context: dict[str, Any] | None = None) -> dict[str, Any]:
     rag_context = rag_context or evidence.get("rag", {})
+    category = (evidence.get("question") or {}).get("category", "")
+    category_charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", ["d1"])
+
     return {
         "role": "astrology_synthesis_payload",
         "answer_schema": ANSWER_SCHEMA,
@@ -88,10 +146,11 @@ def build_prompt_payload(evidence: dict[str, Any], rag_context: dict[str, Any] |
             "must_state_confidence_reason": True,
         },
         "question": evidence.get("question", {}),
+        "required_divisional_charts": _required_divisional_charts(category),
         "summary_scores": evidence.get("summary_scores", {}),
         "evidence_ledger": evidence.get("evidence_ledger", []),
         "contradictions": evidence.get("contradictions", {}),
-        "triggered_rules": _compact_rules(evidence.get("triggered_rules", [])),
+        "triggered_rules": _select_rules(evidence.get("triggered_rules", []), category_charts),
         "system_evidence": {
             "parashari": evidence.get("parashari", {}),
             "parashari_vimshottari": evidence.get("parashari_vimshottari", {}),
@@ -99,8 +158,10 @@ def build_prompt_payload(evidence: dict[str, Any], rag_context: dict[str, Any] |
             "varga": {
                 "status": evidence.get("varga", {}).get("status"),
                 "score": evidence.get("varga", {}).get("score"),
-                "d9_findings": evidence.get("varga", {}).get("d9_findings", []),
-                "d10_findings": evidence.get("varga", {}).get("d10_findings", []),
+                "primary_chart": evidence.get("varga", {}).get("primary_chart"),
+                "secondary_chart": evidence.get("varga", {}).get("secondary_chart"),
+                "primary_findings": evidence.get("varga", {}).get("primary_findings", []),
+                "secondary_findings": evidence.get("varga", {}).get("secondary_findings", []),
                 "cross_chart_confirmations": evidence.get("varga", {}).get("cross_chart_confirmations", []),
             },
             "yogini": evidence.get("yogini", {}),

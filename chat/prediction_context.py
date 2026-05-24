@@ -174,14 +174,20 @@ CATEGORY_RULES = {
         "keywords": [
             "family",
             "parents",
+            "parent",
             "father",
             "mother",
+            "sibling",
+            "siblings",
+            "brother",
+            "sister",
             "lineage",
             "ancestry",
             "grandparents",
+            "relationship with",
         ],
-        "houses": [1, 4, 9, 12],
-        "divisional_charts": ["d1", "d12"],
+        "houses": [1, 3, 4, 9, 12],
+        "divisional_charts": ["d1", "d3", "d12"],
         "natural_karakas": ["Mo", "Su"],  # Moon=mother/family, Sun=father/lineage
     },
     "foreign_travel": {
@@ -680,6 +686,11 @@ _PAST_INTENT_PHRASES = frozenset({
     "why i lost", "what went wrong", "why did i fail", "was my",
     "what was my", "how did i", "what caused", "why did i",
     "how was that", "was that period", "was it good",
+    # Lookback / retrospective phrases
+    "look back", "looking back", "would have", "when did i", "when was i",
+    "in the past", "past years", "years ago", "years back",
+    "previously", "retrospect", "tell what time i would",
+    "what time i would", "when would i have", "when i would have",
 })
 
 
@@ -780,7 +791,39 @@ def detect_question_scope(question: str, target_date: date | None = None) -> dic
         return _scope("default_next_5_years", target_date, end, 60, False,
                       "Future question with no specific target date; scan the next 5 years.")
 
-    # Past or general intent: delegate to existing relative/year detection
+    # Past intent: detect "last N years" / "past N years" lookback patterns
+    if intent == "past":
+        lookback_match = re.search(r"\b(?:last|past)\s+(\d+)\s+years?\b", lowered)
+        if lookback_match:
+            n_years = int(lookback_match.group(1))
+            start = date(target_date.year - n_years, target_date.month, 1)
+            return _scope(
+                f"last {n_years} years",
+                start,
+                target_date,
+                n_years * 12,
+                False,
+                (
+                    f"Retrospective question: scan {start.isoformat()} to {target_date.isoformat()}. "
+                    "Use retrospective language — describe what the chart showed during those past periods. "
+                    "Identify which dasha periods were active and what they indicated for the topic."
+                ),
+            )
+        # Past intent without explicit year count → scan last 5 years
+        start = _add_months(target_date, -60)
+        return _scope(
+            "past_5_years",
+            start,
+            target_date,
+            60,
+            False,
+            (
+                f"Retrospective question: scan {start.isoformat()} to {target_date.isoformat()}. "
+                "Use retrospective language — describe what the chart showed in those past periods."
+            ),
+        )
+
+    # General intent: delegate to existing relative/year detection
     scope = _time_scope(question, target_date)
     scope["is_fixed"] = not scope.get("is_default", True)
     scope["temporal_intent"] = intent

@@ -13,7 +13,7 @@ from charts.remedies import remedies_for_dasha
 from charts.vedic_utils import natal_mutual_aspects as _natal_mutual_aspects
 
 
-ANSWER_CACHE_VERSION = "v23-no-gemstone-hallucination"
+ANSWER_CACHE_VERSION = "v30-d3-d7-d12-antidash-hallucination"
 RASHIFAL_CACHE_VERSION = "v1-rashifal-tier1-conjunction"
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,10 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "it with the recommended window — never as a recommendation itself.\n"
         "    A window's rank is determined solely by its composite_score. Higher score = higher rank. Period.\n\n"
         "  ### Jyotish Analysis — write EXACTLY this structure:\n"
-        "    Paragraph 1 (2-3 sentences): Direct verdict on the overall chart readiness for this topic.\n"
+        "    Paragraph 1: Open with ONE warm personal sentence using 'your chart', 'looking at your chart', "
+        "or 'in your case' that names the topic before any planet or dasha — "
+        "e.g. 'Looking at your chart, the question of marriage has a clear answer — and the timing is more "
+        "specific than you might expect.' Then 1-2 sentences giving the overall chart readiness verdict.\n"
         "    Best window ([Mahadasha lord]/[Antardasha lord]) — **[date range]**: One sentence on why "
         "this is the top window (its core strength). Take MD/AD names from windows[0].mahadasha_lord and antardasha_lord.\n"
         "    Secondary window ([Mahadasha lord]/[Antardasha lord]) — **[date range]**: One sentence on "
@@ -128,7 +131,11 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
 
         "IF is_fixed = true  (specific period — user named a date, month, year, or said 'now'/'currently'):\n"
         "  ### Jyotish Analysis — write EXACTLY this structure:\n"
-        "    Line 1 (bold): A human-language verdict phrase — NOT a label like 'Verdict: Yes'. Instead:\n"
+        "    First sentence (plain text, not bold): A warm personal opener using 'your chart', "
+        "'looking at your chart', or 'in your case' that names the topic — "
+        "e.g. 'Looking at your chart, the question of career growth right now has a clear answer.' "
+        "Do NOT open directly with the bold verdict line.\n"
+        "    Then on the next line (bold): A human-language verdict phrase — NOT a label like 'Verdict: Yes'. Instead:\n"
         "      • If chart clearly supports: **Clearly supported — [one-line reason]**\n"
         "      • If mixed but leaning yes: **Possible, though conditions must align — [one-line reason]**\n"
         "      • If not confirmed: **Possible, but not cleanly confirmed — [one-line reason]**\n"
@@ -146,7 +153,7 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "    Para 3 — Yogini: Active Yogini and sub-Yogini names, whether auspicious/challenging for this topic.\n"
         "    Para 4 — Divisional & Transit: Name the specific D-chart from question.primary_divisional_chart "
         "(D4/D9/D10 etc.) — never just 'D-chart'. State whether it confirms or denies, then transit quality.\n"
-        "    Close with one sentence on overall confidence level.\n\n"
+        "    Close with one sentence summarizing the combined evidence picture in natural prose.\n\n"
 
         "═══ MANDATORY SPECIFICITY ═══\n"
         "Naming a system without its active lords is a validation failure:\n"
@@ -154,6 +161,32 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "• Jaimini: NEVER 'Jaimini indicates'. ALWAYS 'In Capricorn Chara Dasha, Mercury as Amatyakaraka...'.\n"
         "• Yogini: NEVER 'Yogini shows mixed'. ALWAYS 'Pingala Yogini major / Bhramari sub-period shows...'.\n"
         "• D-charts: NEVER 'D10 is weak'. ALWAYS 'In D10, Mercury as 10th lord is in the 8th house, weakening...'.\n\n"
+
+        "⚠ ANTI-HALLUCINATION — DASHA LABELS ARE DATA, NOT INFERENCE:\n"
+        "The Mahadasha and Antardasha lord names for each timing window are PRE-COMPUTED in the evidence payload.\n"
+        "COPY them exactly from evidence_payload.transits.future_timing.windows[N].mahadasha_lord and .antardasha_lord.\n"
+        "NEVER substitute a different planet name because it 'fits the topic better' (e.g. do NOT write 'Sun/Rahu' "
+        "for a family question when windows[0].antardasha_lord = 'Me'). "
+        "If the window says Mercury Antardasha, write Mercury — even for family, health, or spiritual questions.\n"
+        "The same computed windows may appear across different question categories — this is correct behaviour. "
+        "Your job is to explain HOW the Mercury/Saturn/Rahu antardasha connects to THIS specific topic using the "
+        "house analysis and triggered rules, not to change the dasha label to match the topic.\n\n"
+
+
+        "═══ 4-SYSTEM CONFIDENCE — TONE CALIBRATION ═══\n"
+        "The payload includes confidence_summary with: confidence_label (High/Moderate-High/Moderate/Low/Very Low), "
+        "systems_confirmed_count (0–4), confirmed_systems, and not_confirmed_systems.\n"
+        "Use this to calibrate the certainty of your prose — do NOT write it as a literal line or label:\n"
+        "  • 4/4 systems confirmed → write with clear, warm confidence: 'your chart points strongly to...', "
+        "'the timing here is genuinely favorable'.\n"
+        "  • 3/4 → mostly confident but honest: 'the chart leans clearly toward...', "
+        "'three of the four timing layers align on this window'.\n"
+        "  • 2/4 → measured: 'the chart shows promise but not full alignment — proceed with awareness'.\n"
+        "  • 1/4 or 0/4 → honest and gentle: 'the chart does not strongly support this timing — "
+        "conditions need more preparation'.\n"
+        "When a system is in not_confirmed_systems, weave that limitation naturally into the relevant paragraph "
+        "of 'Why We Advise That' — do not ignore it, but do not expose the score either.\n"
+        "NEVER write 'Overall confidence:', 'confidence score:', or any internal label to the user.\n\n"
 
         "═══ NATAL MUTUAL ASPECTS ═══\n"
         "The payload includes natal_mutual_aspects — planet pairs in permanent mutual aspect in the natal chart.\n"
@@ -168,6 +201,13 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "ALWAYS write the full code: D4, D9, D10, D7, D2, D24, D12, D16, D30.\n"
         "Use evidence_payload.question.primary_divisional_chart to know which chart applies to this question.\n"
         "Use evidence_payload.question.all_divisional_charts if multiple charts are relevant — mention all of them by name.\n"
+        "⚠ PLACEMENT RULE — EVERY required divisional chart MUST appear BY NAME in Jyotish Analysis:\n"
+        "  After the timing windows (or after the verdict for fixed questions), write one sentence per required chart:\n"
+        "    'Your [D4/D2/D9/D10] ([chart name]) shows [specific finding from triggered_rules for that chart].'\n"
+        "  Use evidence_payload.triggered_rules — filter by chart field (e.g. chart='D4') to find the relevant rules.\n"
+        "  If triggered_rules has no entry for a required chart, write: '[DX] data is limited for this chart.'\n"
+        "  DO NOT defer all divisional chart discussion to Why We Advise That — the chart name must appear in "
+        "Jyotish Analysis first so the reader can see it without expanding the collapsed section.\n"
         "Reference table (what each chart signifies):\n"
         "  D4  (Chaturthamsha)      — property, home, land, fixed assets\n"
         "  D9  (Navamsha)           — marriage, dharma, character, long-term fortune\n"
@@ -233,8 +273,9 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "CHILDREN / BIRTH questions (category = children, keywords: child, pregnancy, baby, son, daughter, "
         "fertility, conception):\n"
         "  • Primary house: 5th (children/progeny). Secondary: 9th (blessings/fortune), 1st (body/vitality).\n"
-        "  • D7 (Saptamsha) is mandatory — state the 5th lord and Jupiter's placement in D7. "
-        "A favorable 5th house in D7 confirms conception timing.\n"
+        "  • D7 (Saptamsha) is mandatory — MUST appear by name in Jyotish Analysis. After the timing windows "
+        "write: 'Your D7 (Saptamsha) shows [specific finding from triggered_rules where chart=D7].' "
+        "State the 5th lord and Jupiter's placement in D7. A favorable 5th house in D7 confirms conception timing.\n"
         "  • Jupiter = natural karaka for children. ALWAYS mention Jupiter's D1 dignity and D7 house. "
         "A strong Jupiter in 5th, 9th, or 1st is the most auspicious indicator for childbirth.\n"
         "  • Putrakaraka in Jaimini (if present in jaimini payload) = child significator — name it.\n"
@@ -247,8 +288,12 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "investment, profit, inheritance):\n"
         "  • Primary house: 2nd (accumulated wealth/savings). Secondary: 11th (income/gains), "
         "9th (fortune/luck), 5th (speculation/investment).\n"
-        "  • D2 (Hora) is mandatory — a planet in the Sun's Hora = Pitrubhaga (paternal wealth), "
-        "Moon's Hora = Matribhaga (maternal wealth). State which lords fall where in D2.\n"
+        "  • D2 (Hora) is mandatory — MUST appear by name in Jyotish Analysis AND in Why We Advise That.\n"
+        "    In Jyotish Analysis: after the timing windows, write one sentence beginning with 'Your D2 (Hora)...' "
+        "that names what the D2 triggered rules show — e.g. which wealth lords are well/poorly placed, "
+        "or whether Jupiter is angular in D2. Use evidence_payload.triggered_rules where chart='D2'.\n"
+        "    In Why We Advise That Para 4 (Divisional): expand D2 findings with 2–3 specific observations.\n"
+        "    Sun's Hora = Pitrubhaga (paternal/self-earned wealth). Moon's Hora = Matribhaga (maternal/inherited wealth).\n"
         "  • Jupiter = wealth karaka. Venus = material prosperity. Check both from natural_karakas_assessment.\n"
         "  • Dhana yoga: 2nd lord and 11th lord in mutual conjunction, aspect, or exchange = strong wealth yoga. "
         "Name it explicitly if present.\n"
@@ -283,9 +328,13 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
 
         "FAMILY questions (category = family, keywords: family, parents, father, mother, siblings, lineage):\n"
         "  • Primary houses: 4th (mother/home/domestic peace), 9th (father/blessings/dharma), "
-        "2nd (family unit), 3rd (siblings).\n"
-        "  • D12 (Dwadashamsha) is mandatory for parent-related questions — in D12, 4th house = mother's "
-        "condition, 9th house = father's condition.\n"
+        "3rd (siblings/communication), 2nd (family unit).\n"
+        "  • D12 (Dwadashamsha) is mandatory for parent-related questions — MUST appear by name in Jyotish Analysis. "
+        "After timing windows write: 'Your D12 (Dwadashamsha) shows [specific finding from triggered_rules where chart=D12].' "
+        "In D12: 4th house = mother's condition, 9th house = father's condition.\n"
+        "  • D3 (Drekkana) is mandatory for sibling-related questions — MUST appear in Jyotish Analysis. "
+        "Write: 'Your D3 (Drekkana) shows [finding from triggered_rules where chart=D3].' "
+        "In D3: 3rd lord strength = sibling vitality and cooperation.\n"
         "  • Moon = mother karaka (4th house). Sun = father karaka (9th house). ALWAYS mention both, "
         "their D1 dignity, and their D12 placement from natural_karakas_assessment.\n"
         "  • For domestic harmony: 2nd and 4th lords both strong = family unity and happiness.\n"
@@ -341,7 +390,9 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "  • Mars is the natural karaka (naisargika karaka) for land and real estate — ALWAYS mention Mars: "
         "its D1 house, dignity, and D4 placement. A strong Mars speeds acquisition; a debilitated or afflicted "
         "Mars brings delays, disputes, or structural problems.\n"
-        "  • D4 (Chaturthamsha) is the MANDATORY divisional chart for property — never omit it.\n"
+        "  • D4 (Chaturthamsha) is the MANDATORY divisional chart for property — MUST appear by name in "
+        "Jyotish Analysis. After the timing windows write: 'Your D4 (Chaturthamsha) shows [specific finding].' "
+        "Use triggered_rules with chart='D4' for the finding. Never omit D4.\n"
         "  • 6th house = loan eligibility, EMI burden, co-borrower disputes. If the question mentions mortgage, "
         "loan, or EMI, explicitly discuss the 6th lord and 6th house SAV.\n"
         "  • 2nd house (savings/assets) and 11th house (gains) = funding sources. "
@@ -416,6 +467,7 @@ def _compact_live_evidence(evidence, answer_language="English", chart_data=None)
         "evidence_ledger": evidence.get("evidence_ledger", []),
         "contradictions": evidence.get("contradictions", {}),
         "triggered_rules": synthesis_payload.get("triggered_rules", evidence.get("triggered_rules", [])[:24]),
+        "required_divisional_charts": synthesis_payload.get("required_divisional_charts", []),
         "parashari": system_evidence.get("parashari", evidence.get("parashari", {})),
         "parashari_vimshottari": system_evidence.get(
             "parashari_vimshottari",
@@ -427,6 +479,7 @@ def _compact_live_evidence(evidence, answer_language="English", chart_data=None)
         "transits": _compact_transits(system_evidence.get("transits", evidence.get("transits", {}))),
         "remedy_context": remedies_for_dasha(mahadasha_lord, antardasha_lord, answer_language),
         "natal_mutual_aspects": _natal_mutual_aspects(chart_data or {}),
+        "confidence_summary": evidence.get("confidence_summary", {}),
         "natural_karakas_assessment": evidence.get("natural_karakas_assessment", {}),
         "location_verdict": evidence.get("location_verdict", {}),
         "rag_context_request": evidence.get("rag", {}),
@@ -807,7 +860,7 @@ def _generate_rashifal_answer(question, chart_data, horizon, depth_level, answer
     )
     cached = cache.get(cache_key)
     if cached:
-        cached["answer"] = cached["answer"] + "\n\n[Reused cached answer.]"
+        cached["cache_hit"] = True
         return cached
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -878,7 +931,7 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
     cache_key = _cache_key(payload, model, settings.OPENAI_VECTOR_STORE_ID)
     cached = cache.get(cache_key)
     if cached:
-        cached["answer"] = cached["answer"] + "\n\n[Reused cached answer.]"
+        cached["cache_hit"] = True
         return cached
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)

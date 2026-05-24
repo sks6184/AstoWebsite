@@ -172,7 +172,7 @@ class AstrologyEngineTests(TestCase):
         answer = "\n".join(
             [
                 "### Jyotish Analysis",
-                f"Career improvement is possible with moderate confidence. "
+                f"Career improvement is possible. "
                 f"The chart shows mixed support — some career activation is indicated, but delay and risk are present. "
                 f"The workable timing should be watched around **May 2026 to June 2026**, not treated as a guarantee. "
                 f"D10 (Dashamsha) is central for this career question.",
@@ -182,7 +182,7 @@ class AstrologyEngineTests(TestCase):
                 f"Jaimini/Chara: {ak_name} as Atmakaraka and {amk_name} as Amatyakaraka are assessed through "
                 f"Chara Dasha and Arudha factors. "
                 f"Yogini: The active {yogini_name} Yogini major period with {sub_yogini} sub-period is considered. "
-                f"D10 placements and Sarvashtakavarga support the career assessment. Confidence is medium.",
+                f"D10 placements and Sarvashtakavarga support the career assessment.",
                 "### Remedy",
                 "- Beej Mantra guidance is included from deterministic remedy context.",
                 "### Practical Guidance",

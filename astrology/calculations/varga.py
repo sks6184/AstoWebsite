@@ -3,14 +3,12 @@ from typing import Any
 from charts.vedic_utils import PLANET_NAMES, SIGN_LORDS, SIGN_NAMES, get_planet_dignity
 
 
-CAREER_HOUSES = {2, 6, 10, 11}
-BUSINESS_HOUSES = {2, 7, 10, 11}
 SUPPORTED_VARGAS = ["d1", "d2", "d3", "d4", "d7", "d9", "d10", "d12", "d16", "d20", "d24", "d27", "d30", "d40", "d45", "d60"]
 VARGA_PURPOSES = {
     "d1": "Basic chart and overall life context.",
     "d2": "Wealth, family resources, and speech.",
     "d3": "Coborns, courage, effort, communication, and vitality of initiative.",
-    "d4": "Home, immovable property, comforts, and destiny related to residence.",
+    "d4": "Home, immovable property, comforts, destiny related to residence, and foreign settlement.",
     "d7": "Children, grandchildren, creativity, and fulfilment.",
     "d9": "Strength confirmation, spouse, dharma, marriage, and partnership.",
     "d10": "Profession, status, career rise/fall, promotion, demotion, and work.",
@@ -134,9 +132,10 @@ def build_varga_facts(
     chart_data: dict[str, Any],
     category: str = "general",
     chart_keys: list[str] | None = None,
+    category_houses: list[int] | None = None,
 ) -> dict[str, Any]:
     chart_keys = chart_keys or SUPPORTED_VARGAS
-    relevant_houses = sorted(BUSINESS_HOUSES if category == "business" else CAREER_HOUSES)
+    relevant_houses = sorted(category_houses or [])
     charts = {}
 
     for chart_key in chart_keys:
@@ -182,8 +181,13 @@ def build_varga_facts(
     }
 
 
-def build_chart_facts(chart_data: dict[str, Any], category: str = "general") -> dict[str, Any]:
-    varga_facts = build_varga_facts(chart_data, category)
+def build_chart_facts(
+    chart_data: dict[str, Any],
+    category: str = "general",
+    category_houses: list[int] | None = None,
+    chart_keys: list[str] | None = None,
+) -> dict[str, Any]:
+    varga_facts = build_varga_facts(chart_data, category, chart_keys, category_houses)
     return {
         "system": chart_data.get("system"),
         "ayanamsa": chart_data.get("ayanamsa"),
@@ -242,42 +246,49 @@ def _lord_finding(chart_key: str, house_label: str, placement: dict[str, Any], c
     }
 
 
-def build_varga_assessment(chart_facts: dict[str, Any], category: str = "general") -> dict[str, Any]:
+def build_varga_assessment(
+    chart_facts: dict[str, Any],
+    category: str = "general",
+    primary_chart: str = "d9",
+    secondary_chart: str | None = "d10",
+) -> dict[str, Any]:
     facts = chart_facts.get("varga", {})
     category_houses = facts.get("relevant_houses", [2, 6, 10, 11])
-    d9_findings = []
-    d10_findings = []
+    primary_findings = []
+    secondary_findings = []
     cross_chart_confirmations = []
 
-    d9 = facts.get("charts", {}).get("d9", {})
-    d10 = facts.get("charts", {}).get("d10", {})
+    primary = facts.get("charts", {}).get(primary_chart, {})
+    secondary = facts.get("charts", {}).get(secondary_chart, {}) if secondary_chart else {}
 
     for house_number in category_houses:
         house_label = f"{house_number}th lord"
-        d9_placement = d9.get("key_lord_placements", {}).get(f"{house_number}_lord", {})
-        d10_placement = d10.get("key_lord_placements", {}).get(f"{house_number}_lord", {})
-        d9_finding = _lord_finding("d9", house_label, d9_placement, category_houses)
-        d10_finding = _lord_finding("d10", house_label, d10_placement, category_houses)
-        if d9_finding:
-            d9_findings.append(d9_finding)
-        if d10_finding:
-            d10_findings.append(d10_finding)
-        if d9_finding and d10_finding and d9_finding["score"] > 0 and d10_finding["score"] > 0:
-            cross_chart_confirmations.append(
-                {
-                    "factor": house_label,
-                    "finding": f"D9 and D10 both support the {house_label}.",
-                    "impact": "Divisional confirmation improves confidence.",
-                    "score": min(d9_finding["score"] + d10_finding["score"], 10),
-                }
-            )
+        primary_placement = primary.get("key_lord_placements", {}).get(f"{house_number}_lord", {})
+        primary_finding = _lord_finding(primary_chart, house_label, primary_placement, category_houses)
+        if primary_finding:
+            primary_findings.append(primary_finding)
+
+        if secondary:
+            secondary_placement = secondary.get("key_lord_placements", {}).get(f"{house_number}_lord", {})
+            secondary_finding = _lord_finding(secondary_chart, house_label, secondary_placement, category_houses)
+            if secondary_finding:
+                secondary_findings.append(secondary_finding)
+            if primary_finding and secondary_finding and primary_finding["score"] > 0 and secondary_finding["score"] > 0:
+                cross_chart_confirmations.append(
+                    {
+                        "factor": house_label,
+                        "finding": f"{primary_chart.upper()} and {secondary_chart.upper()} both support the {house_label}.",
+                        "impact": "Divisional confirmation improves confidence.",
+                        "score": min(primary_finding["score"] + secondary_finding["score"], 10),
+                    }
+                )
 
     score = min(
         100,
         max(
             0,
-            sum(item["score"] for item in d9_findings)
-            + sum(item["score"] for item in d10_findings)
+            sum(item["score"] for item in primary_findings)
+            + sum(item["score"] for item in secondary_findings)
             + sum(item["score"] for item in cross_chart_confirmations),
         )
         * 4,
@@ -285,8 +296,10 @@ def build_varga_assessment(chart_facts: dict[str, Any], category: str = "general
     return {
         "system": "Varga / Divisional",
         "category": category,
-        "d9_findings": d9_findings,
-        "d10_findings": d10_findings,
+        "primary_chart": primary_chart.upper(),
+        "secondary_chart": secondary_chart.upper() if secondary_chart else None,
+        "primary_findings": primary_findings,
+        "secondary_findings": secondary_findings,
         "cross_chart_confirmations": cross_chart_confirmations,
         "score": score,
         "status": "supports" if score >= 60 else "mixed" if score else "not_confirmed",

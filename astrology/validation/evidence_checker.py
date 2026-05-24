@@ -1,3 +1,6 @@
+from chat.prediction_context import CATEGORY_RULES
+
+
 _RELOCATION_QUESTION_MARKERS = frozenset({
     "return to", "return back", "return home", "go back", "go home", "move back",
     "come back", "coming back", "homeland", "hometown", "native place", "native country",
@@ -10,24 +13,84 @@ _PERMANENT_MARKERS = frozenset({
     "permanently settle", "never come back", "settle permanently", "settle for good",
 })
 
+# Terms the LLM might use to reference each divisional chart
+_CHART_MENTION_ALIASES: dict[str, list[str]] = {
+    "d1":  ["d1", "lagna chart", "birth chart", "rashi chart"],
+    "d2":  ["d2", "hora"],
+    "d3":  ["d3", "drekkana"],
+    "d4":  ["d4", "chaturthamsha"],
+    "d7":  ["d7", "saptamsha"],
+    "d9":  ["d9", "navamsha"],
+    "d10": ["d10", "dashamsha"],
+    "d12": ["d12", "dwadashamsha"],
+    "d16": ["d16", "shodashamsha"],
+    "d20": ["d20"],
+    "d24": ["d24", "siddhamsha"],
+    "d27": ["d27"],
+    "d30": ["d30", "trimsamsha"],
+    "d40": ["d40"],
+    "d45": ["d45"],
+    "d60": ["d60", "shashtiamsha"],
+}
+
 
 def _question_text(evidence: dict) -> str:
     return (evidence.get("question") or {}).get("text", "").lower()
 
 
+def _charts_with_triggered_rules(evidence: dict) -> set[str]:
+    """Return lowercase chart keys that have at least one triggered rule in the evidence."""
+    charts = set()
+    for rule in evidence.get("triggered_rules", []):
+        chart = (rule.get("chart") or "").lower()
+        if chart:
+            charts.add(chart)
+    return charts
+
+
 def check_evidence(answer: str, evidence: dict) -> list[str]:
     issues = []
     lowered = answer.lower()
-    score_words = ["score", "confidence", "medium", "high", "low"]
+    score_words = [
+        "score", "confidence", "medium", "high", "low",
+        "strong", "strongly", "clearly", "moderate", "weak", "limited",
+        "favorable", "unfavorable", "mixed", "partial", "uncertain",
+        "supported", "confirmed", "alignment", "leans",
+    ]
 
     if not any(word in lowered for word in score_words):
-        issues.append("Answer does not discuss scores or confidence.")
-    if evidence.get("question", {}).get("category") in {"career", "job"} and "d10" not in lowered:
-        issues.append("Career/job answer does not mention D10 evidence.")
+        issues.append("Answer does not discuss the strength or quality of astrological indicators.")
+
+    # ── Auto-validate every non-D1 divisional chart required for this category ──
+    category = (evidence.get("question") or {}).get("category", "")
+    category_charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", [])
+    triggered_charts = _charts_with_triggered_rules(evidence)
+
+    for chart in category_charts:
+        if chart == "d1":
+            continue  # D1 is always implied; skip
+        aliases = _CHART_MENTION_ALIASES.get(chart, [chart])
+        if any(alias in lowered for alias in aliases):
+            continue  # chart is already mentioned — pass
+        if chart in triggered_charts:
+            # Rules fired for this chart but the answer doesn't mention it — hard failure
+            issues.append(
+                f"Answer does not mention {chart.upper()} chart evidence — "
+                f"it is a required divisional chart for this {category} question and rules were triggered."
+            )
+        else:
+            # No rules fired but chart is still required for this category — soft failure
+            issues.append(
+                f"Answer does not mention {chart.upper()} ({_CHART_MENTION_ALIASES.get(chart, [chart])[0]}) — "
+                f"it is a required divisional chart for {category} questions. "
+                f"If data is unavailable, state that explicitly."
+            )
+
     if evidence.get("parashari_vimshottari", {}).get("current_mahadasha") and not all(
         word in lowered for word in ["mahadasha", "antardasha"]
     ):
         issues.append("Answer does not name Vimshottari Mahadasha and Antardasha evidence.")
+
     # Use data-presence checks — calculation_status is stripped from the compact evidence payload
     windows = (evidence.get("transits") or {}).get("future_timing", {}).get("windows", [])
     jaimini_present = (
@@ -48,19 +111,22 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
         issues.append("Answer mentions Jaimini but not specific Jaimini factors (Chara sign, Atmakaraka, etc.).")
     if yogini_present and "yogini" not in lowered:
         issues.append("Answer ignores available Yogini data — must name the active Yogini and sub-Yogini.")
+
     remedy_context = evidence.get("remedy_context", {})
     if remedy_context.get("remedies"):
         if "no deterministic remedy was calculated" in lowered:
             issues.append("Answer says no remedy was calculated even though deterministic remedy_context is present.")
         if "beej" not in lowered or "mantra" not in lowered:
             issues.append("Remedy section does not include the deterministic Beej mantra guidance.")
+
     timing_question = any(
-        phrase in evidence.get("question", {}).get("text", "").lower()
+        phrase in (evidence.get("question") or {}).get("text", "").lower()
         for phrase in ["when", "promotion", "promoted", "job change", "job switch", "switch job"]
     )
     if timing_question and evidence.get("transits", {}).get("future_timing", {}).get("scan_months") == 60:
         if "**" not in answer:
             issues.append("Timing answer should bold important timing windows.")
+
     if "dasha" not in lowered:
         issues.append("Answer does not mention dasha timing.")
 
@@ -69,7 +135,7 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
     is_relocation = any(marker in q_text for marker in _RELOCATION_QUESTION_MARKERS)
     is_permanent = any(marker in q_text for marker in _PERMANENT_MARKERS)
 
-    if is_relocation or evidence.get("question", {}).get("category") == "foreign_travel":
+    if is_relocation or category == "foreign_travel":
         if not any(h in lowered for h in ["4th house", "4th lord", "fourth house", "fourth lord"]):
             issues.append(
                 "Relocation/return answer must discuss the 4th house (homeland/roots) — it is missing."
