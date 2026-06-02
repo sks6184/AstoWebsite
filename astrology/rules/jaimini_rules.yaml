@@ -7,35 +7,32 @@
     value: supports
   reason: Jaimini confirmation supports the career question.
   interpretation: Jaimini agreement raises confidence when karakas and Chara Dasha repeat the same career theme.
-  outcomes:
-    authority_score: 3
-    promotion_score: 2
-    job_change_score: 1
-  weight: 7
-  polarity: positive
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
-  source_book: ""
-  source_chapter: ""
-  source_page: ""
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Predictive Techniques"
+  source_page: "pp. 49-53"
 
 - rule_id: JAIMINI_CAREER_002
   system: Jaimini
-  category: career
+  category: [career, job]
   condition:
-    path: jaimini.karakas.amatyakaraka.house
-    operator: in
-    value: [2, 6, 10, 11]
-  reason: Amatyakaraka is connected to career/income houses.
-  interpretation: Amatyakaraka placement in career houses supports professional identity and work direction.
+    path: jaimini.amatyakaraka_factors.placement_from_d1_lagna.supportive_for_smoother_career
+    operator: equals
+    value: true
+  reason: Amatyakaraka is in a kendra, trikona, or eleventh house from D1 Lagna.
+  interpretation: Chapter 13 treats this placement as support for a generally smoother professional path, while the level of rise still depends on other factors.
   outcomes:
     authority_score: 2
     promotion_score: 2
   weight: 6
   polarity: positive
   confidence: medium
-  source_book: ""
-  source_chapter: ""
-  source_page: ""
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 89-90"
 
 - rule_id: JAIMINI_MIXED_001
   system: Jaimini
@@ -46,15 +43,13 @@
     value: mixed
   reason: Jaimini gives mixed confirmation.
   interpretation: Mixed Jaimini confirmation reduces certainty and should be stated in the final answer.
-  outcomes:
-    delay_score: 2
-    risk_score: 1
-  weight: 4
+  outcomes: {}
+  weight: 0
   polarity: mixed
   confidence: medium
-  source_book: ""
-  source_chapter: ""
-  source_page: ""
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Predictive Techniques"
+  source_page: "pp. 49-53"
 
 - rule_id: JAIMINI_CAREER_AK_001
   system: Jaimini
@@ -65,25 +60,23 @@
     value: [2, 6, 10, 11]
   reason: Atmakaraka is connected to career/income houses.
   interpretation: Atmakaraka placement in career houses can connect personal direction with professional results.
-  outcomes:
-    authority_score: 2
-    promotion_score: 1
-  weight: 5
-  polarity: positive
-  confidence: medium
-  source_book: ""
-  source_chapter: ""
-  source_page: ""
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Predictive Techniques / The Dasha of the Atmakaraka"
+  source_page: "pp. 51, 105-115"
 
 - rule_id: JAIMINI_BUSINESS_001
   system: Jaimini
   category: business
   condition:
-    path: jaimini.karakas.amatyakaraka.house
-    operator: in
-    value: [2, 7, 10, 11]
-  reason: Amatyakaraka connects to business houses.
-  interpretation: Amatyakaraka support to trade, profession, or gains houses can support business activity.
+    path: jaimini.amatyakaraka_factors.placement_from_d1_lagna.supportive_for_smoother_career
+    operator: equals
+    value: true
+  reason: Amatyakaraka is in a kendra, trikona, or eleventh house from D1 Lagna.
+  interpretation: Chapter 13 treats supportive Amatyakaraka placement as professional strength. For business questions it is supporting evidence only and must be confirmed through trade houses, D10, dashas, and transits.
   outcomes:
     business_success_score: 2
     market_visibility_score: 2
@@ -91,9 +84,9 @@
   weight: 6
   polarity: positive
   confidence: medium
-  source_book: ""
-  source_chapter: ""
-  source_page: ""
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 89-90"
 
 - rule_id: JAIMINI_ARUDHA_CAREER_001
   system: Jaimini
@@ -104,16 +97,13 @@
     value: true
   reason: The 10th from Arudha Lagna connects to the career category.
   interpretation: The 10th from Arudha Lagna supports public/professional visibility when it connects to relevant career houses.
-  outcomes:
-    authority_score: 3
-    promotion_score: 2
-    income_growth_score: 1
-  weight: 7
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Predictive Techniques"
-  source_page: ""
+  source_page: "pp. 46-47"
 
 - rule_id: JAIMINI_ARUDHA_KARAKA_INFLUENCE_001
   system: Jaimini
@@ -124,35 +114,30 @@
     value: [Atmakaraka, Amatyakaraka]
   reason: Atmakaraka or Amatyakaraka influences Arudha Lagna or the 10th from Arudha.
   interpretation: Career karaka influence on Arudha factors strengthens visible professional outcomes.
-  outcomes:
-    authority_score: 3
-    promotion_score: 2
-  weight: 7
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Amatyakaraka"
-  source_page: ""
+  source_page: "pp. 46-49"
 
 - rule_id: JAIMINI_RAJA_YOGA_001
   system: Jaimini
   category: career
   condition:
-    path: jaimini.jaimini_yogas.type
-    operator: equals
-    value: raja_yoga
-  reason: Jaimini rajayoga is present through karaka association or rashi aspect.
-  interpretation: Jaimini rajayogas can support position, recognition, and rise when dasha activates them.
-  outcomes:
-    authority_score: 3
-    promotion_score: 2
-    income_growth_score: 1
-  weight: 6
-  polarity: positive
+    path: jaimini.rajayoga_factors.d1_pair_count
+    operator: gte
+    value: 1
+  reason: One or more starter Jaimini Rajayogas are present in D1.
+  interpretation: Chapter 14 treats D1 Rajayogas as a promise of possible rise. Navamsha filtration and timing must confirm whether the promise becomes effective.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
-  source_chapter: "Yogas / Rajyogas"
-  source_page: ""
+  source_chapter: "Rajayogas - Position Givers"
+  source_page: "pp. 96-97"
 
 - rule_id: JAIMINI_AMK_FROM_AK_001
   system: Jaimini
@@ -172,7 +157,7 @@
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Yogas"
-  source_page: ""
+  source_page: "p. 48"
 
 - rule_id: JAIMINI_KARAKAMSHA_AVAILABLE_001
   system: Jaimini
@@ -183,14 +168,13 @@
     value: true
   reason: Karakamsha is calculated from the Atmakaraka's Navamsha sign.
   interpretation: Karakamsha is available as a Jaimini reference point and should be used for deeper rules later.
-  outcomes:
-    delay_score: 0
-  weight: 1
-  polarity: positive
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: high
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Distinctive Features"
-  source_page: ""
+  source_page: "p. 49 checklist"
 
 - rule_id: JAIMINI_BUSINESS_ARUDHA_001
   system: Jaimini
@@ -201,26 +185,23 @@
     value: [Atmakaraka, Amatyakaraka]
   reason: Career karakas influence Arudha factors for business visibility.
   interpretation: Atmakaraka or Amatyakaraka influence on Arudha factors can support public visibility and client-facing business results.
-  outcomes:
-    business_success_score: 2
-    market_visibility_score: 3
-    long_term_sustainability_score: 1
-  weight: 7
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Amatyakaraka"
-  source_page: ""
+  source_page: "pp. 46-49"
 
 - rule_id: JAIMINI_NAVAMSHA_RAJA_YOGA_001
   system: Jaimini
   category: career
   condition:
-    path: jaimini.navamsha_jaimini_yogas.type
-    operator: equals
-    value: navamsha_raja_yoga_confirmation
-  reason: Jaimini rajayoga repeats in Navamsha.
-  interpretation: Navamsha confirmation helps decide which Jaimini rajayogas survive and remain effective for rise or position.
+    path: jaimini.rajayoga_factors.surviving_pair_count
+    operator: gte
+    value: 1
+  reason: One or more D1 Jaimini Rajayogas survive Navamsha filtration.
+  interpretation: Chapter 14 treats Navamsha as the crucial filter showing which Rajayogas remain effective for professional rise, authority, and recognition.
   outcomes:
     authority_score: 3
     promotion_score: 2
@@ -229,8 +210,28 @@
   polarity: positive
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
-  source_chapter: "Yogas / Rajyogas"
-  source_page: "pp. 48, 96-97"
+  source_chapter: "Rajayogas - Position Givers"
+  source_page: "pp. 96-104"
+
+- rule_id: JAIMINI_RAJA_YOGA_CHARA_TENTH_FOCUS_001
+  system: Jaimini
+  category: career
+  condition:
+    path: jaimini.rajayoga_factors.timing.active
+    operator: equals
+    value: true
+  reason: Surviving Navamsha Rajayoga planets focus the tenth house from an active Chara Dasha sign.
+  interpretation: Chapter 14 uses the active Chara period and subperiod to time when surviving Rajayogas can support professional rise, authority, or recognition. Vimshottari and the wider chart must still agree.
+  outcomes:
+    authority_score: 2
+    promotion_score: 2
+    income_growth_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Rajayogas - Position Givers"
+  source_page: "pp. 101-103"
 
 - rule_id: JAIMINI_AK_DASHA_CAUTION_001
   system: Jaimini
@@ -240,7 +241,7 @@
     operator: equals
     value: true
   reason: Current Chara Dasha is related to Atmakaraka.
-  interpretation: The book gives caution for dasha periods of Atmakaraka or signs aspected by Atmakaraka; final answers should not overstate ease without support from other systems.
+  interpretation: Chapter 15 treats Chara periods containing or aspected by Atmakaraka as significant, but rejects automatic predictions of fall. Final answers should not overstate ease or difficulty without support from other systems.
   outcomes:
     risk_score: 2
     delay_score: 2
@@ -249,25 +250,136 @@
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "The Dasha of the Atmakaraka"
-  source_page: "pp. 105, 120"
+  source_page: "pp. 105-115, 120-121"
+
+- rule_id: JAIMINI_AK_TENTH_FROM_CHARA_CONTEXT_001
+  system: Jaimini
+  category: general
+  condition:
+    path: jaimini.atmakaraka_dasha_caution.tenth_house_context_active
+    operator: equals
+    value: true
+  reason: Atmakaraka is in the tenth house from an active Chara period sign.
+  interpretation: Chapter 15 treats the rashi period from which Atmakaraka falls in the tenth house as significant. It is context for deeper judgment and does not automatically indicate rise or fall.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "The Dasha of the Atmakaraka"
+  source_page: "pp. 108-110"
+
+- rule_id: JAIMINI_AK_SAGITTARIUS_REFERENCE_001
+  system: Jaimini
+  category: general
+  condition:
+    path: jaimini.atmakaraka_dasha_caution.sagittarius_reference_active
+    operator: equals
+    value: true
+  reason: Atmakaraka or Karakamsha is in Sagittarius.
+  interpretation: Chapter 15 discusses Sagittarius references but explicitly warns against treating them as automatic indicators of fall or a specific harmful event.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "The Dasha of the Atmakaraka"
+  source_page: "pp. 114-115"
 
 - rule_id: JAIMINI_AMK_KEY_PERSONS_001
   system: Jaimini
-  category: career
+  category: [career, job, business]
   condition:
-    path: jaimini.karakas.amatyakaraka.code
-    operator: exists
+    path: jaimini.amatyakaraka_factors.important_person_scope.available
+    operator: equals
     value: true
   reason: Amatyakaraka is available as the key career/status karaka.
   interpretation: The book emphasizes Amatyakaraka as a key karaka for important persons and status-oriented predictions.
-  outcomes:
-    authority_score: 1
-  weight: 3
-  polarity: positive
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Amatyakaraka or Important Persons"
   source_page: "pp. 83-84"
+
+- rule_id: JAIMINI_AMK_CHARA_TIMING_CAREER_001
+  system: Jaimini
+  category: [career, job]
+  condition:
+    path: jaimini.amatyakaraka_factors.timing.support_count
+    operator: gte
+    value: 1
+  reason: Active Chara Dasha places Amatyakaraka in the running sign or in the tenth or eleventh from it.
+  interpretation: Chapter 13 treats this as a favourable professional-timing clue when Vimshottari and the wider chart agree.
+  outcomes:
+    authority_score: 2
+    promotion_score: 2
+    job_change_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 91, 95"
+
+- rule_id: JAIMINI_AMK_CHARA_TIMING_BUSINESS_001
+  system: Jaimini
+  category: business
+  condition:
+    path: jaimini.amatyakaraka_factors.timing.support_count
+    operator: gte
+    value: 1
+  reason: Active Chara Dasha places Amatyakaraka in the running sign or in the tenth or eleventh from it.
+  interpretation: Chapter 13 treats this as a favourable professional-timing clue. For business, confirm it through trade houses, D10, Vimshottari, Yogini, and transits.
+  outcomes:
+    business_success_score: 2
+    market_visibility_score: 1
+    long_term_sustainability_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 91-95"
+
+- rule_id: JAIMINI_AMK_PRESSURE_CAREER_001
+  system: Jaimini
+  category: [career, job]
+  condition:
+    path: jaimini.amatyakaraka_factors.caution.active
+    operator: equals
+    value: true
+  reason: Amatyakaraka is under professional-pressure conditions.
+  interpretation: Difficult placement or malefic influence on Amatyakaraka can show friction, controversy, or image risk. It does not independently justify a prediction of failure or loss of position.
+  outcomes:
+    risk_score: 2
+    delay_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 89-94"
+
+- rule_id: JAIMINI_AMK_PRESSURE_BUSINESS_001
+  system: Jaimini
+  category: business
+  condition:
+    path: jaimini.amatyakaraka_factors.caution.active
+    operator: equals
+    value: true
+  reason: Amatyakaraka is under professional-pressure conditions.
+  interpretation: Difficult placement or malefic influence on Amatyakaraka can show business friction or image risk. It does not independently justify a prediction of business failure.
+  outcomes:
+    financial_risk_score: 1
+    execution_pressure_score: 2
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Amatyakaraka or Important Persons"
+  source_page: "pp. 89-94"
 
 - rule_id: JAIMINI_MOON_VENUS_RAJA_YOGA_001
   system: Jaimini
@@ -301,13 +413,10 @@
       - Putrakaraka-Darakaraka
       - fifth lord-Darakaraka
   reason: One of the book-listed Jaimini rajayoga pairs is present.
-  interpretation: The Jaimini source lists AK, AmK, PK, DK, and the fifth lord combinations as Rajayoga factors; when one is present, career rise must be checked against dasha and other systems.
-  outcomes:
-    authority_score: 2
-    promotion_score: 2
-    income_growth_score: 1
-  weight: 6
-  polarity: positive
+  interpretation: The Jaimini source lists AK, AmK, PK, DK, and the fifth lord combinations as Rajayoga promises. Chapter 14 requires Navamsha filtration before scoring career rise.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Yogas"
@@ -360,7 +469,7 @@
     operator: equals
     value: true
   reason: Sagittarius Chara Dasha or subperiod is active.
-  interpretation: The source examples flag Sagittarius dasha as needing careful judgment; final synthesis should verify the timing through other systems before making a strong claim.
+  interpretation: Chapter 16 treats Sagittarius periods as caution markers that can accompany rise as well as difficulty. They do not justify an automatic event prediction; final synthesis must verify natal promise and other systems.
   outcomes:
     delay_score: 1
     risk_score: 1
@@ -368,8 +477,83 @@
   polarity: mixed
   confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
-  source_chapter: "Illustrated Chara Dasha Examples"
-  source_page: "p. 116"
+  source_chapter: "Be Careful in Sagittarius Dasha"
+  source_page: "pp. 116-123"
+
+- rule_id: JAIMINI_CHARA_SUBPERIOD_SIXTH_EIGHTH_CAUTION_001
+  system: Jaimini
+  category: general
+  condition:
+    path: jaimini.sagittarius_dasha_caution.sixth_or_eighth_subperiod_from_major.active
+    operator: equals
+    value: true
+  reason: Active Chara subperiod is sixth or eighth from the major-period sign.
+  interpretation: Chapter 16 advises greater care when the Chara subperiod is sixth or eighth from the major sign. Treat this as a timing-pressure modifier, not an automatic event prediction.
+  outcomes:
+    delay_score: 1
+    risk_score: 2
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Be Careful in Sagittarius Dasha"
+  source_page: "p. 122"
+
+- rule_id: JAIMINI_CHARA_SUBPERIOD_SIXTH_EIGHTH_AK_ASPECT_CAUTION_001
+  system: Jaimini
+  category: general
+  condition:
+    path: jaimini.sagittarius_dasha_caution.sixth_or_eighth_subperiod_from_major.aspected_by_atmakaraka
+    operator: equals
+    value: true
+  reason: Active sixth/eighth Chara subperiod is also aspected by Atmakaraka.
+  interpretation: Chapter 16 gives extra caution when a sixth/eighth subperiod from the major sign is also aspected by Atmakaraka. This remains a cross-check signal only.
+  outcomes:
+    risk_score: 1
+  weight: 3
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Be Careful in Sagittarius Dasha"
+  source_page: "p. 122"
+
+- rule_id: JAIMINI_AK_EIGHTH_FROM_CHARA_CAUTION_001
+  system: Jaimini
+  category: general
+  condition:
+    path: jaimini.atmakaraka_dasha_caution.eighth_house_caution_active
+    operator: equals
+    value: true
+  reason: Atmakaraka is eighth from an active Chara major period or subperiod sign.
+  interpretation: Chapter 16 advises careful prediction when Atmakaraka falls in the eighth from the active Chara period. It does not independently establish a specific adverse event.
+  outcomes:
+    risk_score: 2
+    delay_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Be Careful in Sagittarius Dasha"
+  source_page: "p. 122"
+
+- rule_id: JAIMINI_CHILDREN_SIXTH_HOUSE_DASHA_CAUTION_001
+  system: Jaimini
+  category: children
+  condition:
+    path: jaimini.sagittarius_dasha_caution.children_sixth_house_period.active
+    operator: equals
+    value: true
+  reason: Active Chara period is the sixth-house sign from natal Lagna.
+  interpretation: Chapter 16 advises caution regarding children when the sixth-house rashi period operates because it is second from the fifth. This is a caution flag only and requires D7, Vimshottari, and wider-chart confirmation.
+  outcomes:
+    risk_score: 2
+    delay_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Be Careful in Sagittarius Dasha"
+  source_page: "pp. 122-123"
 
 - rule_id: JAIMINI_NAVAMSHA_FULL_RAJA_YOGA_001
   system: Jaimini
@@ -382,13 +566,10 @@
       - D9 Amatyakaraka-fifth lord
       - D9 Putrakaraka-Darakaraka
   reason: A Jaimini Rajayoga repeats in Navamsha.
-  interpretation: The source asks the reader to check the same Rajayogas in Navamsha; repetition strengthens confidence that the yoga can operate.
-  outcomes:
-    authority_score: 2
-    promotion_score: 2
-    delay_score: -1
-  weight: 7
-  polarity: positive
+  interpretation: The source asks the reader to check the same Rajayogas in Navamsha. This pair-specific rule is retained as traceable context; the normalized Navamsha survival rule carries the score.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Yogas / Rajyogas"
@@ -403,14 +584,9 @@
     value: 2
   reason: Running Chara Dasha signs activate relevant houses when treated as temporary lagnas.
   interpretation: The Jaimini source instructs prediction by treating the running rashi dasha as lagna and judging important houses from it; multiple relevant activations strengthen timing relevance.
-  outcomes:
-    authority_score: 1
-    education_score: 1
-    property_score: 1
-    children_score: 1
-    family_support_score: 1
-  weight: 5
-  polarity: positive
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Predictive Techniques"
@@ -425,13 +601,10 @@
     value: true
   reason: The 10th from the running Chara Mahadasha sign is occupied.
   interpretation: Occupation of the 10th from the active dasha sign gives a concrete career factor under the running-sign-as-lagna method.
-  outcomes:
-    authority_score: 2
-    promotion_score: 2
-    job_change_score: 1
-  weight: 6
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Predictive Techniques"
   source_page: "p. 51"
@@ -465,15 +638,13 @@
     value: [Atmakaraka, Amatyakaraka, Putrakaraka, Darakaraka]
   reason: A Jaimini karaka influences the 10th from Karakamsha.
   interpretation: The 10th from Karakamsha is a deeper Jaimini work-direction factor; karaka influence supports professional identity when repeated by dasha and divisional charts.
-  outcomes:
-    authority_score: 2
-    promotion_score: 1
-  weight: 6
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Karakamsha / Predictive Techniques"
-  source_page: ""
+  source_page: "p. 49 checklist"
 
 - rule_id: JAIMINI_KARAKAMSHA_FIFTH_NINTH_EDUCATION_001
   system: Jaimini
@@ -488,15 +659,13 @@
         value: [Atmakaraka, Amatyakaraka, Putrakaraka]
   reason: Karakamsha fifth or ninth house is influenced by key Jaimini karakas.
   interpretation: Fifth and ninth from Karakamsha can support learning, counsel, dharma, and higher-study themes when divisional and dasha evidence agrees.
-  outcomes:
-    education_score: 2
-    higher_studies_score: 2
-  weight: 5
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Karakamsha / Predictive Techniques"
-  source_page: ""
+  source_page: "p. 49 checklist"
 
 - rule_id: JAIMINI_ARUDHA_ELEVENTH_GAINS_001
   system: Jaimini
@@ -507,16 +676,13 @@
     value: true
   reason: The 11th from Arudha Lagna is influenced.
   interpretation: The 11th from Arudha Lagna supports visible gains, recognition, and result delivery; it is useful for career and income confidence.
-  outcomes:
-    income_growth_score: 2
-    promotion_score: 1
-    authority_score: 1
-  weight: 5
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Arudha Lagna"
-  source_page: ""
+  source_page: "pp. 46-47"
 
 - rule_id: JAIMINI_UPAPADA_FAMILY_RELATION_001
   system: Jaimini
@@ -527,33 +693,70 @@
     value: true
   reason: Upapada Lagna is calculated for family/relationship context.
   interpretation: Upapada Lagna is a Jaimini reference point for family and relational obligations; it should be cited only as supporting context until deeper Upapada rules are added.
-  outcomes:
-    family_support_score: 1
-  weight: 2
+  outcomes: {}
+  weight: 0
   polarity: mixed
   confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Upapada"
   source_page: "p. 49 checklist"
 
-- rule_id: JAIMINI_DARAKARAKA_RELATIONSHIP_001
+- rule_id: JAIMINI_RELATIONSHIP_TIMING_STRONG_001
   system: Jaimini
   category: marriage
   condition:
-    path: jaimini.karaka_method.karakas.darakaraka.house
-    operator: in
-    value: [1, 2, 7, 9, 11]
-  reason: Darakaraka is placed in a relationship-supporting house.
-  interpretation: Darakaraka is a Jaimini relationship significator; supportive placement helps relationship promise when D1, D9, and dasha agree.
+    path: jaimini.relationship_factors.timing.support_count
+    operator: gte
+    value: 2
+  reason: Active Chara Dasha signs repeat multiple relationship reference signs.
+  interpretation: Multiple matches involving the D1 seventh axis, Darakaraka, Upapada, Darapada, Darakaraka Navamsha, or D9 axis give moderate Jaimini relationship-timing support. Confirm with Vimshottari, D9, Yogini, and transits.
   outcomes:
-    marriage_score: 2
+    marriage_score: 3
     partnership_score: 2
   weight: 6
   polarity: positive
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
-  source_chapter: "Chara Karakas / Darakaraka"
-  source_page: "p. 49 checklist"
+  source_chapter: "Love Relationship and Marriage / Marriage Related Problems"
+  source_page: "pp. 64, 73-82"
+
+- rule_id: JAIMINI_RELATIONSHIP_TIMING_SINGLE_001
+  system: Jaimini
+  category: marriage
+  condition:
+    path: jaimini.relationship_factors.timing.support_count
+    operator: equals
+    value: 1
+  reason: One active Chara Dasha sign matches a relationship reference sign.
+  interpretation: A single relationship-axis match is a preliminary Jaimini timing clue. It requires confirmation from Vimshottari, D9, Yogini, and transits.
+  outcomes:
+    marriage_score: 1
+    partnership_score: 1
+  weight: 3
+  polarity: positive
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Love Relationship and Marriage / Marriage Related Problems"
+  source_page: "pp. 64, 73-82"
+
+- rule_id: JAIMINI_RELATIONSHIP_PRESSURE_001
+  system: Jaimini
+  category: marriage
+  condition:
+    path: jaimini.relationship_factors.pressure.pressure_count
+    operator: gte
+    value: 1
+  reason: Relationship reference signs receive one or more pressure signals.
+  interpretation: Sixth/twelfth links, node influence, or Darakaraka pressure require cautious relationship judgment. They do not independently justify claims of separation, violence, or loss.
+  outcomes:
+    risk_score: 2
+    delay_score: 1
+  weight: 4
+  polarity: mixed
+  confidence: medium
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Marriage Related Problems"
+  source_page: "pp. 73-82"
 
 - rule_id: JAIMINI_UPAPADA_MARRIAGE_AVAILABLE_001
   system: Jaimini
@@ -564,10 +767,8 @@
     value: true
   reason: Upapada Lagna is calculated for relationship judgment.
   interpretation: Upapada Lagna provides an independent Jaimini reference for spouse, marriage, and relational obligations; use it as confirmation or contradiction, not as a substitute for D1/D9.
-  outcomes:
-    marriage_score: 1
-    partnership_score: 1
-  weight: 3
+  outcomes: {}
+  weight: 0
   polarity: mixed
   confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
@@ -583,15 +784,66 @@
     value: [2, 5, 9, 11]
   reason: Putrakaraka is placed in a children-supporting house.
   interpretation: Putrakaraka is a Jaimini indicator for children and merit; supportive placement strengthens child-related promise when D1/D7/dasha agree.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "Predictive Techniques"
+  source_page: "p. 53"
+
+- rule_id: JAIMINI_CHILDHOOD_GNATIKARAKA_PRESSURE_001
+  system: Jaimini
+  category: children
+  condition:
+    path: jaimini.childhood_factors.caution.active
+    operator: equals
+    value: true
+  reason: An active Chara period contains an afflicted Gnatikaraka.
+  interpretation: Chapter 10 uses Gnatikaraka as a cautious childhood-pressure factor when its sign is activated and it receives malefic influence. This does not independently justify an illness, accident, or harmful-event prediction; confirm with D1, D7, Vimshottari, and the wider chart.
   outcomes:
-    children_score: 2
-    fulfilment_score: 1
-  weight: 6
-  polarity: positive
+    risk_score: 2
+    delay_score: 1
+  weight: 4
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
-  source_chapter: "Chara Karakas / Putrakaraka"
-  source_page: "p. 48-49"
+  source_chapter: "The First Lesson - Childhood"
+  source_page: "pp. 55-56, 61"
+
+- rule_id: JAIMINI_CHILDHOOD_PK_GK_LINK_CONTEXT_001
+  system: Jaimini
+  category: children
+  condition:
+    path: jaimini.childhood_factors.putrakaraka_gnatikaraka_active_period
+    operator: equals
+    value: true
+  reason: Putrakaraka and Gnatikaraka share a sign activated by the current Chara period.
+  interpretation: Chapter 10 uses the Putrakaraka-Gnatikaraka linkage as parent-child context. Keep this traceable but unscored until D1, D7, Vimshottari, and the wider chart establish a specific supported conclusion.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "The First Lesson - Childhood"
+  source_page: "pp. 55-56, 61"
+
+- rule_id: JAIMINI_CHILDHOOD_SAGITTARIUS_GK_CONTEXT_001
+  system: Jaimini
+  category: children
+  condition:
+    path: jaimini.childhood_factors.sagittarius_gnatikaraka_subperiod_caution
+    operator: equals
+    value: true
+  reason: Sagittarius subperiod contains Gnatikaraka.
+  interpretation: Chapter 10 includes a Sagittarius-Gnatikaraka childhood example. Preserve it as zero-weight context because Sagittarius and Gnatikaraka must not be converted into an automatic event prediction.
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
+  source_book: "Predicting through Jaimini's Chara Dasha"
+  source_chapter: "The First Lesson - Childhood"
+  source_page: "p. 55"
 
 - rule_id: JAIMINI_ARUDHA_WEALTH_GAINS_001
   system: Jaimini
@@ -602,12 +854,10 @@
     value: true
   reason: The 11th from Arudha Lagna is influenced for gains.
   interpretation: The 11th from Arudha supports visible gains and fulfilment; useful as a Jaimini wealth confirmation when D1/D2/dasha agree.
-  outcomes:
-    income_growth_score: 2
-    wealth_score: 2
-  weight: 6
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Arudha Lagna"
   source_page: "p. 49 checklist"
@@ -621,12 +871,10 @@
     value: true
   reason: Arudha gains factor is influenced for business visibility.
   interpretation: Arudha factors show public image and visible results; 11th from Arudha influence can support market visibility and client-facing gains.
-  outcomes:
-    business_success_score: 2
-    market_visibility_score: 3
-  weight: 6
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Padas / Arudha Lagna"
   source_page: "p. 49 checklist"
@@ -640,15 +888,13 @@
     value: [Atmakaraka, Amatyakaraka, Putrakaraka]
   reason: Ninth from Karakamsha is influenced by key karakas.
   interpretation: Ninth from Karakamsha can support dharma, guidance, and spiritual direction when repeated by D20, dasha, and transit.
-  outcomes:
-    spiritual_practice_score: 2
-    education_score: 1
-  weight: 5
-  polarity: positive
-  confidence: medium
+  outcomes: {}
+  weight: 0
+  polarity: mixed
+  confidence: low
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Karakamsha / Predictive Techniques"
-  source_page: ""
+  source_page: "p. 49 checklist"
 
 - rule_id: JAIMINI_CHARA_DASHA_CATEGORY_TIMING_001
   system: Jaimini
@@ -659,16 +905,9 @@
     value: 3
   reason: Chara Dasha signs strongly activate category houses.
   interpretation: Treating the running rashi as lagna, multiple activated category houses gives independent Jaimini timing relevance.
-  outcomes:
-    promotion_score: 1
-    business_success_score: 1
-    marriage_score: 1
-    children_score: 1
-    education_score: 1
-    property_score: 1
-    income_growth_score: 1
-  weight: 6
-  polarity: positive
+  outcomes: {}
+  weight: 0
+  polarity: mixed
   confidence: medium
   source_book: "Predicting through Jaimini's Chara Dasha"
   source_chapter: "Predictive Techniques"

@@ -51,7 +51,7 @@ def _current_period(periods, target_date):
         end = _parse_date(period["end"])
         if start <= target_date <= end:
             return period
-    return periods[0] if periods else {}
+    return {}
 
 
 def _karaka_planets(chart_data, category):

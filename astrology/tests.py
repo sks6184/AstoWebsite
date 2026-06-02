@@ -1,23 +1,39 @@
-from datetime import date, time
+from datetime import date, datetime, time
 
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from astrology.calculations.dasha_facts import build_dasha_facts
 from astrology.calculations.annual_yogini import build_annual_yogini_periods
+from astrology.calculations.dasha_facts import _current_period as current_dasha_period
+from astrology.calculations.dasha_facts import build_dasha_facts
+from astrology.calculations.jaimini import (
+    build_ak_dasha_caution,
+    build_amatyakaraka_factors,
+    build_childhood_factors,
+    build_karaka_condition_facts,
+    build_karakas,
+    build_navamsha_jaimini_yogas,
+    build_rajayoga_factors,
+    build_relationship_factors,
+    build_sagittarius_dasha_caution,
+    jaimini_aspected_signs,
+)
 from astrology.calculations.varga import SUPPORTED_VARGAS, build_chart_facts
 from astrology.rag.query_builder import build_rag_query
+from astrology.rules.engine import run_rule_engine
 from astrology.rules.loader import load_rules
+from astrology.rules.scoring import aggregate_scores
 from astrology.services.prediction_service import build_prediction_evidence
 from astrology.synthesis.answer_schema import REQUIRED_SECTIONS
 from astrology.synthesis.prompt_builder import build_prompt_messages
 from astrology.validation.answer_validator import validate_astrology_answer
 from astrology.validation.validator import validate_answer
 from chat.llm_engine import _apply_deterministic_remedy, build_prompt_payload as build_live_prompt_payload
-from charts.astro_engine import build_vedic_chart
+from charts.astro_engine import JAIMINI_KARAKAS, _assign_jaimini_karakas, build_vedic_chart
 from charts.divisional_confirmation import evaluate_divisional_confirmation
 from charts.models import SavedChart
+from charts.jaimini import _period_calculation, _subperiods, build_chara_dasha
 from charts.planetary_dasha_principles import evaluate_planetary_dasha_pair
 from charts.yogini_alignment import build_yogini_alignment
 from charts.yogini_baselines import YOGINI_PAIR_BASELINES, evaluate_yogini_baseline
@@ -51,6 +67,101 @@ class AstrologyEngineTests(TestCase):
             self.assertIn("planets", self.chart_data[chart_key])
         self.assertEqual(self.chart_data["dashas"]["yogini"]["calculation_status"], "active")
         self.assertGreater(len(self.chart_data["dashas"]["yogini"]["periods"]), 8)
+
+    def test_jaimini_seven_karakas_exclude_nodes_and_follow_degree_order(self):
+        planets = [
+            {"code": code, "longitude": longitude}
+            for code, longitude in [
+                ("Su", 28.0),
+                ("Mo", 24.0),
+                ("Ma", 20.0),
+                ("Me", 16.0),
+                ("Ju", 12.0),
+                ("Ve", 8.0),
+                ("Sa", 4.0),
+                ("Ra", 29.0),
+                ("Ke", 29.0),
+            ]
+        ]
+
+        assigned = _assign_jaimini_karakas(planets)
+
+        self.assertEqual(
+            [planet["jaimini_karaka"] for planet in assigned[:7]],
+            JAIMINI_KARAKAS,
+        )
+        self.assertEqual(assigned[7]["jaimini_karaka"], "")
+        self.assertEqual(assigned[8]["jaimini_karaka"], "")
+
+    def test_jaimini_chara_dasha_repeats_second_cycle_and_exposes_math(self):
+        chara = self.chart_data["jaimini"]["chara_dasha"]
+
+        self.assertEqual(chara["cycles_generated"], 2)
+        self.assertEqual(len(chara["periods"]), 24)
+        self.assertEqual(chara["periods"][0]["sign_number"], chara["periods"][12]["sign_number"])
+        self.assertEqual(chara["periods"][0]["duration_years"], chara["periods"][12]["duration_years"])
+        self.assertEqual(chara["periods"][0]["cycle"], 1)
+        self.assertEqual(chara["periods"][12]["cycle"], 2)
+        self.assertIn("count_direction", chara["periods"][0]["calculation"])
+
+    def test_jaimini_chara_dasha_major_and_subperiod_orders(self):
+        planets = self.chart_data["d1"]["planets"]
+        direct = build_chara_dasha(date(1990, 1, 1), {"sign_number": 1}, planets, cycles=1)
+        indirect = build_chara_dasha(date(1990, 1, 1), {"sign_number": 2}, planets, cycles=1)
+        subperiods = _subperiods(1, datetime(1990, 1, 1), datetime(1991, 1, 1), 1)
+
+        self.assertEqual([period["sign_number"] for period in direct["periods"][:3]], [1, 2, 3])
+        self.assertEqual([period["sign_number"] for period in indirect["periods"][:3]], [2, 1, 12])
+        self.assertEqual(subperiods[0]["sign_number"], 2)
+        self.assertEqual(subperiods[-1]["sign_number"], 1)
+
+    def test_jaimini_dual_lord_edge_cases_follow_chapter_six(self):
+        both_own = [
+            {"code": "Ma", "sign_number": 8, "longitude": 217.0},
+            {"code": "Ke", "sign_number": 8, "longitude": 219.0},
+        ]
+        one_own = [
+            {"code": "Ma", "sign_number": 8, "longitude": 217.0},
+            {"code": "Ke", "sign_number": 6, "longitude": 169.0},
+        ]
+        associated_lower_degree = [
+            {"code": "Ma", "sign_number": 6, "longitude": 151.0},
+            {"code": "Ke", "sign_number": 7, "longitude": 194.0},
+            {"code": "Ju", "sign_number": 6, "longitude": 155.0},
+        ]
+        aquarius_one_own = [
+            {"code": "Sa", "sign_number": 11, "longitude": 312.0},
+            {"code": "Ra", "sign_number": 3, "longitude": 79.0},
+        ]
+
+        self.assertEqual(_period_calculation(8, both_own)["duration_years"], 12)
+        self.assertEqual(_period_calculation(8, both_own)["lord_selection_rule"], "both_dual_lords_in_own_sign")
+        self.assertEqual(_period_calculation(8, one_own)["selected_lord"], "Ke")
+        self.assertEqual(_period_calculation(8, one_own)["lord_selection_rule"], "ignore_dual_lord_in_own_sign")
+        self.assertEqual(_period_calculation(8, associated_lower_degree)["selected_lord"], "Ma")
+        self.assertEqual(
+            _period_calculation(8, associated_lower_degree)["lord_selection_rule"],
+            "stronger_dual_lord_by_more_associations",
+        )
+        self.assertEqual(_period_calculation(11, aquarius_one_own)["selected_lord"], "Ra")
+        self.assertEqual(_period_calculation(11, aquarius_one_own)["count_direction"], "indirect")
+
+    def test_jaimini_current_period_is_empty_outside_generated_range(self):
+        periods = self.chart_data["jaimini"]["chara_dasha"]["periods"]
+
+        self.assertEqual(current_dasha_period(periods, date(1900, 1, 1)), {})
+
+    def test_jaimini_rashi_aspects_follow_sign_modalities(self):
+        self.assertEqual(jaimini_aspected_signs(1), [5, 8, 11])
+        self.assertEqual(jaimini_aspected_signs(2), [4, 7, 10])
+        self.assertEqual(jaimini_aspected_signs(3), [6, 9, 12])
+
+    def test_jaimini_sthira_karakas_are_exposed_as_unscored_reference(self):
+        karakas = build_karakas(self.chart_data)
+
+        self.assertEqual(karakas["sthira_karakas"]["1"]["planet"], "Su")
+        self.assertEqual(karakas["sthira_karakas"]["10"]["planet"], "Me")
+        self.assertEqual(karakas["sthira_karakas_scoring_status"], "unscored_reference_only")
 
     def test_chart_facts_expose_varga_lookup(self):
         facts = build_chart_facts(self.chart_data, "career")
@@ -298,15 +409,450 @@ class AstrologyEngineTests(TestCase):
         self.assertIn("ak_amk_relation", jaimini)
         self.assertIn("sagittarius_dasha_caution", jaimini)
         self.assertIn("dasha_sign_as_lagna", jaimini)
+        self.assertIn("predictive_checklist", jaimini)
+        self.assertIn("relationship_factors", jaimini)
+        self.assertIn("childhood_factors", jaimini)
+        self.assertIn("amatyakaraka_factors", jaimini)
+        self.assertIn("rajayoga_factors", jaimini)
+        self.assertIn("karaka_condition_facts", jaimini)
+        self.assertIn("navamsha_fifth_lord_references", jaimini)
         self.assertIn("tenth_from_karakamsha", jaimini["karakamsha"])
         self.assertIn("eleventh_from_arudha", jaimini["arudha_factors"])
+        self.assertEqual(len(jaimini["padas"]["all_padas"]), 12)
+        self.assertFalse(jaimini["padas"]["exceptions_applied"])
+        self.assertEqual(jaimini["padas"]["planetary_padas"]["calculation_status"], "deferred")
+        self.assertEqual(
+            len(jaimini["dasha_sign_as_lagna"]["mahadasha"]["houses_from_dasha_sign"]),
+            12,
+        )
+        self.assertEqual(
+            jaimini["karaka_condition_facts"]["scoring_status"],
+            "unscored_reference_only",
+        )
         self.assertIn("darakaraka", jaimini["karaka_method"]["karakas"])
         self.assertIn("putrakaraka", jaimini["karaka_method"]["karakas"])
+
+    def test_chapter_eight_navamsha_confirmation_includes_full_pair_list(self):
+        chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ju", "jaimini_karaka": "Atmakaraka"},
+                    {"code": "Ve", "jaimini_karaka": "Amatyakaraka"},
+                    {"code": "Mo", "jaimini_karaka": "Putrakaraka"},
+                    {"code": "Ma", "jaimini_karaka": "Darakaraka"},
+                ]
+            },
+            "d9": {
+                "planets": [
+                    {"code": "Asc", "sign_number": 1},
+                    {"code": "Ju", "sign_number": 3},
+                    {"code": "Ve", "sign_number": 3},
+                    {"code": "Mo", "sign_number": 3},
+                    {"code": "Ma", "sign_number": 3},
+                    {"code": "Su", "sign_number": 3},
+                ]
+            },
+        }
+
+        names = {yoga["name"] for yoga in build_navamsha_jaimini_yogas(chart)}
+
+        self.assertIn("D9 Putrakaraka-fifth lord", names)
+        self.assertIn("D9 fifth lord-Darakaraka", names)
+        self.assertIn("D9 Moon-Venus Jaimini Rajayoga", names)
+
+    def test_upapada_availability_rules_are_unscored(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+
+        self.assertEqual(rules["JAIMINI_UPAPADA_FAMILY_RELATION_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_UPAPADA_FAMILY_RELATION_001"]["outcomes"], {})
+        self.assertEqual(rules["JAIMINI_UPAPADA_MARRIAGE_AVAILABLE_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_UPAPADA_MARRIAGE_AVAILABLE_001"]["outcomes"], {})
+
+    def test_chapters_eleven_twelve_relationship_factors_use_reference_axes(self):
+        chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ve", "sign_number": 7, "house": 7, "jaimini_karaka": "Darakaraka"},
+                    {"code": "Ju", "sign_number": 5, "house": 5, "jaimini_karaka": "Putrakaraka"},
+                    {"code": "Ra", "sign_number": 3, "house": 3},
+                    {"code": "Ke", "sign_number": 9, "house": 9},
+                ]
+            },
+            "d9": {
+                "planets": [
+                    {"code": "Asc", "sign_number": 2, "house": 1},
+                    {"code": "Ve", "sign_number": 8, "house": 7},
+                ]
+            },
+        }
+        padas = {
+            "all_padas": {"7": {"pada_sign_number": 4, "pada_sign": "Cancer"}},
+            "upapada_lagna": {"pada_sign_number": 11, "pada_sign": "Aquarius"},
+        }
+
+        factors = build_relationship_factors(
+            chart,
+            padas,
+            build_karaka_condition_facts(chart),
+            {"sign_number": 7},
+            {"sign_number": 1},
+        )
+
+        self.assertEqual(factors["references"]["d1_lagna"]["seventh_sign_number"], 7)
+        self.assertEqual(factors["references"]["darapada"]["sign_number"], 4)
+        self.assertEqual(factors["references"]["darakaraka_navamsha"]["sign_number"], 8)
+        self.assertGreaterEqual(factors["timing"]["support_count"], 2)
+        self.assertTrue(factors["timing"]["antardasha"]["putrakaraka_in_fifth_from_period"])
+        self.assertIn("rahu_aspected_signs", factors["rahu_ketu_axis"])
+        self.assertIn("pressure_count", factors["pressure"])
+        self.assertIn("must not be converted", factors["scoring_note"])
+
+    def test_chapters_eleven_twelve_rules_use_precise_timing_and_caution(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+
+        self.assertNotIn("JAIMINI_DARAKARAKA_RELATIONSHIP_001", rules)
+        self.assertEqual(
+            rules["JAIMINI_RELATIONSHIP_TIMING_STRONG_001"]["condition"]["path"],
+            "jaimini.relationship_factors.timing.support_count",
+        )
+        self.assertEqual(rules["JAIMINI_RELATIONSHIP_PRESSURE_001"]["polarity"], "mixed")
+        self.assertNotIn("divorce", rules["JAIMINI_RELATIONSHIP_PRESSURE_001"]["outcomes"])
+
+    def test_chapters_eleven_twelve_relationship_rules_trigger_from_normalized_facts(self):
+        result = run_rule_engine(
+            {
+                "jaimini": {
+                    "relationship_factors": {
+                        "timing": {"support_count": 2},
+                        "pressure": {"pressure_count": 1},
+                    }
+                }
+            },
+            "marriage",
+        )
+        rule_ids = {rule["rule_id"] for rule in result["triggered_rules"]}
+
+        self.assertIn("JAIMINI_RELATIONSHIP_TIMING_STRONG_001", rule_ids)
+        self.assertIn("JAIMINI_RELATIONSHIP_PRESSURE_001", rule_ids)
+        self.assertNotIn("JAIMINI_RELATIONSHIP_TIMING_SINGLE_001", rule_ids)
+
+    def test_chapter_thirteen_amatyakaraka_facts_expose_placement_influences_and_timing(self):
+        chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ju", "sign_number": 10, "house": 10, "jaimini_karaka": "Amatyakaraka"},
+                    {"code": "Me", "sign_number": 10, "house": 10},
+                    {"code": "Sa", "sign_number": 2, "house": 2},
+                    {"code": "Ma", "sign_number": 4, "house": 4},
+                ]
+            },
+        }
+
+        factors = build_amatyakaraka_factors(
+            chart,
+            {"sign_number": 1},
+            {"sign_number": 12},
+        )
+
+        self.assertTrue(factors["placement_from_d1_lagna"]["supportive_for_smoother_career"])
+        self.assertEqual(factors["timing"]["mahadasha"]["relation"], "amatyakaraka_in_tenth_from_period")
+        self.assertEqual(factors["timing"]["antardasha"]["relation"], "amatyakaraka_in_eleventh_from_period")
+        self.assertEqual(factors["timing"]["support_count"], 2)
+        self.assertTrue(factors["sixth_lord_connection"]["connected"])
+        self.assertFalse(factors["eighth_lord_connection"]["connected"])
+        self.assertTrue(factors["struggle_capacity_pattern"]["active"])
+        self.assertTrue(factors["caution"]["active"])
+        self.assertIn("Sa", {planet["code"] for planet in factors["malefic_influences"]})
+        self.assertEqual(factors["important_person_scope"]["scoring_status"], "context_only")
+
+    def test_chapter_thirteen_rules_use_normalized_amatyakaraka_facts(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+        result = run_rule_engine(
+            {
+                "jaimini": {
+                    "amatyakaraka_factors": {
+                        "placement_from_d1_lagna": {"supportive_for_smoother_career": True},
+                        "timing": {"support_count": 1},
+                        "caution": {"active": True},
+                        "important_person_scope": {"available": True},
+                    }
+                }
+            },
+            "career",
+        )
+        rule_ids = {rule["rule_id"] for rule in result["triggered_rules"]}
+
+        self.assertEqual(
+            rules["JAIMINI_AMK_KEY_PERSONS_001"]["weight"],
+            0,
+        )
+        self.assertEqual(
+            rules["JAIMINI_AMK_KEY_PERSONS_001"]["category"],
+            ["career", "job", "business"],
+        )
+        self.assertIn("JAIMINI_CAREER_002", rule_ids)
+        self.assertIn("JAIMINI_AMK_CHARA_TIMING_CAREER_001", rule_ids)
+        self.assertIn("JAIMINI_AMK_PRESSURE_CAREER_001", rule_ids)
+
+    def test_chapter_fourteen_rajayoga_factors_filter_through_navamsha_and_time_tenth_focus(self):
+        chart = {
+            "d1": {
+                "planets": [
+                    {"code": "Ju", "jaimini_karaka": "Atmakaraka"},
+                    {"code": "Ve", "jaimini_karaka": "Amatyakaraka"},
+                ]
+            },
+            "d9": {
+                "planets": [
+                    {"code": "Ju", "sign_number": 2},
+                    {"code": "Ve", "sign_number": 5},
+                ]
+            },
+        }
+        d1_yogas = [
+            {
+                "name": "Atmakaraka-Amatyakaraka",
+                "planets": [{"code": "Ju", "sign_number": 2}, {"code": "Ve", "sign_number": 5}],
+            },
+            {
+                "name": "Atmakaraka-Putrakaraka",
+                "planets": [{"code": "Ju", "sign_number": 2}, {"code": "Mo", "sign_number": 8}],
+            },
+        ]
+        d9_yogas = [
+            {
+                "name": "D9 Atmakaraka-Amatyakaraka",
+                "planets": [{"code": "Ju", "sign_number": 2}, {"code": "Ve", "sign_number": 5}],
+            }
+        ]
+
+        factors = build_rajayoga_factors(
+            chart,
+            d1_yogas,
+            d9_yogas,
+            {"sign_number": 5},
+            {"sign_number": 1},
+        )
+
+        self.assertEqual(factors["d1_pair_count"], 2)
+        self.assertEqual(factors["surviving_pair_count"], 1)
+        self.assertEqual(factors["filtered_out_pair_names"], ["Atmakaraka-Putrakaraka"])
+        self.assertEqual(factors["navamsha_filtration_status"], "partial_survival")
+        self.assertTrue(factors["ak_amk_navamsha_relation"]["supportive"])
+        self.assertTrue(factors["timing"]["mahadasha"]["active"])
+        self.assertTrue(factors["timing"]["active"])
+
+    def test_chapter_fourteen_rules_score_filtered_survival_and_timing_once(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+        result = run_rule_engine(
+            {
+                "jaimini": {
+                    "rajayoga_factors": {
+                        "d1_pair_count": 2,
+                        "surviving_pair_count": 1,
+                        "timing": {"active": True},
+                    }
+                }
+            },
+            "career",
+        )
+        rule_ids = {rule["rule_id"] for rule in result["triggered_rules"]}
+
+        self.assertEqual(rules["JAIMINI_RAJA_YOGA_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_FULL_RAJA_YOGA_PAIR_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_NAVAMSHA_FULL_RAJA_YOGA_001"]["weight"], 0)
+        self.assertIn("JAIMINI_NAVAMSHA_RAJA_YOGA_001", rule_ids)
+        self.assertIn("JAIMINI_RAJA_YOGA_CHARA_TENTH_FOCUS_001", rule_ids)
+
+    def test_chapters_fifteen_sixteen_expose_guarded_atmakaraka_and_period_cautions(self):
+        chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ju", "sign_number": 5, "house": 5, "jaimini_karaka": "Atmakaraka"},
+                ]
+            },
+            "d9": {
+                "planets": [
+                    {"code": "Ju", "sign_number": 9, "house": 1},
+                ]
+            },
+        }
+
+        ak_caution = build_ak_dasha_caution(
+            chart,
+            {"sign_number": 10},
+            {"sign_number": 8},
+            {"sign_number": 9},
+        )
+        sixth_eighth_caution = build_sagittarius_dasha_caution(
+            chart,
+            {"sign_number": 8},
+            {"sign_number": 1},
+            ak_caution,
+        )
+        children_caution = build_sagittarius_dasha_caution(
+            chart,
+            {"sign_number": 6},
+            {"sign_number": 9},
+            ak_caution,
+        )
+
+        self.assertTrue(ak_caution["major_period"]["aspected_by_atmakaraka"])
+        self.assertTrue(ak_caution["major_period"]["atmakaraka_in_eighth_from_period"])
+        self.assertTrue(ak_caution["subperiod"]["atmakaraka_in_tenth_from_period"])
+        self.assertTrue(ak_caution["karakamsha_in_sagittarius"])
+        self.assertEqual(ak_caution["d9_dignity"], "own_sign")
+        self.assertTrue(sixth_eighth_caution["sixth_or_eighth_subperiod_from_major"]["active"])
+        self.assertTrue(sixth_eighth_caution["sixth_or_eighth_subperiod_from_major"]["aspected_by_atmakaraka"])
+        self.assertTrue(children_caution["subperiod_active"])
+        self.assertTrue(children_caution["children_sixth_house_period"]["active"])
+        self.assertIn("Do not convert", sixth_eighth_caution["scoring_note"])
+
+    def test_chapters_fifteen_sixteen_rules_keep_context_unscored_and_cautions_scoped(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+        result = run_rule_engine(
+            {
+                "jaimini": {
+                    "atmakaraka_dasha_caution": {
+                        "active": True,
+                        "tenth_house_context_active": True,
+                        "sagittarius_reference_active": True,
+                        "eighth_house_caution_active": True,
+                    },
+                    "sagittarius_dasha_caution": {
+                        "active": True,
+                        "sixth_or_eighth_subperiod_from_major": {
+                            "active": True,
+                            "aspected_by_atmakaraka": True,
+                        },
+                        "children_sixth_house_period": {"active": True},
+                    },
+                }
+            },
+            "children",
+        )
+        rule_ids = {rule["rule_id"] for rule in result["triggered_rules"]}
+
+        self.assertEqual(rules["JAIMINI_AK_TENTH_FROM_CHARA_CONTEXT_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_AK_SAGITTARIUS_REFERENCE_001"]["weight"], 0)
+        self.assertIn("JAIMINI_AK_EIGHTH_FROM_CHARA_CAUTION_001", rule_ids)
+        self.assertIn("JAIMINI_CHARA_SUBPERIOD_SIXTH_EIGHTH_CAUTION_001", rule_ids)
+        self.assertIn("JAIMINI_CHARA_SUBPERIOD_SIXTH_EIGHTH_AK_ASPECT_CAUTION_001", rule_ids)
+        self.assertIn("JAIMINI_CHILDREN_SIXTH_HOUSE_DASHA_CAUTION_001", rule_ids)
+
+    def test_chapter_ten_childhood_factors_use_gnatikaraka_only_as_child_caution(self):
+        chart = {
+            "d1": {
+                "planets": [
+                    {"code": "Ve", "sign_number": 9, "house": 9, "jaimini_karaka": "Gnatikaraka"},
+                    {"code": "Mo", "sign_number": 9, "house": 9, "jaimini_karaka": "Putrakaraka"},
+                    {"code": "Ma", "sign_number": 9, "house": 9},
+                    {"code": "Ra", "sign_number": 9, "house": 9},
+                ]
+            },
+        }
+
+        factors = build_childhood_factors(
+            chart,
+            build_karaka_condition_facts(chart),
+            {"sign_number": 10},
+            {"sign_number": 9},
+        )
+
+        self.assertEqual(factors["gnatikaraka_malefic_influence_count"], 2)
+        self.assertTrue(factors["timing"]["antardasha"]["contains_gnatikaraka"])
+        self.assertTrue(factors["putrakaraka_gnatikaraka_same_sign"])
+        self.assertTrue(factors["putrakaraka_gnatikaraka_active_period"])
+        self.assertTrue(factors["sagittarius_gnatikaraka_subperiod_caution"])
+        self.assertTrue(factors["caution"]["active"])
+        self.assertIn("child-related questions", factors["scoring_note"])
+
+    def test_chapter_ten_rules_trigger_only_for_children_and_score_pressure_once(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+        evidence = {
+            "jaimini": {
+                "childhood_factors": {
+                    "caution": {"active": True},
+                    "putrakaraka_gnatikaraka_active_period": True,
+                    "sagittarius_gnatikaraka_subperiod_caution": True,
+                }
+            }
+        }
+
+        children_ids = {
+            rule["rule_id"]
+            for rule in run_rule_engine(evidence, "children")["triggered_rules"]
+        }
+        career_ids = {
+            rule["rule_id"]
+            for rule in run_rule_engine(evidence, "career")["triggered_rules"]
+        }
+
+        self.assertEqual(rules["JAIMINI_CHILDHOOD_PK_GK_LINK_CONTEXT_001"]["weight"], 0)
+        self.assertEqual(rules["JAIMINI_CHILDHOOD_SAGITTARIUS_GK_CONTEXT_001"]["weight"], 0)
+        self.assertIn("JAIMINI_CHILDHOOD_GNATIKARAKA_PRESSURE_001", children_ids)
+        self.assertIn("JAIMINI_CHILDHOOD_PK_GK_LINK_CONTEXT_001", children_ids)
+        self.assertIn("JAIMINI_CHILDHOOD_SAGITTARIUS_GK_CONTEXT_001", children_ids)
+        self.assertNotIn("JAIMINI_CHILDHOOD_GNATIKARAKA_PRESSURE_001", career_ids)
 
     def test_rules_load_without_errors(self):
         result = load_rules()
         self.assertGreater(result.rules, [])
         self.assertEqual(result.errors, [])
+
+    def test_jaimini_rules_have_sources_and_consistent_scoring_metadata(self):
+        jaimini_rules = [
+            rule
+            for rule in load_rules().rules
+            if rule.get("system") == "Jaimini"
+        ]
+
+        self.assertEqual(len({rule["rule_id"] for rule in jaimini_rules}), len(jaimini_rules))
+        for rule in jaimini_rules:
+            self.assertTrue(rule.get("source_book"), rule["rule_id"])
+            self.assertTrue(rule.get("source_chapter"), rule["rule_id"])
+            self.assertTrue(rule.get("source_page"), rule["rule_id"])
+            if rule.get("weight", 0) == 0:
+                self.assertEqual(rule.get("outcomes"), {}, rule["rule_id"])
+            else:
+                self.assertTrue(rule.get("outcomes"), rule["rule_id"])
+
+    def test_zero_weight_rules_never_change_summary_scores(self):
+        scores = aggregate_scores(
+            [
+                {
+                    "rule_id": "TRACE_ONLY",
+                    "weight": 0,
+                    "outcomes": {"risk_score": 99, "promotion_score": 99},
+                },
+            ],
+            "career",
+        )
+
+        self.assertEqual(scores["risk_score"], 0)
+        self.assertEqual(scores["promotion_score"], 0)
+
+    def test_broad_jaimini_reference_rules_remain_unscored(self):
+        rules = {rule["rule_id"]: rule for rule in load_rules().rules}
+        context_rule_ids = {
+            "JAIMINI_CAREER_001",
+            "JAIMINI_MIXED_001",
+            "JAIMINI_CAREER_AK_001",
+            "JAIMINI_ARUDHA_CAREER_001",
+            "JAIMINI_KARAKAMSHA_AVAILABLE_001",
+            "JAIMINI_DASHA_SIGN_AS_LAGNA_RELEVANT_001",
+            "JAIMINI_DASHA_SIGN_TENTH_OCCUPIED_001",
+            "JAIMINI_PUTRAKARAKA_CHILDREN_001",
+            "JAIMINI_CHARA_DASHA_CATEGORY_TIMING_001",
+        }
+
+        for rule_id in context_rule_ids:
+            self.assertEqual(rules[rule_id]["weight"], 0, rule_id)
+            self.assertEqual(rules[rule_id]["outcomes"], {}, rule_id)
 
     def test_prediction_evidence_triggers_rules_scores_and_rag_query(self):
         evidence = build_prediction_evidence("Will my career improve?", self.chart_data, date(2026, 5, 15))

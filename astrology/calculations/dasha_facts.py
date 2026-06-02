@@ -25,7 +25,7 @@ def _current_period(periods: list[dict[str, Any]], target_date: date) -> dict[st
         end = _parse_date(period.get("end"))
         if start and end and start <= target_date <= end:
             return period
-    return periods[0] if periods else {}
+    return {}
 
 
 def _compact_dasha_lord(chart_data: dict[str, Any], planet_code: str, category_houses: list[int]) -> dict[str, Any]:
@@ -140,7 +140,7 @@ def build_jaimini_facts(
     major = _current_period(chara.get("periods", []), target_date)
     subperiod = _current_period(major.get("subperiods", []), target_date)
     confirmation = build_jaimini_confirmation(chart_data, category, category_houses, target_date)
-    enhanced = build_enhanced_jaimini_facts(chart_data, category, category_houses, major, subperiod)
+    enhanced = build_enhanced_jaimini_facts(chart_data, category, category_houses, major, subperiod, chara)
     karakas = {
         planet.get("jaimini_karaka"): planet
         for planet in chart_data.get("d1", {}).get("planets", [])
@@ -179,8 +179,15 @@ def build_jaimini_facts(
         "padas": enhanced.get("padas", {}),
         "arudha_factors": enhanced.get("arudha_factors", {}),
         "dasha_sign_as_lagna": enhanced.get("dasha_sign_as_lagna", {}),
+        "predictive_checklist": enhanced.get("predictive_checklist", {}),
+        "relationship_factors": enhanced.get("relationship_factors", {}),
+        "childhood_factors": enhanced.get("childhood_factors", {}),
+        "amatyakaraka_factors": enhanced.get("amatyakaraka_factors", {}),
         "jaimini_yogas": enhanced.get("jaimini_yogas", []),
         "navamsha_jaimini_yogas": enhanced.get("navamsha_jaimini_yogas", []),
+        "rajayoga_factors": enhanced.get("rajayoga_factors", {}),
+        "navamsha_fifth_lord_references": enhanced.get("navamsha_fifth_lord_references", {}),
+        "karaka_condition_facts": enhanced.get("karaka_condition_facts", {}),
         "ak_amk_relation": enhanced.get("ak_amk_relation", {}),
         "atmakaraka_dasha_caution": enhanced.get("atmakaraka_dasha_caution", {}),
         "sagittarius_dasha_caution": enhanced.get("sagittarius_dasha_caution", {}),
