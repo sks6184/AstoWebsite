@@ -2,6 +2,11 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from charts.vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, get_planet_dignity
+from charts.divisional_confirmation import evaluate_divisional_confirmation
+from charts.planetary_dasha_principles import evaluate_planetary_dasha_pair
+from charts.yogini_baselines import evaluate_yogini_baseline
+from charts.yogini_principles import evaluate_yogini_lord
+from charts.yogini_snapshot import build_yogini_snapshot_checklist
 
 from .varga import get_planet_in_varga
 
@@ -286,15 +291,47 @@ def build_yogini_facts(
                 }
             )
 
-    score = min(100, sum(item["score"] for item in findings))
+    pair_assessment = evaluate_planetary_dasha_pair(
+        chart_data, current_major.get("lord"), current_sub.get("lord"), category_houses
+    )
+    divisional_confirmation = evaluate_divisional_confirmation(chart_data, category, category_houses, lords)
+    classical_baseline = evaluate_yogini_baseline(current_major.get("yogini"), current_sub.get("yogini"))
+    major_assessment = evaluate_yogini_lord(chart_data, current_major.get("lord"), category, category_houses)
+    sub_assessment = evaluate_yogini_lord(chart_data, current_sub.get("lord"), category, category_houses)
+    snapshot_checklist = build_yogini_snapshot_checklist(
+        current_major.get("yogini"), current_sub.get("yogini"), major_assessment, sub_assessment
+    )
+    for reason in pair_assessment.get("reasons", []):
+        findings.append(
+            {
+                "factor": "Yogini major / subperiod relationship",
+                "finding": reason,
+                "impact": pair_assessment.get("status"),
+                "score": 0,
+            }
+        )
+
+    score = min(
+        100,
+        max(
+            0,
+            sum(item["score"] for item in findings)
+            + pair_assessment.get("score", 0)
+            + divisional_confirmation.get("score", 0)
+            + classical_baseline.get("score", 0),
+        ),
+    )
     return {
         **dasha,
         "category": category,
         "current_yogini_dasha": current_major,
         "current_yogini_subperiod": current_sub,
         "yogini_lord_facts": lord_facts,
+        "pair_assessment": pair_assessment,
+        "divisional_confirmation": divisional_confirmation,
+        "classical_baseline": classical_baseline,
+        "snapshot_checklist": snapshot_checklist,
         "findings": findings,
         "score": score,
         "status": "supports" if score >= 24 else "mixed" if score else "not_confirmed",
     }
-

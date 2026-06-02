@@ -3,6 +3,7 @@ from typing import Any
 
 from chat.timing_windows import build_timing_windows
 from charts.transit_priority import build_transit_priority_context
+from charts.yogini_transit_convergence import evaluate_transit_convergence
 
 
 def _add_months(value: date, months: int) -> date:
@@ -36,6 +37,9 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
 
     # Slim yogini_alignment — drop full lord objects, keep essential fields
     yog = window.get("yogini_alignment", {})
+    pair = yog.get("pair_assessment", {})
+    divisional = yog.get("divisional_confirmation", {})
+    baseline = yog.get("classical_baseline", {})
     yog_compact = {
         "status": yog.get("status"),
         "score": yog.get("score", 0),
@@ -45,7 +49,30 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "sub_yogini": yog.get("sub_yogini"),
         "sub_lord": yog.get("sub_lord"),
         "sub_lord_name": yog.get("sub_lord_name"),
-        "major_nature": yog.get("major_nature"),
+        "major_lord_quality": yog.get("major_lord_quality"),
+        "sub_lord_quality": yog.get("sub_lord_quality"),
+        "pair_assessment": {
+            "status": pair.get("status"),
+            "score": pair.get("score", 0),
+            "distance_from_major_to_subperiod": pair.get("distance_from_major_to_subperiod"),
+            "is_kendra_or_trikona": pair.get("is_kendra_or_trikona"),
+            "is_six_eight": pair.get("is_six_eight"),
+            "is_two_twelve": pair.get("is_two_twelve"),
+            "reasons": pair.get("reasons", [])[:2],
+        },
+        "divisional_confirmation": {
+            "primary_varga": divisional.get("primary_varga"),
+            "status": divisional.get("status"),
+            "score": divisional.get("score", 0),
+            "factors": divisional.get("factors", [])[:3],
+        },
+        "classical_baseline": {
+            "major_baseline": baseline.get("major_baseline", {}),
+            "pair_baseline": baseline.get("pair_baseline", {}),
+            "score": baseline.get("score", 0),
+            "is_low_weight_modifier": baseline.get("is_low_weight_modifier", True),
+        },
+        "snapshot_checklist": yog.get("snapshot_checklist", {}),
         "reasons": yog.get("reasons", [])[:2],
     }
 
@@ -69,6 +96,8 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "jaimini_score": window.get("jaimini_score", 0),
         "yogini_score": window.get("yogini_score", 0),
         "varga_score": window.get("varga_score", 0),
+        "confirmation_count": window.get("confirmation_count", 0),
+        "intersection_tier": window.get("intersection_tier"),
         "mahadasha_lord": window.get("mahadasha_lord"),
         "antardasha_lord": window.get("antardasha_lord"),
         "jaimini_active_sign": window.get("jaimini_active_sign"),
@@ -80,6 +109,7 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "reasons": window.get("reasons", [])[:4],
         "jaimini_confirmation": jai_compact,
         "yogini_alignment": yog_compact,
+        "transit_convergence": window.get("transit_convergence", {}),
         "sub_period_breakdown": top_breakdown,
         "transit_segments": segs_compact,
     }
@@ -147,6 +177,7 @@ def build_transit_facts(
     positive_score = sum(max(event.get("score", 0), 0) for event in supporting[:5])
     pressure_score = sum(abs(min(event.get("score", 0), 0)) for event in pressure[:5])
     score = max(0, min(100, positive_score - pressure_score))
+    transit_convergence = evaluate_transit_convergence(chart_data, category_houses, target_date)
     future_timing = build_future_transit_windows(
         question, chart_data, category, target_date,
         months=future_months, end_date=end_date,
@@ -159,6 +190,7 @@ def build_transit_facts(
         "target_date": target_date.isoformat(),
         "relevant_transits": events[:12],
         "dasha_lord_transits": dasha_lord_events[:6],
+        "transit_convergence": transit_convergence,
         "future_timing": future_timing,
         "score": score,
     }

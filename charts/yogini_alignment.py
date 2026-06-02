@@ -7,37 +7,12 @@ Pattern mirrors jaimini_confirmation.py — called per timing window at midpoint
 from datetime import datetime
 from typing import Any
 
-from .vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, get_planets
-
-
-# Primary divisional chart for each category — mirrors timing_windows._CATEGORY_PRIMARY_VARGA
-_CATEGORY_PRIMARY_VARGA: dict[str, str] = {
-    "job": "d10",
-    "career": "d10",
-    "business": "d10",
-    "money": "d2",
-    "marriage": "d9",
-    "children": "d7",
-    "health": "d9",
-    "education": "d24",
-    "spirituality": "d20",
-    "property": "d4",
-    "foreign_travel": "d9",
-    "general": "d9",
-}
-
-# Classical Yogini nature — determines a base score bonus/penalty.
-# Source: Applications of Yogini Dasha (K.N. Rao tradition)
-YOGINI_NATURE: dict[str, str] = {
-    "Mangala": "auspicious",    # Moon — nurturing, results
-    "Pingala": "mixed",         # Sun — authority, visibility, some instability
-    "Dhanya": "auspicious",     # Jupiter — expansion, wisdom
-    "Bhramari": "challenging",  # Mars — obstacles, delays, conflict
-    "Bhadrika": "auspicious",   # Mercury — communication, learning, commerce
-    "Ulka": "challenging",      # Saturn — hardship, discipline, delays
-    "Siddha": "auspicious",     # Venus — success, completion, relationships
-    "Sankata": "challenging",   # Rahu — confusion, sudden changes
-}
+from .divisional_confirmation import CHAPTER_FIVE_REFERENCE, evaluate_divisional_confirmation
+from .planetary_dasha_principles import CHAPTER_SIX_REFERENCE, evaluate_planetary_dasha_pair
+from .vedic_utils import PLANET_NAMES
+from .yogini_baselines import CHAPTER_SEVEN_REFERENCE, evaluate_yogini_baseline
+from .yogini_principles import CHAPTER_FOUR_REFERENCE, SOURCE_REFERENCE, evaluate_yogini_lord
+from .yogini_snapshot import CHAPTER_EIGHT_REFERENCE, build_yogini_snapshot_checklist
 
 
 def _parse_date(value: str) -> Any:
@@ -53,67 +28,6 @@ def _current_period(periods: list[dict], target_date: Any) -> dict:
     return periods[-1] if periods else {}
 
 
-def _lord_varga_house(chart_data: dict, lord_code: str, chart_key: str) -> int | None:
-    """Return the planet's house number in a pre-computed divisional chart."""
-    for planet in get_planets(chart_data, chart_key):
-        if planet.get("code") == lord_code:
-            return planet.get("house")
-    return None
-
-
-def _lord_category_score(
-    chart_data: dict,
-    lord_code: str,
-    category_houses: list[int],
-    category: str,
-) -> tuple[int, list[str]]:
-    if not lord_code:
-        return 0, []
-
-    planet = get_planet(chart_data, lord_code, "d1")
-    owned = get_owned_houses(chart_data, lord_code)
-    placed = planet.get("house")
-    connections = sorted(set(owned + ([placed] if placed else [])))
-    category_connected = [h for h in connections if h in category_houses]
-
-    score = 0
-    reasons = []
-    lord_name = PLANET_NAMES.get(lord_code, lord_code)
-
-    if category_connected:
-        score += 18
-        reasons.append(
-            f"{lord_name} (Yogini lord) connects to D1 "
-            f"category house(s) {category_connected}."
-        )
-
-    # Primary varga placement check — category-specific divisional chart
-    primary_varga = _CATEGORY_PRIMARY_VARGA.get(category)
-    if primary_varga:
-        varga_house = _lord_varga_house(chart_data, lord_code, primary_varga)
-        if varga_house:
-            if varga_house in category_houses:
-                score += 12
-                reasons.append(
-                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
-                    f"(category house) — divisional chart confirms Yogini timing."
-                )
-            elif varga_house in {1, 5, 9, 10}:
-                score += 6
-                reasons.append(
-                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
-                    f"(kendra/trikona) — divisional chart supports Yogini period."
-                )
-            elif varga_house in {6, 8, 12}:
-                score -= 10
-                reasons.append(
-                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
-                    f"(dusthana) — divisional chart weakens Yogini delivery for {category}."
-                )
-
-    return score, reasons
-
-
 def build_yogini_alignment(
     chart_data: dict,
     category: str,
@@ -121,8 +35,8 @@ def build_yogini_alignment(
     target_date: Any,
 ) -> dict:
     """
-    Returns which Yogini major and sub-period are active at target_date,
-    how auspicious the Yogini nature is, and whether its lords support the category.
+    Returns which Yogini major and sub-period are active at target_date and
+    whether their contextual lord, divisional, and pair factors support the category.
 
     Called once per timing window at the window midpoint.
     """
@@ -148,26 +62,28 @@ def build_yogini_alignment(
     score = 0
     reasons = []
 
-    major_nature = YOGINI_NATURE.get(major_yogini, "mixed")
-    if major_nature == "auspicious":
-        score += 10
-        reasons.append(f"{major_yogini} Yogini is classically auspicious.")
-    elif major_nature == "challenging":
-        score -= 8
-        reasons.append(f"{major_yogini} Yogini is classically challenging.")
-
-    major_score, major_reasons = _lord_category_score(
-        chart_data, major_lord, category_houses, category
-    )
-    score += major_score
-    reasons.extend(major_reasons)
+    major_assessment = evaluate_yogini_lord(chart_data, major_lord, category, category_houses)
+    sub_assessment = evaluate_yogini_lord(chart_data, sub_lord, category, category_houses) if sub_lord else {}
+    score += major_assessment.get("score", 0)
+    reasons.extend(factor["reason"] for factor in major_assessment.get("factors", []))
 
     if sub_lord and sub_lord != major_lord:
-        sub_score, sub_reasons = _lord_category_score(
-            chart_data, sub_lord, category_houses, category
-        )
-        score += sub_score // 2
-        reasons.extend(sub_reasons)
+        score += sub_assessment.get("score", 0) // 2
+        reasons.extend(factor["reason"] for factor in sub_assessment.get("factors", []))
+
+    pair_assessment = evaluate_planetary_dasha_pair(chart_data, major_lord, sub_lord, category_houses)
+    divisional_confirmation = evaluate_divisional_confirmation(
+        chart_data, category, category_houses, [major_lord, sub_lord]
+    )
+    classical_baseline = evaluate_yogini_baseline(major_yogini, sub_yogini)
+    snapshot_checklist = build_yogini_snapshot_checklist(
+        major_yogini, sub_yogini, major_assessment, sub_assessment
+    )
+    score += pair_assessment.get("score", 0)
+    score += divisional_confirmation.get("score", 0) // 2
+    score += classical_baseline.get("score", 0)
+    reasons.extend(pair_assessment.get("reasons", []))
+    reasons.extend(factor["reason"] for factor in divisional_confirmation.get("factors", []))
 
     score = min(100, max(0, score))
     status = "supports" if score >= 20 else "mixed" if score >= 8 else "not_confirmed"
@@ -182,7 +98,23 @@ def build_yogini_alignment(
         "sub_lord_name": PLANET_NAMES.get(sub_lord, sub_lord) if sub_lord else None,
         "major_period_start": major.get("start"),
         "major_period_end": major.get("end"),
-        "major_nature": major_nature,
+        "major_lord_quality": major_assessment.get("quality", "weak"),
+        "sub_lord_quality": sub_assessment.get("quality", "weak"),
+        "major_lord_assessment": major_assessment,
+        "sub_lord_assessment": sub_assessment,
+        "pair_assessment": pair_assessment,
+        "divisional_confirmation": divisional_confirmation,
+        "classical_baseline": classical_baseline,
+        "snapshot_checklist": snapshot_checklist,
+        "source_reference": SOURCE_REFERENCE,
+        "source_references": [
+            SOURCE_REFERENCE,
+            CHAPTER_FOUR_REFERENCE,
+            CHAPTER_FIVE_REFERENCE,
+            CHAPTER_SIX_REFERENCE,
+            CHAPTER_SEVEN_REFERENCE,
+            CHAPTER_EIGHT_REFERENCE,
+        ],
         "score": score,
         "status": status,
         "reasons": reasons[:5],

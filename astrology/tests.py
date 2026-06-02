@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from astrology.calculations.dasha_facts import build_dasha_facts
+from astrology.calculations.annual_yogini import build_annual_yogini_periods
 from astrology.calculations.varga import SUPPORTED_VARGAS, build_chart_facts
 from astrology.rag.query_builder import build_rag_query
 from astrology.rules.loader import load_rules
@@ -15,7 +16,16 @@ from astrology.validation.answer_validator import validate_astrology_answer
 from astrology.validation.validator import validate_answer
 from chat.llm_engine import _apply_deterministic_remedy, build_prompt_payload as build_live_prompt_payload
 from charts.astro_engine import build_vedic_chart
+from charts.divisional_confirmation import evaluate_divisional_confirmation
 from charts.models import SavedChart
+from charts.planetary_dasha_principles import evaluate_planetary_dasha_pair
+from charts.yogini_alignment import build_yogini_alignment
+from charts.yogini_baselines import YOGINI_PAIR_BASELINES, evaluate_yogini_baseline
+from charts.yogini_event_confirmation import build_event_confirmation
+from charts.yogini_derived_meanings import get_experimental_yogini_themes
+from charts.yogini_principles import evaluate_yogini_lord
+from charts.yogini_reference_frames import build_reference_frames
+from charts.yogini_transit_convergence import evaluate_transit_convergence
 
 
 def sample_chart_data():
@@ -55,7 +65,214 @@ class AstrologyEngineTests(TestCase):
         self.assertEqual(yogini["calculation_status"], "active")
         self.assertIn("current_yogini_dasha", yogini)
         self.assertIn("current_yogini_subperiod", yogini)
+        self.assertIn("pair_assessment", yogini)
+        self.assertIn("divisional_confirmation", yogini)
+        self.assertIn("classical_baseline", yogini)
+        self.assertIn("snapshot_checklist", yogini)
         self.assertGreater(len(yogini["periods"]), 8)
+
+    def test_yogini_lord_quality_is_contextual_not_fixed_by_yogini_name(self):
+        supportive_chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {"planets": [{"code": "Sa", "house": 7, "sign_number": 7}]},
+            "d9": {"planets": [{"code": "Sa", "house": 7, "sign_number": 7}]},
+        }
+        pressured_chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {"planets": [{"code": "Sa", "house": 1, "sign_number": 1}]},
+            "d9": {"planets": [{"code": "Sa", "house": 1, "sign_number": 1}]},
+        }
+
+        supportive = evaluate_yogini_lord(supportive_chart, "Sa", "general", [])
+        pressured = evaluate_yogini_lord(pressured_chart, "Sa", "general", [])
+
+        self.assertEqual(supportive["quality"], "supportive")
+        self.assertEqual(pressured["quality"], "pressured")
+        self.assertGreater(supportive["score"], pressured["score"])
+
+    def test_yogini_alignment_exposes_chapter_three_lord_assessments(self):
+        alignment = build_yogini_alignment(self.chart_data, "career", [2, 6, 10, 11], date(2026, 5, 15))
+
+        self.assertEqual(alignment["calculation_status"], "active")
+        self.assertNotIn("major_nature", alignment)
+        self.assertIn("major_lord_quality", alignment)
+        self.assertIn("major_lord_assessment", alignment)
+        self.assertEqual(alignment["source_reference"]["chapter"], "Chapter 3: The Basic Principles")
+
+    def test_yogini_lord_assessment_uses_dispositor_for_rahu(self):
+        chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ra", "house": 5, "sign_number": 1},
+                    {"code": "Ma", "house": 10, "sign_number": 10},
+                ]
+            },
+            "d10": {"planets": [{"code": "Ra", "house": 5, "sign_number": 1}]},
+            "d9": {"planets": [{"code": "Ra", "house": 5, "sign_number": 1}]},
+        }
+
+        assessment = evaluate_yogini_lord(chart, "Ra", "business", [2, 7, 10, 11])
+        factor_codes = {factor["code"] for factor in assessment["factors"]}
+
+        self.assertEqual(assessment["dispositor"]["code"], "Ma")
+        self.assertIn("strong_dispositor", factor_codes)
+        self.assertIn("category_relevant_dispositor", factor_codes)
+
+    def test_yogini_lord_assessment_surfaces_raja_yoga_activation(self):
+        chart = {
+            "ascendant": {"sign_number": 2},
+            "d1": {"planets": [{"code": "Sa", "house": 10, "sign_number": 11}]},
+            "d10": {"planets": [{"code": "Sa", "house": 10, "sign_number": 11}]},
+            "d9": {"planets": [{"code": "Sa", "house": 10, "sign_number": 11}]},
+        }
+
+        assessment = evaluate_yogini_lord(chart, "Sa", "career", [2, 6, 10, 11])
+        factor_codes = {factor["code"] for factor in assessment["factors"]}
+
+        self.assertIn("active_lord_raja_yoga", factor_codes)
+        self.assertTrue(any(ref["chapter"].startswith("Chapter 4") for ref in assessment["source_references"]))
+
+    def test_chapter_five_divisional_confirmation_checks_active_lord_in_d10(self):
+        chart = {
+            "d10": {
+                "planets": [
+                    {"code": "Asc", "house": 1, "sign_number": 1},
+                    {"code": "Ma", "house": 10, "sign_number": 10},
+                    {"code": "Su", "house": 5, "sign_number": 5},
+                ],
+                "houses": [
+                    {"number": house, "sign_number": house}
+                    for house in range(1, 13)
+                ],
+            }
+        }
+
+        confirmation = evaluate_divisional_confirmation(chart, "career", [10], ["Ma"])
+        factor_codes = {factor["code"] for factor in confirmation["factors"]}
+
+        self.assertEqual(confirmation["primary_varga"], "d10")
+        self.assertIn("active_lord_in_varga_topic_house", factor_codes)
+        self.assertEqual(confirmation["source_reference"]["chapter"], "Chapter 5: Interpretation of Divisional Charts")
+
+    def test_chapter_six_dasha_pair_support_and_pressure(self):
+        supportive_chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ma", "house": 1, "sign_number": 1},
+                    {"code": "Sa", "house": 10, "sign_number": 10},
+                ]
+            },
+        }
+        pressured_chart = {
+            "ascendant": {"sign_number": 1},
+            "d1": {
+                "planets": [
+                    {"code": "Ma", "house": 1, "sign_number": 1},
+                    {"code": "Sa", "house": 8, "sign_number": 8},
+                ]
+            },
+        }
+
+        supportive = evaluate_planetary_dasha_pair(supportive_chart, "Ma", "Sa", [10])
+        pressured = evaluate_planetary_dasha_pair(pressured_chart, "Ma", "Sa", [10])
+
+        self.assertTrue(supportive["is_kendra_or_trikona"])
+        self.assertEqual(supportive["status"], "supports")
+        self.assertTrue(pressured["is_six_eight"])
+        self.assertEqual(pressured["status"], "pressured")
+
+    def test_vimshottari_facts_expose_pair_and_divisional_confirmation(self):
+        dasha_facts = build_dasha_facts(self.chart_data, "career", [2, 6, 10, 11], date(2026, 5, 15))
+        vimshottari = dasha_facts["parashari_vimshottari"]
+
+        self.assertIn("pair_assessment", vimshottari)
+        self.assertIn("divisional_confirmation", vimshottari)
+        self.assertEqual(vimshottari["divisional_confirmation"]["primary_varga"], "d10")
+
+    def test_chapter_seven_yogini_pair_matrix_is_complete_and_low_weight(self):
+        baseline = evaluate_yogini_baseline("Sankata", "Siddha")
+
+        self.assertEqual(len(YOGINI_PAIR_BASELINES), 64)
+        self.assertEqual(baseline["pair_baseline"]["tone"], "supportive")
+        self.assertLessEqual(abs(baseline["score"]), 4)
+        self.assertTrue(baseline["is_low_weight_modifier"])
+
+    def test_chapter_eight_snapshot_checklist_is_explanatory_only(self):
+        alignment = build_yogini_alignment(self.chart_data, "career", [2, 6, 10, 11], date(2026, 5, 15))
+        checklist = alignment["snapshot_checklist"]
+
+        self.assertTrue(checklist["aspects_checked"])
+        self.assertTrue(checklist["conjunctions_checked"])
+        self.assertTrue(checklist["is_snapshot_only"])
+        self.assertIn("Do not bypass", checklist["instruction"])
+        self.assertTrue(any(ref["chapter"].startswith("Chapter 8") for ref in alignment["source_references"]))
+
+    def test_chapter_nine_event_confirmation_ranks_three_system_intersection_first(self):
+        confirmation = build_event_confirmation(
+            {"status": "supports", "score": 80},
+            {"status": "mixed", "score": 45},
+            {"status": "supports", "score": 70},
+            {"primary_varga": "d10", "status": "supports", "score": 12},
+        )
+
+        self.assertEqual(confirmation["confirmation_count"], 3)
+        self.assertEqual(confirmation["intersection_tier"], "intersection_of_three")
+        self.assertEqual(confirmation["divisional_confirmation"]["primary_varga"], "d10")
+
+    def test_chapter_ten_reference_frames_include_moon_karaka_and_d10_lagna(self):
+        frames = build_reference_frames(self.chart_data, "career", [2, 6, 10, 11])
+        labels = {frame["label"] for frame in frames["frames"]}
+
+        self.assertIn("D1 Lagna", labels)
+        self.assertIn("Moon as Lagna", labels)
+        self.assertIn("Sun as karaka Lagna", labels)
+        self.assertIn("D10 Lagna", labels)
+        self.assertEqual(frames["primary_varga"], "d10")
+
+    def test_chapter_eleven_transit_convergence_is_confirmation_only(self):
+        convergence = evaluate_transit_convergence(self.chart_data, [2, 6, 10, 11], date(2026, 5, 15))
+
+        self.assertLessEqual(convergence["score"], 15)
+        self.assertIn("not as the sole prediction basis", convergence["instruction"])
+        self.assertIn("moon_lagna_vedha_ranking", convergence["deferred_unscored_rules"])
+        self.assertTrue(all("transit_house_from_moon" in trigger for trigger in convergence["triggers"]))
+
+    def test_dasha_facts_expose_chapter_nine_and_ten_evidence(self):
+        dasha_facts = build_dasha_facts(self.chart_data, "career", [2, 6, 10, 11], date(2026, 5, 15))
+
+        self.assertIn("event_confirmation", dasha_facts)
+        self.assertIn("reference_frames", dasha_facts)
+        self.assertIn(dasha_facts["event_confirmation"]["confirmation_count"], {0, 1, 2, 3})
+
+    def test_chapter_twelve_annual_yogini_matches_pingala_example(self):
+        annual = build_annual_yogini_periods(
+            birth_nakshatra_number=13,
+            completed_years=26,
+            moon_remaining_fraction=0.8,
+            annual_chart_start=date(1994, 1, 26),
+        )
+
+        self.assertEqual(annual["formula_remainder"], 2)
+        self.assertEqual(annual["first_yogini"], "Pingala")
+        self.assertEqual(annual["first_balance_days"], 16)
+        self.assertEqual(annual["periods"][0]["yogini"], "Pingala")
+        self.assertEqual(annual["periods"][-1]["yogini"], "Pingala")
+        self.assertEqual(annual["annual_chart_end"], "1995-01-21")
+        self.assertEqual(
+            annual["scoring_status"],
+            "isolated_until_varshaphala_chart_is_calculated",
+        )
+        self.assertEqual(len(annual["periods"][0]["subperiods"]), 8)
+
+    def test_chapter_thirteen_themes_are_experimental_and_unscored(self):
+        themes = get_experimental_yogini_themes("Sankata")
+
+        self.assertTrue(themes["experimental"])
+        self.assertFalse(themes["scored"])
+        self.assertIn("technical themes", themes["themes"])
+        self.assertIn("Do not treat any Yogini as automatically positive or negative", themes["instruction"])
 
     def test_vimshottari_dasha_lord_facts_include_dignity(self):
         dasha_facts = build_dasha_facts(self.chart_data, "career", [2, 6, 10, 11], date(2026, 5, 15))

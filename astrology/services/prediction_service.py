@@ -137,6 +137,8 @@ def build_prediction_evidence(
         },
     )
     evidence_json = evidence.to_dict()
+    evidence_json["event_confirmation"] = dasha_facts["event_confirmation"]
+    evidence_json["reference_frames"] = dasha_facts["reference_frames"]
     rule_result = run_rule_engine(evidence_json, category)
     generic_varga_rules = evaluate_generic_varga_rules(evidence_json["chart_facts"], category)
     d1_lagna_rules = evaluate_d1_lagna_roles(evidence_json["chart_facts"], evidence_json, category)

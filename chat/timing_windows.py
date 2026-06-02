@@ -3,7 +3,9 @@ from zoneinfo import ZoneInfo
 
 from charts.jaimini_confirmation import build_jaimini_confirmation
 from charts.yogini_alignment import build_yogini_alignment
-from charts.vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, transit_context_for_lord
+from charts.yogini_event_confirmation import build_event_confirmation
+from charts.yogini_transit_convergence import evaluate_transit_convergence
+from charts.vedic_utils import PLANET_NAMES, SIGN_LORDS, get_owned_houses, get_planet, transit_context_for_lord
 
 from .prediction_context import CATEGORY_RULES
 
@@ -298,11 +300,11 @@ def _window_explanation(
     if yogini_alignment and yogini_alignment.get("calculation_status") == "active":
         major = yogini_alignment.get("yogini")
         sub = yogini_alignment.get("sub_yogini")
-        nature = yogini_alignment.get("major_nature", "mixed")
+        quality = yogini_alignment.get("major_lord_quality", "weak")
         major_lord_name = yogini_alignment.get("major_lord_name", "")
         sub_lord_name = yogini_alignment.get("sub_lord_name", "")
         parts.append(
-            f"Yogini: {major} major period ({major_lord_name}, {nature}) "
+            f"Yogini: {major} major period ({major_lord_name}, {quality}) "
             f"/ {sub} sub-period ({sub_lord_name}). "
             f"Yogini score: {yogini_alignment.get('score', 0)}."
         )
@@ -409,16 +411,7 @@ def _score_micro_period(chart_data, category, category_houses, period_start, per
     yogini_aln = build_yogini_alignment(chart_data, category, category_houses, midpoint)
     yogini_score = yogini_aln.get("score", 0)
 
-    varga_score, varga_reasons = _varga_score_for_window_lord(chart_data, ad_lord, category, category_houses)
-    reasons.extend(varga_reasons)
-
-    composite_score = min(100, max(0, round(
-        vimshottari_score * 0.40
-        + jaimini_score * 0.25
-        + yogini_score * 0.20
-        + varga_score * 0.15
-    )))
-
+    # Raw dasha periods — needed for transit augmentation and return fields
     jaimini_chara = chart_data.get("jaimini", {}).get("chara_dasha", {})
     jaimini_major = _current_period_at(jaimini_chara.get("periods", []), midpoint)
     jaimini_sub = _current_period_at(jaimini_major.get("subperiods", []), midpoint)
@@ -426,6 +419,50 @@ def _score_micro_period(chart_data, category, category_houses, period_start, per
     yogini_data = chart_data.get("dashas", {}).get("yogini", {})
     yogini_major = _current_period_at(yogini_data.get("periods", []), midpoint)
     yogini_sub = _current_period_at(yogini_major.get("subperiods", []), midpoint) if yogini_major else {}
+
+    # Augment Jaimini score with transit + SAV of the active Chara sign lords
+    jai_md_lord = SIGN_LORDS.get(jaimini_major.get("sign_number"))
+    jai_sub_lord = SIGN_LORDS.get(jaimini_sub.get("sign_number"))
+    if jai_md_lord:
+        t, _, _ = _transit_score(chart_data, jai_md_lord, midpoint, category_houses)
+        jaimini_score = min(100, jaimini_score + t)
+    if jai_sub_lord and jai_sub_lord != jai_md_lord:
+        t, _, _ = _transit_score(chart_data, jai_sub_lord, midpoint, category_houses)
+        jaimini_score = min(100, jaimini_score + t // 2)
+
+    # Augment Yogini score with transit + SAV of the active Yogini lords
+    yog_md_lord = yogini_major.get("lord") if yogini_major else None
+    yog_sub_lord = yogini_sub.get("lord") if yogini_sub else None
+    if yog_md_lord:
+        t, _, _ = _transit_score(chart_data, yog_md_lord, midpoint, category_houses)
+        yogini_score = min(100, yogini_score + t)
+    if yog_sub_lord and yog_sub_lord != yog_md_lord:
+        t, _, _ = _transit_score(chart_data, yog_sub_lord, midpoint, category_houses)
+        yogini_score = min(100, yogini_score + t // 2)
+
+    varga_score, varga_reasons = _varga_score_for_window_lord(chart_data, ad_lord, category, category_houses)
+    reasons.extend(varga_reasons)
+    transit_convergence = evaluate_transit_convergence(chart_data, category_houses, midpoint)
+
+    composite_score = min(100, max(0, round(
+        vimshottari_score * 0.40
+        + jaimini_score * 0.25
+        + yogini_score * 0.20
+        + varga_score * 0.15
+        + transit_convergence.get("score", 0) * 0.25
+    )))
+
+    # Intersection ranking — count how many independent systems confirm this period
+    vim_confirmed = vimshottari_score >= 10
+    jai_confirmed = jaimini_conf.get("status") in {"supports", "mixed"}
+    yog_confirmed = yogini_aln.get("status") in {"supports", "mixed"}
+    confirmation_count = sum([vim_confirmed, jai_confirmed, yog_confirmed])
+    event_confirmation = build_event_confirmation(
+        {"status": "supports" if vim_confirmed else "not_confirmed", "score": vimshottari_score},
+        {"status": jaimini_conf.get("status"), "score": jaimini_score},
+        {"status": yogini_aln.get("status"), "score": yogini_score},
+        yogini_aln.get("divisional_confirmation"),
+    )
 
     return {
         "start": period_start.isoformat(),
@@ -445,6 +482,10 @@ def _score_micro_period(chart_data, category, category_houses, period_start, per
         "yogini_score": yogini_score,
         "varga_score": varga_score,
         "composite_score": composite_score,
+        "confirmation_count": confirmation_count,
+        "intersection_tier": event_confirmation.get("intersection_tier"),
+        "event_confirmation": event_confirmation,
+        "transit_convergence": transit_convergence,
         "jaimini_confirmation": jaimini_conf,
         "yogini_alignment": yogini_aln,
         "reasons": reasons[:6],
@@ -516,6 +557,8 @@ def _build_convergence_window(group):
         },
         "score": composite_score,
         "composite_score": composite_score,
+        "confirmation_count": best.get("confirmation_count", 0),
+        "intersection_tier": best.get("intersection_tier"),
         "vimshottari_score": best.get("vimshottari_score", 0),
         "jaimini_score": best.get("jaimini_score", 0),
         "yogini_score": best.get("yogini_score", 0),
@@ -524,6 +567,8 @@ def _build_convergence_window(group):
         "reasons": all_reasons[:8],
         "jaimini_confirmation": best.get("jaimini_confirmation", {}),
         "yogini_alignment": best.get("yogini_alignment", {}),
+        "event_confirmation": best.get("event_confirmation", {}),
+        "transit_convergence": best.get("transit_convergence", {}),
         "sub_period_breakdown": compact_breakdown,
         "dasha_lord_transit_checks": [],
         "transit_segments": [],
@@ -610,7 +655,7 @@ def build_timing_windows(question, chart_data, category, start_date, months=60, 
 
     # Merge by Vimshottari antardasha, rank, then enrich top-8 with transit segments
     merged = _merge_adjacent_convergence_windows(micro_periods)
-    merged.sort(key=lambda w: (w.get("composite_score", 0), w["start"]), reverse=True)
+    merged.sort(key=lambda w: (w.get("confirmation_count", 0), w.get("composite_score", 0), w["start"]), reverse=True)
     top_windows = merged[:8]
     _enrich_with_transit_segments(chart_data, top_windows, category)
 

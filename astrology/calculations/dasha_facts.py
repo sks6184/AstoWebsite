@@ -2,7 +2,11 @@ from datetime import date, datetime
 from typing import Any
 
 from charts.jaimini_confirmation import build_jaimini_confirmation
+from charts.divisional_confirmation import evaluate_divisional_confirmation
+from charts.planetary_dasha_principles import evaluate_planetary_dasha_pair
 from charts.vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, get_planet_dignity
+from charts.yogini_event_confirmation import build_event_confirmation
+from charts.yogini_reference_frames import build_reference_frames
 
 from .jaimini import build_enhanced_jaimini_facts
 from .varga import get_planet_in_varga
@@ -84,7 +88,29 @@ def build_vimshottari_facts(
                 }
             )
 
-    score = min(100, sum(item["score"] for item in findings) * 10)
+    pair_assessment = evaluate_planetary_dasha_pair(
+        chart_data, mahadasha.get("lord"), antardasha.get("lord"), category_houses
+    )
+    divisional_confirmation = evaluate_divisional_confirmation(chart_data, category, category_houses, lords)
+    for reason in pair_assessment.get("reasons", []):
+        findings.append(
+            {
+                "factor": "Mahadasha / Antardasha relationship",
+                "finding": reason,
+                "impact": pair_assessment.get("status"),
+                "score": 0,
+            }
+        )
+
+    score = min(
+        100,
+        max(
+            0,
+            sum(item["score"] for item in findings) * 10
+            + pair_assessment.get("score", 0)
+            + divisional_confirmation.get("score", 0),
+        ),
+    )
     return {
         "system": "Parashari / Vimshottari",
         "category": category,
@@ -94,6 +120,8 @@ def build_vimshottari_facts(
             _compact_dasha_lord(chart_data, lord, category_houses)
             for lord in lords
         ],
+        "pair_assessment": pair_assessment,
+        "divisional_confirmation": divisional_confirmation,
         "findings": findings,
         "score": score,
         "status": "supports" if score >= 60 else "mixed" if score else "not_confirmed",
@@ -169,8 +197,18 @@ def build_dasha_facts(
 ) -> dict[str, Any]:
     target_date = target_date or date.today()
     category_houses = category_houses or [2, 6, 10, 11]
+    vimshottari = build_vimshottari_facts(chart_data, category, category_houses, target_date)
+    jaimini = build_jaimini_facts(chart_data, category, category_houses, target_date)
+    yogini = build_yogini_facts(chart_data, category, category_houses, target_date)
     return {
-        "parashari_vimshottari": build_vimshottari_facts(chart_data, category, category_houses, target_date),
-        "jaimini": build_jaimini_facts(chart_data, category, category_houses, target_date),
-        "yogini": build_yogini_facts(chart_data, category, category_houses, target_date),
+        "parashari_vimshottari": vimshottari,
+        "jaimini": jaimini,
+        "yogini": yogini,
+        "reference_frames": build_reference_frames(chart_data, category, category_houses),
+        "event_confirmation": build_event_confirmation(
+            vimshottari,
+            jaimini,
+            yogini,
+            yogini.get("divisional_confirmation") or vimshottari.get("divisional_confirmation"),
+        ),
     }
