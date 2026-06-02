@@ -25,8 +25,12 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "score": jai.get("score", 0),
         "mahadasha_sign": (jai_chara.get("mahadasha") or {}).get("sign"),
         "mahadasha_sign_house_from_lagna": jai_chara.get("mahadasha_house_from_lagna"),
+        "mahadasha_sign_lord": jai_chara.get("mahadasha_sign_lord"),
+        "mahadasha_sign_lord_name": jai_chara.get("mahadasha_sign_lord_name"),
         "antardasha_sign": (jai_chara.get("antardasha") or {}).get("sign"),
         "antardasha_sign_house_from_lagna": jai_chara.get("antardasha_house_from_lagna"),
+        "antardasha_sign_lord": jai_chara.get("antardasha_sign_lord"),
+        "antardasha_sign_lord_name": jai_chara.get("antardasha_sign_lord_name"),
         "reasons": jai.get("reasons", [])[:2],
     }
 
@@ -36,7 +40,11 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "status": yog.get("status"),
         "score": yog.get("score", 0),
         "yogini": yog.get("yogini"),
+        "major_lord": yog.get("major_lord"),
+        "major_lord_name": yog.get("major_lord_name"),
         "sub_yogini": yog.get("sub_yogini"),
+        "sub_lord": yog.get("sub_lord"),
+        "sub_lord_name": yog.get("sub_lord_name"),
         "major_nature": yog.get("major_nature"),
         "reasons": yog.get("reasons", [])[:2],
     }

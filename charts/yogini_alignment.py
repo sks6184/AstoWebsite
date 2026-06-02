@@ -10,6 +10,22 @@ from typing import Any
 from .vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, get_planets
 
 
+# Primary divisional chart for each category — mirrors timing_windows._CATEGORY_PRIMARY_VARGA
+_CATEGORY_PRIMARY_VARGA: dict[str, str] = {
+    "job": "d10",
+    "career": "d10",
+    "business": "d10",
+    "money": "d2",
+    "marriage": "d9",
+    "children": "d7",
+    "health": "d9",
+    "education": "d24",
+    "spirituality": "d20",
+    "property": "d4",
+    "foreign_travel": "d9",
+    "general": "d9",
+}
+
 # Classical Yogini nature — determines a base score bonus/penalty.
 # Source: Applications of Yogini Dasha (K.N. Rao tradition)
 YOGINI_NATURE: dict[str, str] = {
@@ -37,9 +53,9 @@ def _current_period(periods: list[dict], target_date: Any) -> dict:
     return periods[-1] if periods else {}
 
 
-def _lord_d10_house(chart_data: dict, lord_code: str) -> int | None:
-    """Find the planet's house number in the pre-computed D10 chart."""
-    for planet in get_planets(chart_data, "d10"):
+def _lord_varga_house(chart_data: dict, lord_code: str, chart_key: str) -> int | None:
+    """Return the planet's house number in a pre-computed divisional chart."""
+    for planet in get_planets(chart_data, chart_key):
         if planet.get("code") == lord_code:
             return planet.get("house")
     return None
@@ -62,22 +78,38 @@ def _lord_category_score(
 
     score = 0
     reasons = []
+    lord_name = PLANET_NAMES.get(lord_code, lord_code)
 
     if category_connected:
         score += 18
         reasons.append(
-            f"{PLANET_NAMES.get(lord_code, lord_code)} (Yogini lord) connects to D1 "
+            f"{lord_name} (Yogini lord) connects to D1 "
             f"category house(s) {category_connected}."
         )
 
-    if category in {"career", "job", "business"}:
-        d10_house = _lord_d10_house(chart_data, lord_code)
-        if d10_house and d10_house in category_houses:
-            score += 10
-            reasons.append(
-                f"{PLANET_NAMES.get(lord_code, lord_code)} is in D10 house {d10_house}, "
-                f"confirming career/business theme in Navamsha-adjacent varga."
-            )
+    # Primary varga placement check — category-specific divisional chart
+    primary_varga = _CATEGORY_PRIMARY_VARGA.get(category)
+    if primary_varga:
+        varga_house = _lord_varga_house(chart_data, lord_code, primary_varga)
+        if varga_house:
+            if varga_house in category_houses:
+                score += 12
+                reasons.append(
+                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
+                    f"(category house) — divisional chart confirms Yogini timing."
+                )
+            elif varga_house in {1, 5, 9, 10}:
+                score += 6
+                reasons.append(
+                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
+                    f"(kendra/trikona) — divisional chart supports Yogini period."
+                )
+            elif varga_house in {6, 8, 12}:
+                score -= 10
+                reasons.append(
+                    f"{lord_name} is in {primary_varga.upper()} house {varga_house} "
+                    f"(dusthana) — divisional chart weakens Yogini delivery for {category}."
+                )
 
     return score, reasons
 

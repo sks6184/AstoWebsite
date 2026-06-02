@@ -104,7 +104,7 @@ def _periods_in_range(periods, start_date, end_date):
     ]
 
 
-def _house_score(chart_data, planet_code, category_houses):
+def _house_score(chart_data, planet_code, category_houses, category=""):
     planet = get_planet(chart_data, planet_code)
     owned = get_owned_houses(chart_data, planet_code)
     placed = planet.get("house")
@@ -123,6 +123,19 @@ def _house_score(chart_data, planet_code, category_houses):
     if planet.get("jaimini_karaka") in {"Amatyakaraka", "Atmakaraka"}:
         score += 8
         reasons.append(f"{PLANET_NAMES.get(planet_code, planet_code)} is {planet.get('jaimini_karaka')}.")
+
+    # Divisional chart dusthana penalty: if the lord is in house 6/8/12 of the
+    # category's primary varga, reduce confidence — D1 promise is not confirmed.
+    primary_varga = _CATEGORY_PRIMARY_VARGA.get(category)
+    if primary_varga:
+        varga_planet = _planet_in_varga(chart_data, primary_varga, planet_code)
+        varga_house = varga_planet.get("house")
+        if varga_house in {6, 8, 12}:
+            score -= 15
+            reasons.append(
+                f"{PLANET_NAMES.get(planet_code, planet_code)} is in {primary_varga.upper()} "
+                f"house {varga_house} (dusthana) — divisional chart weakens D1 timing promise."
+            )
 
     return score, reasons
 
@@ -383,7 +396,7 @@ def _score_micro_period(chart_data, category, category_houses, period_start, per
     if md_lord or ad_lord:
         reasons.append(f"Runs during {md_lord}/{ad_lord} Vimshottari period.")
     for lord in dict.fromkeys([l for l in [md_lord, ad_lord] if l]):
-        lord_score, lord_reasons = _house_score(chart_data, lord, category_houses)
+        lord_score, lord_reasons = _house_score(chart_data, lord, category_houses, category)
         transit_s, transit_r, _ = _transit_score(chart_data, lord, midpoint, category_houses)
         score += lord_score + transit_s
         reasons.extend(lord_reasons)

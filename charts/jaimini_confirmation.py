@@ -1,4 +1,4 @@
-from .vedic_utils import PLANET_NAMES, get_planets, house_from_sign
+from .vedic_utils import PLANET_NAMES, SIGN_LORDS, get_planets, house_from_sign
 
 
 CATEGORY_KARAKAS = {
@@ -15,6 +15,28 @@ CATEGORY_KARAKAS = {
 }
 
 FOREIGN_HOUSES = {3, 7, 9, 12}
+
+_MOVABLE_SIGNS = {1, 4, 7, 10}   # Aries, Cancer, Libra, Capricorn
+_FIXED_SIGNS   = {2, 5, 8, 11}   # Taurus, Leo, Scorpio, Aquarius
+_DUAL_SIGNS    = {3, 6, 9, 12}   # Gemini, Virgo, Sagittarius, Pisces
+
+
+def _jaimini_aspects(sign_number: int) -> set:
+    """Return the sign numbers aspected by sign_number using Jaimini rashi aspect rules.
+
+    Movable signs aspect all fixed signs except the immediately adjacent one.
+    Fixed signs aspect all movable signs except the immediately adjacent one.
+    Dual signs aspect all other dual signs.
+    """
+    if sign_number in _MOVABLE_SIGNS:
+        adjacent_fixed = sign_number + 1          # e.g. Aries(1) → adjacent Taurus(2)
+        return _FIXED_SIGNS - {adjacent_fixed}
+    if sign_number in _FIXED_SIGNS:
+        adjacent_movable = sign_number - 1        # e.g. Taurus(2) → adjacent Aries(1)
+        return _MOVABLE_SIGNS - {adjacent_movable}
+    if sign_number in _DUAL_SIGNS:
+        return _DUAL_SIGNS - {sign_number}
+    return set()
 
 
 def _parse_date(value):
@@ -113,6 +135,26 @@ def build_jaimini_confirmation(chart_data, category, category_houses, target_dat
             score += 14
             reasons.append(f"{planet['karaka']} {planet['name']} connects with foreign-stay house {planet['house']}.")
 
+    # Jaimini rashi aspect check — bonus when the running Chara sign aspects the
+    # sign occupied by a category karaka (stronger timing activation than house alone).
+    for period_label, period, weight in [
+        ("Chara Mahadasha", major, 10),
+        ("Chara Antardasha", subperiod, 6),
+    ]:
+        chara_sign = period.get("sign_number")
+        if not chara_sign:
+            continue
+        aspected = _jaimini_aspects(chara_sign)
+        for planet in karakas:
+            karaka_sign = planet.get("sign_number")
+            if karaka_sign and karaka_sign in aspected:
+                score += weight
+                reasons.append(
+                    f"{period_label} {period.get('sign')} aspects "
+                    f"{planet['name']} ({planet['karaka']}) in {planet.get('sign')} "
+                    f"— Jaimini rashi aspect activates {category} karaka."
+                )
+
     if category == "foreign_travel":
         for node_code in ["Ra", "Ke"]:
             node = next((planet for planet in get_planets(chart_data, "d1") if planet.get("code") == node_code), {})
@@ -146,6 +188,10 @@ def build_jaimini_confirmation(chart_data, category, category_houses, target_dat
             "antardasha": subperiod,
             "mahadasha_house_from_lagna": major_house,
             "antardasha_house_from_lagna": subperiod_house,
+            "mahadasha_sign_lord": SIGN_LORDS.get(major.get("sign_number")),
+            "mahadasha_sign_lord_name": PLANET_NAMES.get(SIGN_LORDS.get(major.get("sign_number")), ""),
+            "antardasha_sign_lord": SIGN_LORDS.get(subperiod.get("sign_number")),
+            "antardasha_sign_lord_name": PLANET_NAMES.get(SIGN_LORDS.get(subperiod.get("sign_number")), ""),
         },
         "relevant_karakas": karakas,
         "mahadasha_sign_occupants": major_occupants,

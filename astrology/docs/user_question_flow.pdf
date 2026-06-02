@@ -1,0 +1,790 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 7033 >>
+stream
+0.090 0.220 0.290 rg
+BT /F2 19 Tf 32.0 560.0 Td (Astrology GPT: User Question Flow) Tj ET
+0.396 0.443 0.427 rg
+BT /F1 9 Tf 34.0 540.0 Td (Live Django request path, deterministic astrology pipeline, RAG/LLM traffic, validation, and storage.) Tj ET
+0.851 0.871 0.824 RG
+1 w 32.0 528.0 m 810.0 528.0 l S
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 30.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 38.0 482.0 Td (Browser / ngrok) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 38.0 467.0 Td (User submits) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 38.0 457.0 Td (chart_id, question,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 38.0 447.0 Td (depth, language.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 38.0 437.0 Td (templates/chat/ask.ht) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 146.0 459.0 m 167.0 459.0 l S
+0.192 0.361 0.447 rg
+167.0 459.0 m 159.0 463.0 l 159.0 455.0 l f
+1.000 1.000 1.000 rg
+0.851 0.871 0.824 RG
+1 w 167.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 175.0 482.0 Td (Django view) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 175.0 467.0 Td (Checks auth, credits,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 175.0 457.0 Td (chart ownership.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 175.0 447.0 Td (chat/views.py::ask_qu) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 175.0 437.0 Td (estion) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 283.0 459.0 m 304.0 459.0 l S
+0.192 0.361 0.447 rg
+304.0 459.0 m 296.0 463.0 l 296.0 455.0 l f
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 304.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 312.0 482.0 Td (Conversation DB) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 312.0 467.0 Td (Creates user Message) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 312.0 457.0 Td (before LLM call.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 312.0 447.0 Td (chat/models.py) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 420.0 459.0 m 441.0 459.0 l S
+0.192 0.361 0.447 rg
+441.0 459.0 m 433.0 463.0 l 433.0 455.0 l f
+1.000 1.000 1.000 rg
+0.851 0.871 0.824 RG
+1 w 441.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 449.0 482.0 Td (LLM engine) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 449.0 467.0 Td (Intent, evidence) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 449.0 457.0 Td (payload, cache,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 449.0 447.0 Td (OpenAI call.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 449.0 437.0 Td (chat/llm_engine.py) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 557.0 459.0 m 578.0 459.0 l S
+0.192 0.361 0.447 rg
+578.0 459.0 m 570.0 463.0 l 570.0 455.0 l f
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 578.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 586.0 482.0 Td (Assistant answer) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 586.0 467.0 Td (Validated/repaired) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 586.0 457.0 Td (answer saved as) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 586.0 447.0 Td (Message.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 586.0 437.0 Td (chat/views.py +) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 694.0 459.0 m 715.0 459.0 l S
+0.192 0.361 0.447 rg
+715.0 459.0 m 707.0 463.0 l 707.0 455.0 l f
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 715.0 420.0 116.0 78.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 723.0 482.0 Td (Rendered reading) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 723.0 467.0 Td (astro_answer filter) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 723.0 457.0 Td (formats answer) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 723.0 447.0 Td (sections.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 723.0 437.0 Td (templates/chat/ask.ht) Tj ET
+0.651 0.435 0.165 rg
+BT /F2 10 Tf 36.0 375.0 Td (High-level rule:) Tj ET
+0.122 0.165 0.161 rg
+BT /F2 10 Tf 126.0 375.0 Td (Software calculates. Rules judge. RAG supports. LLM explains. Validator controls quality.) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 52.0 245.0 170.0 92.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 60.0 321.0 Td (Normal prediction branch) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 306.0 Td (chat.llm_engine.generate_answer) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 296.0 Td (\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 286.0 Td (classify_intent\(\) says intent) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 276.0 Td (is not periodic) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 266.0 Td (build_prompt_payload\(\) calls as) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 60.0 256.0 Td (trology.services.prediction_ser) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 334.0 245.0 170.0 92.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 342.0 321.0 Td (Periodic/rashifal branch) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 306.0 Td (classify_intent\(\) returns) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 296.0 Td (periodic) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 286.0 Td (_generate_rashifal_answer\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 276.0 Td (chat/rashifal_context.py builds) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 266.0 Td (periodic payload) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 342.0 256.0 Td (OpenAI file_search max results) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 616.0 245.0 170.0 92.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 624.0 321.0 Td (Fallback branch) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 306.0 Td (If OPENAI_API_KEY or) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 296.0 Td (OPENAI_VECTOR_STORE_ID is) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 286.0 Td (missing) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 276.0 Td (_fallback_answer\(\) returns) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 266.0 Td (deterministic summary) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 624.0 256.0 Td (No external LLM/RAG traffic is) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 222.0 291.0 m 334.0 291.0 l S
+0.192 0.361 0.447 rg
+334.0 291.0 m 326.0 295.0 l 326.0 287.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 248.0 300.0 Td (intent split) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 504.0 291.0 m 616.0 291.0 l S
+0.192 0.361 0.447 rg
+616.0 291.0 m 608.0 295.0 l 608.0 287.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 530.0 300.0 Td (config fail) Tj ET
+0.651 0.435 0.165 rg
+BT /F2 10 Tf 36.0 205.0 Td (Important current boundary:) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 54.0 188.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 188.0 Td (The architecture package astrology/ owns deterministic evidence, rules, RAG query construction, synthesis payloads, and validation) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 177.0 Td (helpers.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 54.0 166.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 166.0 Td (The live traffic orchestrator is still chat/llm_engine.py: it builds compact evidence, calls OpenAI, runs validation, repairs,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 155.0 Td (applies deterministic remedies, caches, and returns the answer.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 54.0 144.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 144.0 Td (SavedChart.chart_data is assumed to already contain chart calculations from charts/ code; prediction_service wraps and normalizes) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 64.0 133.0 Td (that data instead of recalculating from the LLM.) Tj ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 11 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 7237 >>
+stream
+0.090 0.220 0.290 rg
+BT /F2 19 Tf 32.0 560.0 Td (Deterministic Evidence Construction) Tj ET
+0.396 0.443 0.427 rg
+BT /F1 9 Tf 34.0 540.0 Td (Files used before any LLM synthesis. This is the core no-invention boundary.) Tj ET
+0.851 0.871 0.824 RG
+1 w 32.0 528.0 m 810.0 528.0 l S
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 34.0 455.0 145.0 62.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 42.0 501.0 Td (Question scope/category) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 486.0 Td (chat/prediction_context.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 476.0 Td (classify_question\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 466.0 Td (detect_question_scope\(\)) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 222.0 455.0 145.0 62.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 230.0 501.0 Td (Chart facts / varga) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 486.0 Td (astrology/calculations/var) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 476.0 Td (ga.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 466.0 Td (build_chart_facts\(\)) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 410.0 455.0 145.0 62.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 418.0 501.0 Td (Dasha facts) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 486.0 Td (astrology/calculations/das) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 476.0 Td (ha_facts.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 466.0 Td (Vimshottari) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 598.0 455.0 145.0 62.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 606.0 501.0 Td (Transits / timing) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 486.0 Td (astrology/calculations/tra) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 476.0 Td (nsit_facts.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 466.0 Td (chat/timing_windows.py) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 179.0 486.0 m 222.0 486.0 l S
+0.192 0.361 0.447 rg
+222.0 486.0 m 214.0 490.0 l 214.0 482.0 l f
+0.192 0.361 0.447 RG
+1.3 w 367.0 486.0 m 410.0 486.0 l S
+0.192 0.361 0.447 rg
+410.0 486.0 m 402.0 490.0 l 402.0 482.0 l f
+0.192 0.361 0.447 RG
+1.3 w 555.0 486.0 m 598.0 486.0 l S
+0.192 0.361 0.447 rg
+598.0 486.0 m 590.0 490.0 l 590.0 482.0 l f
+1.000 1.000 1.000 rg
+0.851 0.871 0.824 RG
+1 w 34.0 335.0 145.0 88.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 42.0 407.0 Td (Parashari facts) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 392.0 Td (astrology/calculations/par) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 382.0 Td (ashari.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 372.0 Td (House/lord factors) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 362.0 Td (Raja yoga / Dhana yoga) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 42.0 352.0 Td (Dasha activation) Tj ET
+1.000 1.000 1.000 rg
+0.851 0.871 0.824 RG
+1 w 222.0 335.0 145.0 88.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 230.0 407.0 Td (Jaimini enrichment) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 392.0 Td (astrology/calculations/jai) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 382.0 Td (mini.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 372.0 Td (charts/jaimini_confirmatio) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 362.0 Td (n.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 230.0 352.0 Td (Karakamsha, Arudha,) Tj ET
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 410.0 335.0 145.0 88.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 418.0 407.0 Td (Varga rule modules) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 392.0 Td (varga_generic_rules.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 382.0 Td (d1_lagna_rules.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 372.0 Td (d2_hora_rules.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 362.0 Td (d3_drekkana_rules.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 418.0 352.0 Td (d4_chaturthamsha_rules.py) Tj ET
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 598.0 335.0 145.0 88.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 606.0 407.0 Td (YAML rule engine) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 392.0 Td (astrology/rules/loader.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 382.0 Td (astrology/rules/engine.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 372.0 Td (parashari_rules.yaml) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 362.0 Td (jaimini_rules.yaml) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 606.0 352.0 Td (divisional_rules.yaml) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 106.0 335.0 m 106.0 296.0 l S
+0.192 0.361 0.447 rg
+106.0 296.0 m 98.0 300.0 l 98.0 292.0 l f
+0.192 0.361 0.447 RG
+1.3 w 294.0 335.0 m 294.0 296.0 l S
+0.192 0.361 0.447 rg
+294.0 296.0 m 286.0 300.0 l 286.0 292.0 l f
+0.192 0.361 0.447 RG
+1.3 w 482.0 335.0 m 482.0 296.0 l S
+0.192 0.361 0.447 rg
+482.0 296.0 m 474.0 300.0 l 474.0 292.0 l f
+0.192 0.361 0.447 RG
+1.3 w 670.0 335.0 m 670.0 296.0 l S
+0.192 0.361 0.447 rg
+670.0 296.0 m 662.0 300.0 l 662.0 292.0 l f
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 50.0 210.0 220.0 70.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 58.0 264.0 Td (Triggered rules + scores) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 58.0 249.0 Td (astrology/rules/scoring.py::aggregate_sc) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 58.0 239.0 Td (ores\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 58.0 229.0 Td (Triggered YAML rules plus Python varga) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 58.0 219.0 Td (rules are merged into) Tj ET
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 310.0 210.0 220.0 70.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 318.0 264.0 Td (Evidence ledger + contradictions) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 318.0 249.0 Td (astrology/evidence/ledger.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 318.0 239.0 Td (astrology/evidence/contradiction_resolve) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 318.0 229.0 Td (r.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 318.0 219.0 Td (astrology/evidence/confidence_scorer.py) Tj ET
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 570.0 210.0 220.0 70.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 578.0 264.0 Td (RAG query request) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 578.0 249.0 Td (astrology/rag/query_builder.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 578.0 239.0 Td (Builds query from category, triggered) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 578.0 229.0 Td (rules, deterministic facts, ledger,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 578.0 219.0 Td (contradictions, and timing windows.) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 270.0 245.0 m 310.0 245.0 l S
+0.192 0.361 0.447 rg
+310.0 245.0 m 302.0 249.0 l 302.0 241.0 l f
+0.192 0.361 0.447 RG
+1.3 w 530.0 245.0 m 570.0 245.0 l S
+0.192 0.361 0.447 rg
+570.0 245.0 m 562.0 249.0 l 562.0 241.0 l f
+1.000 1.000 1.000 rg
+0.192 0.361 0.447 RG
+1 w 160.0 88.0 520.0 68.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 168.0 140.0 Td (PredictionEvidence JSON payload) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 168.0 125.0 Td (astrology/structures.py defines question, chart_facts, parashari_vimshottari, jaimini, varga,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 168.0 115.0 Td (yogini, transits, triggered_rules, summary_scores, rag, validation.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 168.0 105.0 Td (astrology/services/prediction_service.py is the canonical evidence builder.) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 680.0 210.0 m 680.0 156.0 l S
+0.192 0.361 0.447 rg
+680.0 156.0 m 672.0 160.0 l 672.0 152.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 650.0 219.0 Td (payload) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 11 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 7648 >>
+stream
+0.090 0.220 0.290 rg
+BT /F2 19 Tf 32.0 560.0 Td (LLM, RAG, Cache, Validation, and Repair Traffic) Tj ET
+0.396 0.443 0.427 rg
+BT /F1 9 Tf 34.0 540.0 Td (External network calls and the exact places where generated text is allowed.) Tj ET
+0.851 0.871 0.824 RG
+1 w 32.0 528.0 m 810.0 528.0 l S
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 36.0 430.0 155.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 44.0 486.0 Td (Compact live payload) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 471.0 Td (chat/llm_engine.py::_compact) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 461.0 Td (_live_evidence\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 451.0 Td (Sends compact context only) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 441.0 Td (Includes evidence_payload,) Tj ET
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 240.0 430.0 155.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 248.0 486.0 Td (Cache lookup) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 248.0 471.0 Td (django.core.cache) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 248.0 461.0 Td (key from payload + model +) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 248.0 451.0 Td (vector_store_id) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 248.0 441.0 Td (Cache hit: no OpenAI call) Tj ET
+1.000 1.000 1.000 rg
+0.192 0.361 0.447 RG
+1 w 444.0 430.0 155.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 452.0 486.0 Td (OpenAI Responses API) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 452.0 471.0 Td (client.responses.create\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 452.0 461.0 Td (model_for_depth\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 452.0 451.0 Td (instructions from) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 452.0 441.0 Td (_system_instructions\(\)) Tj ET
+1.000 1.000 1.000 rg
+0.651 0.435 0.165 RG
+1 w 648.0 430.0 155.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 656.0 486.0 Td (File search / RAG) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 656.0 471.0 Td (tools=[{'type':'file_search') Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 656.0 461.0 Td (}]) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 656.0 451.0 Td (vector_store_ids=[settings.O) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 656.0 441.0 Td (PENAI_VECTOR_STORE_ID]) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 191.0 466.0 m 240.0 466.0 l S
+0.192 0.361 0.447 rg
+240.0 466.0 m 232.0 470.0 l 232.0 462.0 l f
+0.192 0.361 0.447 RG
+1.3 w 395.0 466.0 m 444.0 466.0 l S
+0.192 0.361 0.447 rg
+444.0 466.0 m 436.0 470.0 l 436.0 462.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 389.5 475.0 Td (miss) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 599.0 466.0 m 648.0 466.0 l S
+0.192 0.361 0.447 rg
+648.0 466.0 m 640.0 470.0 l 640.0 462.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 593.5 475.0 Td (tool) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 648.0 444.0 m 599.0 444.0 l S
+0.192 0.361 0.447 rg
+599.0 444.0 m 607.0 448.0 l 607.0 440.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 593.5 453.0 Td (snippets) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 116.0 300.0 170.0 82.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 124.0 366.0 Td (Draft answer returns) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 124.0 351.0 Td (response.output_text) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 124.0 341.0 Td (usage input/output tokens) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 124.0 331.0 Td (captured) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 124.0 321.0 Td (LLM may explain only using) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 124.0 311.0 Td (payload + retrieved context) Tj ET
+0.933 0.953 0.945 rg
+0.851 0.871 0.824 RG
+1 w 336.0 300.0 170.0 82.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 344.0 366.0 Td (Validation gate) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 344.0 351.0 Td (astrology/validation/validator.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 344.0 341.0 Td (py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 344.0 331.0 Td (answer_validator.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 344.0 321.0 Td (evidence_checker.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 344.0 311.0 Td (completeness_checker.py) Tj ET
+1.000 0.973 0.875 rg
+0.651 0.435 0.165 RG
+1 w 556.0 300.0 170.0 82.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 564.0 366.0 Td (Repair call if failed) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 564.0 351.0 Td (chat/llm_engine.py::_repair_ans) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 564.0 341.0 Td (wer\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 564.0 331.0 Td (Second Responses API call) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 564.0 321.0 Td (Sends original payload, draft) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 564.0 311.0 Td (answer, validation_result) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 444.0 430.0 m 201.0 382.0 l S
+0.192 0.361 0.447 rg
+201.0 382.0 m 209.0 386.0 l 209.0 378.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 292.5 439.0 Td (answer) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 286.0 341.0 m 336.0 341.0 l S
+0.192 0.361 0.447 rg
+336.0 341.0 m 328.0 345.0 l 328.0 337.0 l f
+0.192 0.361 0.447 RG
+1.3 w 506.0 341.0 m 556.0 341.0 l S
+0.192 0.361 0.447 rg
+556.0 341.0 m 548.0 345.0 l 548.0 337.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 501.0 350.0 Td (fail) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 641.0 300.0 m 506.0 300.0 l S
+0.192 0.361 0.447 rg
+506.0 300.0 m 514.0 304.0 l 514.0 296.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 543.5 309.0 Td (re-validate) Tj ET
+1.000 1.000 1.000 rg
+0.851 0.871 0.824 RG
+1 w 150.0 178.0 205.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 158.0 234.0 Td (Deterministic remedy override) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 158.0 219.0 Td (chat/llm_engine.py::_apply_determinis) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 158.0 209.0 Td (tic_remedy\(\)) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 158.0 199.0 Td (Uses charts/remedies.py via) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 158.0 189.0 Td (remedy_context) Tj ET
+1.000 0.973 0.875 rg
+0.851 0.871 0.824 RG
+1 w 486.0 178.0 205.0 72.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 494.0 234.0 Td (Persist final answer) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 494.0 219.0 Td (chat/views.py creates assistant) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 494.0 209.0 Td (Message) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 494.0 199.0 Td (model_name, prompt_tokens,) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 494.0 189.0 Td (completion_tokens saved) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 421.0 300.0 m 252.0 250.0 l S
+0.192 0.361 0.447 rg
+252.0 250.0 m 260.0 254.0 l 260.0 246.0 l f
+0.192 0.361 0.447 rg
+BT /F1 7 Tf 306.5 309.0 Td (pass or repaired) Tj ET
+0.192 0.361 0.447 RG
+1.3 w 355.0 214.0 m 486.0 214.0 l S
+0.192 0.361 0.447 rg
+486.0 214.0 m 478.0 218.0 l 478.0 210.0 l f
+0.651 0.435 0.165 rg
+BT /F2 11 Tf 44.0 128.0 Td (Traffic summary) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 62.0 111.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 111.0 Td (Inbound user traffic: Browser or ngrok public URL -> Django route chat/urls.py path\('ask/'\) -> chat.views.ask_question\(\).) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 62.0 100.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 100.0 Td (Internal deterministic traffic: Python function calls over local chart_data, no LLM calculation.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 62.0 89.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 89.0 Td (External LLM/RAG traffic: Django server -> OpenAI Responses API. File search is requested as an OpenAI tool against) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 78.0 Td (OPENAI_VECTOR_STORE_ID.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 62.0 67.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 67.0 Td (Cache hit traffic: if the cache key exists, Django returns cached answer and no OpenAI/File Search request is made.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 62.0 56.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 72.0 56.0 Td (Failure traffic: missing OPENAI_API_KEY or OPENAI_VECTOR_STORE_ID returns _fallback_answer\(\), no external call.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 11 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 6156 >>
+stream
+0.090 0.220 0.290 rg
+BT /F2 19 Tf 32.0 560.0 Td (Evidence Payload and File Responsibility Map) Tj ET
+0.396 0.443 0.427 rg
+BT /F1 9 Tf 34.0 540.0 Td (What each part of the JSON means and which files own it.) Tj ET
+0.851 0.871 0.824 RG
+1 w 32.0 528.0 m 810.0 528.0 l S
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 36.0 328.0 360.0 184.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 44.0 496.0 Td (Required JSON evidence shape - deterministic side) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 481.0 Td (question: astrology/structures.py::QuestionContext; populated by) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 471.0 Td (prediction_service.py from chat/prediction_context.py.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 461.0 Td (chart_facts: astrology/calculations/varga.py wraps) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 451.0 Td (SavedChart.chart_data; source chart generation is in charts/.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 441.0 Td (parashari and parashari_vimshottari: parashari.py +) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 431.0 Td (dasha_facts.py.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 421.0 Td (jaimini: dasha_facts.py + jaimini.py +) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 411.0 Td (charts/jaimini_confirmation.py.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 401.0 Td (varga: varga.py plus Python varga rule modules such as) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 391.0 Td (d7_saptamsha_rules.py.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 381.0 Td (yogini: astrology/calculations/yogini.py and) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 371.0 Td (charts/yogini_alignment.py for timing windows.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 361.0 Td (transits: transit_facts.py + chat/timing_windows.py +) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 44.0 351.0 Td (charts/transit_priority.py.) Tj ET
+0.984 0.988 0.973 rg
+0.851 0.871 0.824 RG
+1 w 446.0 328.0 360.0 184.0 re B
+0.090 0.220 0.290 rg
+BT /F2 9 Tf 454.0 496.0 Td (Required JSON evidence shape - judgment/support side) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 481.0 Td (triggered_rules: astrology/rules/engine.py YAML rules plus Python) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 471.0 Td (deterministic varga rules.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 461.0 Td (summary_scores: astrology/rules/scoring.py aggregates triggered) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 451.0 Td (rule outcomes.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 441.0 Td (evidence_ledger: astrology/evidence/ledger.py creates traceable) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 431.0 Td (claims.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 421.0 Td (contradictions: astrology/evidence/contradiction_resolver.py flags) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 411.0 Td (mixed signals.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 401.0 Td (confidence_summary: astrology/evidence/confidence_scorer.py) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 391.0 Td (summarizes evidence strength.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 381.0 Td (rag: astrology/rag/query_builder.py builds search terms; OpenAI) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 371.0 Td (file_search retrieves source snippets at call time.) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 361.0 Td (validation: astrology/validation/* checks final answer and drives) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 7 Tf 454.0 351.0 Td (repair_instruction.) Tj ET
+0.651 0.435 0.165 rg
+BT /F2 11 Tf 42.0 288.0 Td (Strict LLM contract) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 271.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 271.0 Td (The LLM must not calculate placements, houses, dashas, vargas, yogas, transits, or rule applicability.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 260.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 260.0 Td (The LLM receives already-calculated evidence and may synthesize, explain, and cite retrieved support.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 249.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 249.0 Td (RAG is not the rule engine. RAG supports explanation after deterministic facts and triggered rules exist.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 238.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 238.0 Td (Validation can force a repair pass when the answer is generic, unsupported, missing systems, or contradicts evidence.) Tj ET
+0.651 0.435 0.165 rg
+BT /F2 11 Tf 42.0 198.0 Td (Notable live files in request order) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 181.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 181.0 Td (templates/chat/ask.html -> chat/views.py -> chat/models.py.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 170.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 170.0 Td (chat/llm_engine.py -> astrology/services/prediction_service.py.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 159.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 159.0 Td (prediction_service.py -> calculations, rules, evidence, rag, synthesis.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 148.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 148.0 Td (chat/llm_engine.py -> OpenAI Responses API with file_search vector store.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 137.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 137.0 Td (astrology/validation/validator.py -> repair call when failed.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 126.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 126.0 Td (chat/llm_engine.py::_apply_deterministic_remedy\(\) -> chat/views.py saves final Message.) Tj ET
+0.192 0.361 0.447 rg
+BT /F2 8 Tf 60.0 115.0 Td (-) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 70.0 115.0 Td (templates/chat/ask.html + chat/templatetags/chat_formatting.py render final reading.) Tj ET
+0.651 0.435 0.165 rg
+BT /F2 11 Tf 42.0 78.0 Td (Current architecture note) Tj ET
+0.122 0.165 0.161 rg
+BT /F1 8 Tf 60.0 61.0 Td (The deterministic architecture is centered in astrology/. The live LLM adapter is still chat/llm_engine.py, which is the main future refactor target.) Tj ET
+0.396 0.443 0.427 rg
+BT /F1 8 Tf 60.0 46.0 Td (Generated file: astrology\\docs\\user_question_flow.pdf) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 11 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R] /Count 4 >>
+endobj
+12 0 obj
+<< /Type /Catalog /Pages 11 0 R >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000160 00000 n 
+0000007245 00000 n 
+0000007382 00000 n 
+0000014671 00000 n 
+0000014808 00000 n 
+0000022508 00000 n 
+0000022645 00000 n 
+0000028853 00000 n 
+0000028991 00000 n 
+0000029068 00000 n 
+trailer
+<< /Size 13 /Root 12 0 R >>
+startxref
+29119
+%%EOF
