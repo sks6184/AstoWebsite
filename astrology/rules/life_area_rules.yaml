@@ -1,0 +1,633 @@
+- rule_id: LIFE_MARRIAGE_7TH_LORD_STRONG_001
+  system: Parashari
+  category: marriage
+  condition:
+    path: parashari.lord_factors.7_lord.is_strong
+    operator: equals
+    value: true
+  reason: Seventh lord is strong in D1.
+  interpretation: A strong seventh lord supports marriage, partnership stability, and relationship promise when D9 and dasha agree.
+  outcomes:
+    marriage_score: 4
+    relationship_stability_score: 3
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari house-lord principles"
+  source_chapter: "Seventh house / marriage judgment"
+  source_page: ""
+
+- rule_id: LIFE_MARRIAGE_7TH_LORD_DUSTHANA_001
+  system: Parashari
+  category: marriage
+  condition:
+    path: parashari.lord_factors.7_lord.in_dusthana
+    operator: equals
+    value: true
+  reason: Seventh lord is under dusthana pressure.
+  interpretation: Seventh-lord pressure can show delay, conflict, separation themes, or extra effort in relationships; D9 and dasha must confirm before judging strongly.
+  outcomes:
+    relationship_risk_score: 3
+    delay_score: 2
+    marriage_score: -2
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari house-lord principles"
+  source_chapter: "Seventh house / marriage judgment"
+  source_page: ""
+
+- rule_id: LIFE_MARRIAGE_DASHA_ACTIVATES_RELATIONSHIP_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: marriage
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [2, 7, 8, 11]
+  reason: Active dasha lord connects to marriage/family fulfilment houses.
+  interpretation: Marriage timing becomes more relevant when the active dasha lord owns or occupies the 2nd, 7th, 8th, or 11th house.
+  outcomes:
+    marriage_score: 3
+    relationship_stability_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Dasha results modified by ownership, location, and relation"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_MARRIAGE_NATURAL_KARAKA_SUPPORT_001
+  system: Natural Karaka
+  category: marriage
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Marriage natural karaka connects to marriage houses.
+  interpretation: Venus or Jupiter in a marriage-related house gives supporting relationship evidence, subject to dignity and affliction.
+  outcomes:
+    marriage_score: 2
+    relationship_stability_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Marriage karakas"
+  source_page: ""
+
+- rule_id: LIFE_MONEY_2ND_OR_11TH_LORD_STRONG_001
+  system: Parashari
+  category: money
+  condition:
+    any:
+      - path: parashari.lord_factors.2_lord.is_strong
+        operator: equals
+        value: true
+      - path: parashari.lord_factors.11_lord.is_strong
+        operator: equals
+        value: true
+  reason: Wealth or gains lord is strong.
+  interpretation: Strength of the 2nd or 11th lord supports savings, income, gains, and financial accumulation when dasha agrees.
+  outcomes:
+    wealth_score: 4
+    income_growth_score: 3
+    financial_risk_score: -1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari wealth-house principles"
+  source_chapter: "Dhana and Labha Bhava"
+  source_page: ""
+
+- rule_id: LIFE_MONEY_DUSTHANA_FINANCE_PRESSURE_001
+  system: Parashari
+  category: money
+  condition:
+    path: parashari.dusthana_pressure_factors.in_dusthana
+    operator: equals
+    value: true
+  reason: Financial houses are under dusthana pressure.
+  interpretation: Dusthana pressure on money houses can show debt, loss, disputes, inheritance complications, or delayed cash flow.
+  outcomes:
+    financial_risk_score: 4
+    delay_score: 2
+    wealth_score: -2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari dusthana principles"
+  source_chapter: "Dhana, Rina, Randhra and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_MONEY_DASHA_ACTIVATES_WEALTH_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: money
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [2, 6, 8, 9, 11]
+  reason: Active dasha lord connects to finance houses.
+  interpretation: Active dasha connection to wealth, debt, inheritance, fortune, or gains houses makes financial outcomes more likely to manifest.
+  outcomes:
+    wealth_score: 2
+    income_growth_score: 2
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_HEALTH_LAGNA_LORD_STRONG_001
+  system: Parashari
+  category: health
+  condition:
+    path: parashari.lord_factors.1_lord.is_strong
+    operator: equals
+    value: true
+  reason: Lagna lord is strong for vitality.
+  interpretation: A strong ascendant lord supports vitality and recovery capacity, though medical claims must remain cautious.
+  outcomes:
+    health_score: 4
+    recovery_score: 3
+    risk_score: -1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari Lagna principles"
+  source_chapter: "Tanu Bhava / health"
+  source_page: ""
+
+- rule_id: LIFE_HEALTH_6_8_12_PRESSURE_001
+  system: Parashari
+  category: health
+  condition:
+    path: parashari.dusthana_pressure_factors.in_dusthana
+    operator: equals
+    value: true
+  reason: Health houses are under dusthana pressure.
+  interpretation: Connections among the 1st, 6th, 8th, and 12th can show illness, injury, treatment, hospitalization, or chronic pressure. The answer must avoid medical certainty.
+  outcomes:
+    health_pressure_score: 4
+    risk_score: 4
+    recovery_score: -2
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari health-house principles"
+  source_chapter: "Roga, Randhra and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_HEALTH_DASHA_ACTIVATES_HEALTH_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: health
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [1, 6, 8, 12]
+  reason: Active dasha lord connects to health houses.
+  interpretation: Health-related dasha activation increases the need to judge vitality, disease, sudden events, treatment, and recovery carefully.
+  outcomes:
+    health_pressure_score: 2
+    risk_score: 2
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_EDUCATION_4TH_5TH_LORD_SUPPORT_001
+  system: Parashari
+  category: education
+  condition:
+    any:
+      - path: parashari.lord_factors.4_lord.is_strong
+        operator: equals
+        value: true
+      - path: parashari.lord_factors.5_lord.is_strong
+        operator: equals
+        value: true
+  reason: Education house lord is strong.
+  interpretation: Strength of the 4th or 5th lord supports formal learning, memory, intelligence, study effort, and academic progress.
+  outcomes:
+    education_score: 4
+    academic_success_score: 3
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari education-house principles"
+  source_chapter: "Chaturtha, Panchama and Navama Bhava"
+  source_page: ""
+
+- rule_id: LIFE_EDUCATION_NATURAL_KARAKA_SUPPORT_001
+  system: Natural Karaka
+  category: education
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Mercury or Jupiter supports education houses.
+  interpretation: Mercury and Jupiter support learning, reasoning, examination, teaching, and higher knowledge when connected to education houses.
+  outcomes:
+    education_score: 2
+    academic_success_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Education karakas"
+  source_page: ""
+
+- rule_id: LIFE_EDUCATION_DASHA_ACTIVATES_STUDY_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: education
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [4, 5, 9, 11]
+  reason: Active dasha lord connects to education houses.
+  interpretation: Study-related dasha activation supports learning outcomes when D24 and Mercury/Jupiter also cooperate.
+  outcomes:
+    education_score: 2
+    academic_success_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_CHILDREN_5TH_LORD_STRONG_001
+  system: Parashari
+  category: children
+  condition:
+    path: parashari.lord_factors.5_lord.is_strong
+    operator: equals
+    value: true
+  reason: Fifth lord is strong.
+  interpretation: The fifth lord is central for children and progeny; strength supports promise when D7 and dasha agree.
+  outcomes:
+    children_score: 4
+    fulfilment_score: 2
+    children_delay_score: -1
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari children-house principles"
+  source_chapter: "Putra Bhava"
+  source_page: ""
+
+- rule_id: LIFE_CHILDREN_5TH_LORD_PRESSURE_001
+  system: Parashari
+  category: children
+  condition:
+    path: parashari.lord_factors.5_lord.in_dusthana
+    operator: equals
+    value: true
+  reason: Fifth lord is under dusthana pressure.
+  interpretation: Fifth-lord pressure can indicate delay, anxiety, medical concern, or interruption around children matters; D7 and dasha must confirm.
+  outcomes:
+    children_delay_score: 4
+    risk_score: 2
+    children_score: -2
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari children-house principles"
+  source_chapter: "Putra Bhava"
+  source_page: ""
+
+- rule_id: LIFE_CHILDREN_DASHA_ACTIVATES_CHILDREN_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: children
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [2, 5, 9, 11]
+  reason: Active dasha lord connects to children/fulfilment houses.
+  interpretation: Dasha activation of 2nd, 5th, 9th, or 11th houses can time children-related matters when natal promise and D7 support.
+  outcomes:
+    children_score: 2
+    fulfilment_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_PROPERTY_4TH_LORD_STRONG_001
+  system: Parashari
+  category: property
+  condition:
+    path: parashari.lord_factors.4_lord.is_strong
+    operator: equals
+    value: true
+  reason: Fourth lord is strong.
+  interpretation: A strong fourth lord supports home, land, property, vehicles, residence, and domestic comfort when D4/D16 and dasha agree.
+  outcomes:
+    property_score: 4
+    settlement_score: 3
+    vehicle_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari property-house principles"
+  source_chapter: "Chaturtha Bhava"
+  source_page: ""
+
+- rule_id: LIFE_PROPERTY_LOAN_OR_EXPENSE_PRESSURE_001
+  system: Parashari
+  category: property
+  condition:
+    path: parashari.dusthana_pressure_factors.in_dusthana
+    operator: equals
+    value: true
+  reason: Property category lords show dusthana pressure.
+  interpretation: Property matters may involve loans, expenses, relocation stress, delay, disputes, or hidden costs when 6th, 8th, or 12th factors are active.
+  outcomes:
+    property_risk_score: 3
+    delay_score: 2
+    financial_risk_score: 2
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari property and dusthana principles"
+  source_chapter: "Chaturtha, Rina, Randhra and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_PROPERTY_DASHA_ACTIVATES_PROPERTY_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: property
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [2, 4, 6, 9, 11, 12]
+  reason: Active dasha lord connects to property/settlement houses.
+  interpretation: Dasha activation of assets, home, loan, fortune, gains, or residence-change houses supports property and settlement timing.
+  outcomes:
+    property_score: 2
+    settlement_score: 2
+    vehicle_score: 1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_PROPERTY_NATURAL_KARAKA_SUPPORT_001
+  system: Natural Karaka
+  category: property
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Property natural karaka connects to property houses.
+  interpretation: Mars, Moon, or Venus connected to property houses supports land, residence, vehicles, or comforts depending on the planet and varga confirmation.
+  outcomes:
+    property_score: 2
+    settlement_score: 1
+    vehicle_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Property and vehicle karakas"
+  source_page: ""
+
+- rule_id: LIFE_FAMILY_4TH_9TH_SUPPORT_001
+  system: Parashari
+  category: family
+  condition:
+    any:
+      - path: parashari.lord_factors.4_lord.is_strong
+        operator: equals
+        value: true
+      - path: parashari.lord_factors.9_lord.is_strong
+        operator: equals
+        value: true
+  reason: Family or parental house lord is strong.
+  interpretation: Strength of the 4th or 9th lord supports family, mother/father lineage, emotional support, and ancestral matters when D12 agrees.
+  outcomes:
+    family_support_score: 4
+    mother_support_score: 1
+    father_support_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari family-house principles"
+  source_chapter: "Chaturtha, Tritiya and Navama Bhava"
+  source_page: ""
+
+- rule_id: LIFE_FAMILY_DASHA_ACTIVATES_FAMILY_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: family
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [1, 3, 4, 9, 12]
+  reason: Active dasha lord connects to family houses.
+  interpretation: Dasha activation of self, siblings, mother/home, father/lineage, or separation/residence houses times family-related matters.
+  outcomes:
+    family_support_score: 2
+    family_pressure_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_FOREIGN_9TH_12TH_ACTIVATION_001
+  system: Parashari
+  category: foreign_travel
+  condition:
+    any:
+      - path: parashari.lord_factors.9_lord.is_strong
+        operator: equals
+        value: true
+      - path: parashari.lord_factors.12_lord.is_strong
+        operator: equals
+        value: true
+  reason: Ninth or twelfth lord is strong for foreign/long-distance matters.
+  interpretation: Strength of the 9th or 12th lord supports long-distance travel, foreign stay, migration, or residence away from birthplace when D4/D9 and dasha agree.
+  outcomes:
+    foreign_opportunity_score: 4
+    settlement_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari travel and residence principles"
+  source_chapter: "Navama and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_FOREIGN_DASHA_ACTIVATES_RELOCATION_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: foreign_travel
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [3, 4, 7, 9, 12]
+  reason: Active dasha lord connects to travel/relocation houses.
+  interpretation: Dasha activation of movement, residence, foreign/public links, fortune, or distant residence houses supports travel or settlement timing.
+  outcomes:
+    foreign_opportunity_score: 3
+    settlement_score: 2
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_FOREIGN_RAHU_SATURN_SUPPORT_001
+  system: Natural Karaka
+  category: foreign_travel
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Rahu or Saturn connects to foreign/relocation houses.
+  interpretation: Rahu can indicate foreign, unfamiliar, or unconventional environments, while Saturn can indicate distance, endurance, and long-term residence conditions.
+  outcomes:
+    foreign_opportunity_score: 2
+    settlement_score: 1
+    delay_score: 1
+  weight: 5
+  polarity: mixed
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Foreign and distance karakas"
+  source_page: ""
+
+- rule_id: LIFE_LEGAL_6TH_LORD_STRONG_001
+  system: Parashari
+  category: legal_and_enemies
+  condition:
+    path: parashari.lord_factors.6_lord.is_strong
+    operator: equals
+    value: true
+  reason: Sixth lord has strength in a legal/enemy question.
+  interpretation: A strong sixth lord can support capacity to handle disputes, competition, litigation, debts, and opponents, though outcome depends on benefic support and 8th/12th pressure.
+  outcomes:
+    legal_strength_score: 4
+    enemy_control_score: 3
+  weight: 7
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari sixth-house principles"
+  source_chapter: "Shashtha Bhava"
+  source_page: ""
+
+- rule_id: LIFE_LEGAL_8TH_12TH_PRESSURE_001
+  system: Parashari
+  category: legal_and_enemies
+  condition:
+    path: parashari.dusthana_pressure_factors.in_dusthana
+    operator: equals
+    value: true
+  reason: Legal/enemy houses show dusthana pressure.
+  interpretation: Strong 8th or 12th involvement can show escalation, hidden complications, penalties, confinement, losses, or prolonged dispute.
+  outcomes:
+    legal_risk_score: 4
+    delay_score: 3
+    financial_risk_score: 2
+  weight: 8
+  polarity: mixed
+  confidence: medium
+  source_book: "Classical Parashari dusthana principles"
+  source_chapter: "Shashtha, Randhra and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_LEGAL_DASHA_ACTIVATES_DISPUTE_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: legal_and_enemies
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [6, 8, 12]
+  reason: Active dasha lord connects to dispute houses.
+  interpretation: Legal or enemy matters are more likely to manifest when the active dasha lord connects to 6th, 8th, or 12th houses.
+  outcomes:
+    legal_strength_score: 1
+    legal_risk_score: 2
+    delay_score: 2
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_SPIRITUAL_9TH_12TH_SUPPORT_001
+  system: Parashari
+  category: spirituality
+  condition:
+    any:
+      - path: parashari.lord_factors.9_lord.is_strong
+        operator: equals
+        value: true
+      - path: parashari.lord_factors.12_lord.is_strong
+        operator: equals
+        value: true
+  reason: Dharma or moksha house lord is strong.
+  interpretation: Strength of the 9th or 12th lord supports dharma, teachers, sadhana, retreat, liberation-oriented practices, and spiritual guidance.
+  outcomes:
+    spiritual_growth_score: 4
+    guidance_score: 2
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari dharma and moksha principles"
+  source_chapter: "Navama and Vyaya Bhava"
+  source_page: ""
+
+- rule_id: LIFE_SPIRITUAL_DASHA_ACTIVATES_MOKSHA_DHARMA_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: spirituality
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [4, 8, 9, 12]
+  reason: Active dasha lord connects to spiritual houses.
+  interpretation: Dasha activation of inner life, occult/transformation, dharma, or moksha houses supports spiritual timing.
+  outcomes:
+    spiritual_growth_score: 3
+    guidance_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_SPIRITUAL_JUPITER_KETU_SUPPORT_001
+  system: Natural Karaka
+  category: spirituality
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Jupiter or Ketu connects to spiritual houses.
+  interpretation: Jupiter supports dharma, wisdom, and teachers; Ketu supports detachment, moksha, occult insight, and inward practice.
+  outcomes:
+    spiritual_growth_score: 2
+    guidance_score: 2
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Spiritual karakas"
+  source_page: ""

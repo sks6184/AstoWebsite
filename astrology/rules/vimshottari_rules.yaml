@@ -1,0 +1,220 @@
+- rule_id: VIMSHOTTARI_CH24_LAGNA_LORD_DASHA_RISE_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    all:
+      - path: parashari_vimshottari.dasha_lord_facts.owned_houses
+        operator: equals
+        value: 1
+      - path: chart_facts.varga.charts.d1.all_lord_placements.1_lord.dignity
+        operator: in
+        value: [exalted, own_sign]
+  reason: Active Vimshottari dasha lord is the Lagna lord and the D1 Lagna lord is strong.
+  interpretation: When the ascendant lord is strong, its dasha supports vitality, initiative, rise, and the ability to carry promised results.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    income_growth_score: 1
+    business_success_score: 1
+    long_term_sustainability_score: 1
+    risk_score: -1
+    delay_score: -1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "pp. 140-143"
+
+- rule_id: VIMSHOTTARI_CH24_SECOND_LORD_WEALTH_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: [career, business, money]
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.owned_houses
+    operator: equals
+    value: 2
+  reason: Active Vimshottari dasha lord owns the 2nd house.
+  interpretation: The dasha of the 2nd lord can deliver income, resources, speech, and family-finance results, modified by dignity and divisional confirmation.
+  outcomes:
+    income_growth_score: 3
+    business_success_score: 2
+    financial_risk_score: -1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "p. 142"
+
+- rule_id: VIMSHOTTARI_CH24_FIFTH_NINTH_LORD_DASHA_GOOD_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.owned_houses
+    operator: in
+    value: [5, 9]
+  reason: Active Vimshottari dasha lord owns a trinal house.
+  interpretation: Dasha periods of 5th and 9th lords are generally favorable, especially when the planet is strong and connected to the question.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    income_growth_score: 1
+    business_success_score: 1
+    long_term_sustainability_score: 1
+    delay_score: -1
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "p. 142"
+
+- rule_id: VIMSHOTTARI_CH24_SIXTH_EIGHTH_LORD_PRESSURE_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.owned_houses
+    operator: in
+    value: [6, 8]
+  reason: Active Vimshottari dasha lord owns the 6th or 8th house.
+  interpretation: Dasha periods of 6th or 8th lords can bring pressure, conflict, debt, health strain, interruption, or transformation unless other benefic factors strongly modify them.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+    execution_pressure_score: 2
+    financial_risk_score: 1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "pp. 141-142"
+
+- rule_id: VIMSHOTTARI_CH24_DASHA_LORD_STRONG_DELIVERY_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d1.dignity
+    operator: in
+    value: [exalted, own_sign]
+  reason: Active Vimshottari dasha lord has strong D1 dignity.
+  interpretation: A strong active dasha lord is more capable of delivering the results promised by its ownership, placement, associations, and aspects.
+  outcomes:
+    promotion_score: 1
+    authority_score: 1
+    income_growth_score: 1
+    business_success_score: 1
+    long_term_sustainability_score: 1
+    delay_score: -1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "pp. 140-142"
+
+- rule_id: VIMSHOTTARI_CH24_DASHA_LORD_WEAK_DELIVERY_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.d1.dignity
+    operator: equals
+    value: debilitated
+  reason: Active Vimshottari dasha lord is debilitated in D1.
+  interpretation: A weak active dasha lord can complicate or reduce delivery of its results; strong claims should be moderated unless other systems confirm.
+  outcomes:
+    risk_score: 2
+    delay_score: 2
+    execution_pressure_score: 1
+    promotion_score: -1
+    business_success_score: -1
+  weight: 6
+  polarity: mixed
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "pp. 140-142"
+
+- rule_id: VIMSHOTTARI_CH24_MD_AD_TRINAL_EXCHANGE_SUPPORT_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    any:
+      - all:
+          - path: parashari_vimshottari.current_mahadasha_lord_facts.owned_houses
+            operator: equals
+            value: 5
+          - path: parashari_vimshottari.current_antardasha_lord_facts.owned_houses
+            operator: equals
+            value: 9
+      - all:
+          - path: parashari_vimshottari.current_mahadasha_lord_facts.owned_houses
+            operator: equals
+            value: 9
+          - path: parashari_vimshottari.current_antardasha_lord_facts.owned_houses
+            operator: equals
+            value: 5
+  reason: Current Mahadasha and Antardasha connect the 5th and 9th lords.
+  interpretation: The sub-period of the 5th lord in the period of the 9th lord, or the reverse, is treated as favorable and can support merit, guidance, fortune, and smoother outcomes.
+  outcomes:
+    promotion_score: 2
+    authority_score: 2
+    income_growth_score: 1
+    business_success_score: 1
+    long_term_sustainability_score: 1
+    delay_score: -1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "p. 143"
+
+- rule_id: VIMSHOTTARI_CH24_MD_AD_RELATION_SUPPORT_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: parashari_vimshottari.pair_assessment.status
+    operator: equals
+    value: supports
+  reason: Mahadasha and Antardasha lords have a supportive assessed relationship.
+  interpretation: Dasha results are compounded through the Mahadasha and Antardasha lords; a supportive pair improves delivery of the promised result.
+  outcomes:
+    promotion_score: 1
+    income_growth_score: 1
+    business_success_score: 1
+    market_visibility_score: 1
+    long_term_sustainability_score: 1
+  weight: 5
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "pp. 142-143"
+
+- rule_id: VIMSHOTTARI_CH24_TRANSIT_MODIFIES_DASHA_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: general
+  condition:
+    path: transits.status
+    operator: exists
+    value: true
+  reason: Transit context is available to modify dasha judgment.
+  interpretation: Dasha results should be moderated by gochara/transit support or pressure rather than judged from the dasha alone.
+  outcomes:
+    delay_score: 0
+  weight: 1
+  polarity: mixed
+  confidence: high
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV: Results of Dasas and Bhuktis"
+  source_page: "p. 142"

@@ -1,4 +1,7 @@
+import re
+
 from chat.prediction_context import CATEGORY_RULES
+from astrology.rules.dasha_scoring import dasha_polarity_summary
 
 
 _RELOCATION_QUESTION_MARKERS = frozenset({
@@ -46,6 +49,53 @@ def _charts_with_triggered_rules(evidence: dict) -> set[str]:
         if chart:
             charts.add(chart)
     return charts
+
+
+def _has_dasha_context(lowered: str) -> bool:
+    return any(term in lowered for term in ["dasha", "mahadasha", "antardasha", "vimshottari"])
+
+
+def _dasha_polarity_claim_issues(answer: str, evidence: dict) -> list[str]:
+    lowered = answer.lower()
+    if not _has_dasha_context(lowered):
+        return []
+
+    positive_claim = bool(
+        re.search(
+            r"\b(?:dasha|mahadasha|antardasha|vimshottari)\b[^.]{0,90}\b(?:favo[u]?rable|auspicious|positive|supportive|supports)\b",
+            lowered,
+        )
+        or re.search(
+            r"\b(?:favo[u]?rable|auspicious|positive|supportive)\b[^.]{0,90}\b(?:dasha|mahadasha|antardasha|vimshottari)\b",
+            lowered,
+        )
+    )
+    pressure_claim = bool(
+        re.search(
+            r"\b(?:dasha|mahadasha|antardasha|vimshottari)\b[^.]{0,90}\b(?:unfavo[u]?rable|negative|difficult|weak|pressure|challenging)\b",
+            lowered,
+        )
+        or re.search(
+            r"\b(?:unfavo[u]?rable|negative|difficult|weak|challenging)\b[^.]{0,90}\b(?:dasha|mahadasha|antardasha|vimshottari)\b",
+            lowered,
+        )
+    )
+    if not positive_claim and not pressure_claim:
+        return []
+
+    summary = dasha_polarity_summary(evidence)
+    issues = []
+    if positive_claim and not summary["has_positive"]:
+        issues.append(
+            "Answer calls Vimshottari/Mahadasha/Antardasha favorable or supportive, "
+            "but no positive triggered Vimshottari rule supports that dasha polarity."
+        )
+    if pressure_claim and not summary["has_pressure"]:
+        issues.append(
+            "Answer calls Vimshottari/Mahadasha/Antardasha unfavorable, difficult, weak, or challenging, "
+            "but no mixed/negative triggered Vimshottari rule supports that dasha polarity."
+        )
+    return issues
 
 
 def check_evidence(answer: str, evidence: dict) -> list[str]:
@@ -129,6 +179,8 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
 
     if "dasha" not in lowered:
         issues.append("Answer does not mention dasha timing.")
+
+    issues.extend(_dasha_polarity_claim_issues(answer, evidence))
 
     # ── Relocation / return-to-homeland rules ──────────────────────────────────
     q_text = _question_text(evidence)

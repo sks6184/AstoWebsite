@@ -13,6 +13,9 @@ from astrology.calculations.d3_drekkana_rules import evaluate_d3_drekkana_rules
 from astrology.calculations.d4_chaturthamsha_rules import evaluate_d4_chaturthamsha_rules
 from astrology.calculations.d7_saptamsha_rules import evaluate_d7_saptamsha_rules
 from astrology.calculations.d9_navamsha_rules import evaluate_d9_navamsha_rules
+from astrology.calculations.d10_dashamsha_rules import evaluate_d10_dashamsha_rules
+from astrology.calculations.d12_dwadashamsha_rules import evaluate_d12_dwadashamsha_rules
+from astrology.calculations.d16_shodashamsha_rules import evaluate_d16_shodashamsha_rules
 from astrology.calculations.varga_generic_rules import evaluate_generic_varga_rules
 from astrology.evidence.confidence_scorer import build_confidence_summary
 from astrology.evidence.contradiction_resolver import resolve_contradictions
@@ -22,6 +25,7 @@ from astrology.rules.engine import run_rule_engine
 from astrology.rules.scoring import aggregate_scores
 from astrology.synthesis.prompt_builder import build_prompt_payload
 from astrology.structures import PredictionEvidence, QuestionContext, business_score_template, career_score_template
+from astrology.services.timing_window_service import build_timing_window_selection
 
 
 BUSINESS_KEYWORDS = {
@@ -139,6 +143,7 @@ def build_prediction_evidence(
     evidence_json = evidence.to_dict()
     evidence_json["event_confirmation"] = dasha_facts["event_confirmation"]
     evidence_json["reference_frames"] = dasha_facts["reference_frames"]
+    evidence_json["natural_karakas_assessment"] = build_natural_karaka_assessment(chart_data, category)
     rule_result = run_rule_engine(evidence_json, category)
     generic_varga_rules = evaluate_generic_varga_rules(evidence_json["chart_facts"], category)
     d1_lagna_rules = evaluate_d1_lagna_roles(evidence_json["chart_facts"], evidence_json, category)
@@ -147,12 +152,25 @@ def build_prediction_evidence(
     d4_rules = evaluate_d4_chaturthamsha_rules(evidence_json["chart_facts"], category)
     d7_rules = evaluate_d7_saptamsha_rules(evidence_json["chart_facts"], category)
     d9_rules = evaluate_d9_navamsha_rules(evidence_json["chart_facts"], category)
-    all_triggered = rule_result["triggered_rules"] + generic_varga_rules + d1_lagna_rules + d2_rules + d3_rules + d4_rules + d7_rules + d9_rules
+    d10_rules = evaluate_d10_dashamsha_rules(evidence_json["chart_facts"], category)
+    d12_rules = evaluate_d12_dwadashamsha_rules(evidence_json["chart_facts"], category)
+    d16_rules = evaluate_d16_shodashamsha_rules(evidence_json["chart_facts"], category)
+    all_triggered = rule_result["triggered_rules"] + generic_varga_rules + d1_lagna_rules + d2_rules + d3_rules + d4_rules + d7_rules + d9_rules + d10_rules + d12_rules + d16_rules
     evidence_json["triggered_rules"] = all_triggered
     evidence_json["summary_scores"] = aggregate_scores(all_triggered, category)
     evidence_json["evidence_ledger"] = build_evidence_ledger(evidence_json)
     evidence_json["contradictions"] = resolve_contradictions(evidence_json)
     evidence_json["rag"] = build_rag_context_request(evidence_json)
+    evidence_json["timing_selection"] = build_timing_window_selection(
+        chart_data,
+        user_question,
+        category,
+        effective_start,
+        months=effective_months,
+        end_date=effective_end,
+        practical_months=min(max(effective_months, 12), 60),
+        precomputed_windows=transit_facts.get("future_timing", {}).get("windows", []),
+    )
     evidence_json["synthesis"] = {
         "prompt_payload": build_prompt_payload(evidence_json),
         "status": "prompt_built",
@@ -165,7 +183,6 @@ def build_prediction_evidence(
     if rule_result["load_errors"]:
         evidence_json["validation"]["issues"].extend(rule_result["load_errors"])
     evidence_json["confidence_summary"] = build_confidence_summary(evidence_json)
-    evidence_json["natural_karakas_assessment"] = build_natural_karaka_assessment(chart_data, category)
     if category == "property":
         jaimini_active = evidence_json.get("jaimini", {}).get("active_chara_dasha")
         evidence_json["location_verdict"] = build_location_verdict(

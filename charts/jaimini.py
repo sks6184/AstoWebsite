@@ -1,35 +1,7 @@
 from datetime import datetime, timedelta
 
-
-SIGNS = [
-    "Aries",
-    "Taurus",
-    "Gemini",
-    "Cancer",
-    "Leo",
-    "Virgo",
-    "Libra",
-    "Scorpio",
-    "Sagittarius",
-    "Capricorn",
-    "Aquarius",
-    "Pisces",
-]
-
-SIGN_LORDS = {
-    1: ["Ma"],
-    2: ["Ve"],
-    3: ["Me"],
-    4: ["Mo"],
-    5: ["Su"],
-    6: ["Me"],
-    7: ["Ve"],
-    8: ["Ma", "Ke"],
-    9: ["Ju"],
-    10: ["Sa"],
-    11: ["Sa", "Ra"],
-    12: ["Ju"],
-}
+from astrology.constants import JAIMINI_SIGN_LORD_CODES as SIGN_LORDS
+from astrology.constants import SIGNS
 
 DASHA_DIRECT_LAGNAS = {1, 5, 6, 7, 11, 12}
 COUNT_DIRECT_SIGNS = {1, 2, 3, 7, 8, 9}

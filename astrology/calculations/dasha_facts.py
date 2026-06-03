@@ -28,6 +28,86 @@ def _current_period(periods: list[dict[str, Any]], target_date: date) -> dict[st
     return {}
 
 
+def _compact_period(period: dict[str, Any]) -> dict[str, Any]:
+    if not period:
+        return {}
+    lord = period.get("lord")
+    return {
+        "lord": lord,
+        "lord_name": period.get("lord_name") or PLANET_NAMES.get(lord, lord),
+        "start": period.get("start"),
+        "end": period.get("end"),
+        "start_display": period.get("start_display"),
+        "end_display": period.get("end_display"),
+        "years": period.get("years"),
+        "nominal_years": period.get("nominal_years"),
+        "balance": period.get("balance", False),
+        "cycle": period.get("cycle"),
+    }
+
+
+def _birth_dasha_balance(vimshottari: dict[str, Any]) -> dict[str, Any]:
+    birth_mahadasha = vimshottari.get("birth_mahadasha", {})
+    if birth_mahadasha.get("balance"):
+        return birth_mahadasha["balance"]
+
+    first_period = (vimshottari.get("periods") or [{}])[0]
+    if first_period.get("balance") and first_period.get("years") is not None:
+        total_days = round(float(first_period["years"]) * 365.2425)
+        years, remainder = divmod(total_days, 365)
+        months, days = divmod(remainder, 30)
+        return {"years": years, "months": months, "days": days}
+
+    return {}
+
+
+def _moon_nakshatra(vimshottari: dict[str, Any]) -> dict[str, Any]:
+    details = vimshottari.get("moon_nakshatra_details")
+    if details:
+        return details
+    return {
+        "name": vimshottari.get("moon_nakshatra"),
+        "lord": vimshottari.get("balance_lord"),
+        "lord_name": PLANET_NAMES.get(vimshottari.get("balance_lord"), vimshottari.get("balance_lord")),
+    }
+
+
+def build_vimshottari_deterministic_facts(
+    chart_data: dict[str, Any],
+    target_date: date | None = None,
+) -> dict[str, Any]:
+    target_date = target_date or date.today()
+    vimshottari = chart_data.get("dashas", {}).get("vimshottari", {})
+    mahadasha = _current_period(vimshottari.get("periods", []), target_date)
+    antardasha = _current_period(mahadasha.get("antardashas", []), target_date)
+    birth_mahadasha = vimshottari.get("birth_mahadasha", {})
+    birth_lord = birth_mahadasha.get("lord") or vimshottari.get("balance_lord")
+    md_lord = mahadasha.get("lord")
+    ad_lord = antardasha.get("lord")
+
+    return {
+        "system": "Vimshottari",
+        "target_date": target_date.isoformat(),
+        "moon_nakshatra": (_moon_nakshatra(vimshottari) or {}).get("name"),
+        "moon_nakshatra_details": _moon_nakshatra(vimshottari),
+        "birth_mahadasha_lord": PLANET_NAMES.get(birth_lord, birth_lord),
+        "birth_mahadasha_lord_code": birth_lord,
+        "birth_dasha_balance": _birth_dasha_balance(vimshottari),
+        "mahadasha_lord": PLANET_NAMES.get(md_lord, md_lord),
+        "mahadasha_lord_code": md_lord,
+        "antardasha_lord": PLANET_NAMES.get(ad_lord, ad_lord),
+        "antardasha_lord_code": ad_lord,
+        "current_mahadasha": _compact_period(mahadasha),
+        "current_antardasha": _compact_period(antardasha),
+        "calculation_status": vimshottari.get("calculation_status", "available" if vimshottari else "unavailable"),
+        "source_fields": {
+            "timeline": "chart_data.dashas.vimshottari.periods",
+            "birth_mahadasha": "chart_data.dashas.vimshottari.birth_mahadasha",
+            "moon_nakshatra": "chart_data.dashas.vimshottari.moon_nakshatra_details",
+        },
+    }
+
+
 def _compact_dasha_lord(chart_data: dict[str, Any], planet_code: str, category_houses: list[int]) -> dict[str, Any]:
     if not planet_code:
         return {}
@@ -71,6 +151,7 @@ def build_vimshottari_facts(
     target_date = target_date or date.today()
     category_houses = category_houses or [2, 6, 10, 11]
     vimshottari = chart_data.get("dashas", {}).get("vimshottari", {})
+    deterministic_facts = build_vimshottari_deterministic_facts(chart_data, target_date)
     mahadasha = _current_period(vimshottari.get("periods", []), target_date)
     antardasha = _current_period(mahadasha.get("antardashas", []), target_date)
     lords = [lord for lord in [mahadasha.get("lord"), antardasha.get("lord")] if lord]
@@ -92,6 +173,8 @@ def build_vimshottari_facts(
         chart_data, mahadasha.get("lord"), antardasha.get("lord"), category_houses
     )
     divisional_confirmation = evaluate_divisional_confirmation(chart_data, category, category_houses, lords)
+    mahadasha_lord_facts = _compact_dasha_lord(chart_data, mahadasha.get("lord"), category_houses)
+    antardasha_lord_facts = _compact_dasha_lord(chart_data, antardasha.get("lord"), category_houses)
     for reason in pair_assessment.get("reasons", []):
         findings.append(
             {
@@ -114,10 +197,22 @@ def build_vimshottari_facts(
     return {
         "system": "Parashari / Vimshottari",
         "category": category,
+        "target_date": target_date.isoformat(),
+        "moon_nakshatra": deterministic_facts.get("moon_nakshatra"),
+        "birth_mahadasha_lord": deterministic_facts.get("birth_mahadasha_lord"),
+        "birth_mahadasha_lord_code": deterministic_facts.get("birth_mahadasha_lord_code"),
+        "birth_dasha_balance": deterministic_facts.get("birth_dasha_balance"),
+        "mahadasha_lord": deterministic_facts.get("mahadasha_lord"),
+        "mahadasha_lord_code": deterministic_facts.get("mahadasha_lord_code"),
+        "antardasha_lord": deterministic_facts.get("antardasha_lord"),
+        "antardasha_lord_code": deterministic_facts.get("antardasha_lord_code"),
+        "deterministic_facts": deterministic_facts,
         "current_mahadasha": mahadasha,
         "current_antardasha": antardasha,
+        "current_mahadasha_lord_facts": mahadasha_lord_facts,
+        "current_antardasha_lord_facts": antardasha_lord_facts,
         "dasha_lord_facts": [
-            _compact_dasha_lord(chart_data, lord, category_houses)
+            mahadasha_lord_facts if lord == mahadasha.get("lord") else antardasha_lord_facts
             for lord in lords
         ],
         "pair_assessment": pair_assessment,

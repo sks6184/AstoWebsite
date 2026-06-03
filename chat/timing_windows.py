@@ -12,7 +12,8 @@ from .prediction_context import CATEGORY_RULES
 
 SLOW_TRANSIT_LORDS = ["Ju", "Sa", "Ra", "Ke"]
 
-# Maps question category to the primary divisional chart for period-lord validation.
+# Fallback map for period-lord validation. CATEGORY_RULES is preferred so this
+# stays category-driven as the product grows.
 _CATEGORY_PRIMARY_VARGA = {
     "job": "d10",
     "career": "d10",
@@ -20,11 +21,23 @@ _CATEGORY_PRIMARY_VARGA = {
     "money": "d2",
     "marriage": "d9",
     "children": "d7",
-    "health": "d9",
+    "health": "d30",
     "education": "d24",
+    "property": "d4",
+    "family": "d12",
+    "foreign_travel": "d4",
+    "legal_and_enemies": "d30",
     "spirituality": "d20",
     "general": "d9",
 }
+
+
+def _category_vargas(category: str) -> list[str]:
+    charts = CATEGORY_RULES.get(category, {}).get("divisional_charts", [])
+    vargas = [chart for chart in charts if chart != "d1"]
+    if vargas:
+        return vargas
+    return [_CATEGORY_PRIMARY_VARGA.get(category, "d9")]
 
 
 def _planet_in_varga(chart_data: dict, chart_key: str, planet_code: str) -> dict:
@@ -46,28 +59,31 @@ def _varga_score_for_window_lord(
     if not lord_code:
         return 0, []
 
-    primary_varga = _CATEGORY_PRIMARY_VARGA.get(category, "d9")
     score = 0
     reasons = []
     lord_name = PLANET_NAMES.get(lord_code, lord_code)
 
-    planet = _planet_in_varga(chart_data, primary_varga, lord_code)
-    house = planet.get("house")
-    if house:
+    for index, varga in enumerate(_category_vargas(category)):
+        planet = _planet_in_varga(chart_data, varga, lord_code)
+        house = planet.get("house")
+        if not house:
+            continue
+        direct_weight = 20 if index == 0 else 12
+        support_weight = 8 if index == 0 else 5
         if house in category_houses:
-            score += 20
+            score += direct_weight
             reasons.append(
-                f"{lord_name} is in {primary_varga.upper()} house {house}, "
+                f"{lord_name} is in {varga.upper()} house {house}, "
                 f"confirming the {category} theme in the divisional chart."
             )
         elif house in {1, 5, 9, 10, 11}:
-            score += 8
+            score += support_weight
             reasons.append(
-                f"{lord_name} is in {primary_varga.upper()} house {house} "
+                f"{lord_name} is in {varga.upper()} house {house} "
                 f"(kendra/trikona/upachaya strength)."
             )
 
-    if category in {"career", "job", "business"} and primary_varga != "d9":
+    if category in {"career", "job", "business"} and "d9" not in _category_vargas(category):
         d9_planet = _planet_in_varga(chart_data, "d9", lord_code)
         d9_house = d9_planet.get("house")
         if d9_house in {1, 5, 9, 10}:
@@ -128,12 +144,11 @@ def _house_score(chart_data, planet_code, category_houses, category=""):
 
     # Divisional chart dusthana penalty: if the lord is in house 6/8/12 of the
     # category's primary varga, reduce confidence — D1 promise is not confirmed.
-    primary_varga = _CATEGORY_PRIMARY_VARGA.get(category)
-    if primary_varga:
+    for index, primary_varga in enumerate(_category_vargas(category)):
         varga_planet = _planet_in_varga(chart_data, primary_varga, planet_code)
         varga_house = varga_planet.get("house")
         if varga_house in {6, 8, 12}:
-            score -= 15
+            score -= 15 if index == 0 else 8
             reasons.append(
                 f"{PLANET_NAMES.get(planet_code, planet_code)} is in {primary_varga.upper()} "
                 f"house {varga_house} (dusthana) — divisional chart weakens D1 timing promise."

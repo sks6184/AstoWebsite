@@ -8,6 +8,8 @@ import yaml
 RULES_DIR = Path(__file__).resolve().parent
 RULE_FILES = [
     "parashari_rules.yaml",
+    "vimshottari_rules.yaml",
+    "life_area_rules.yaml",
     "jaimini_rules.yaml",
     "divisional_rules.yaml",
     "yogini_rules.yaml",
@@ -79,4 +81,3 @@ def load_rules(rules_dir: Path | None = None, rule_files: list[str] | None = Non
             rules.append(normalized)
 
     return RuleLoadResult(rules=rules, errors=errors)
-

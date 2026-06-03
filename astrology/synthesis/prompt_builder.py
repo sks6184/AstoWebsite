@@ -5,6 +5,7 @@ from typing import Any
 from .answer_schema import ANSWER_SCHEMA, REQUIRED_SECTIONS
 from chat.prediction_context import CATEGORY_RULES
 from astrology.calculations.varga import VARGA_PURPOSES
+from astrology.rules.dasha_scoring import dasha_polarity_summary
 
 
 SYSTEM_INSTRUCTIONS = """You are an astrology synthesis engine.
@@ -28,6 +29,8 @@ Do not create subheadings for Direct Answer, Recommended Timing, Launch Strategy
 Divisional Chart Basis, Jaimini Basis, Parashari Basis, Muhurta Basis, RAG / Classical Support,
 Conflicting Signals, or Confidence Level. Weave those concepts into Jyotish Analysis as prose.
 Do not claim Parashari/Jaimini/D10/Yogini support unless that evidence is present in input JSON.
+Do not call Vimshottari, Mahadasha, or Antardasha favorable/supportive unless dasha_rule_polarity.has_positive is true.
+Do not call Vimshottari, Mahadasha, or Antardasha unfavorable/difficult/weak unless dasha_rule_polarity.has_pressure is true.
 Vimshottari is a Parashari dasha, not a separate system. Chara is a Jaimini dasha, not a separate system.
 Do not call a transit unfavorable unless you name the actual planet, sign, house, Sarvashtakavarga points,
 and the payload shows weak support.
@@ -148,6 +151,8 @@ def build_prompt_payload(evidence: dict[str, Any], rag_context: dict[str, Any] |
         "question": evidence.get("question", {}),
         "required_divisional_charts": _required_divisional_charts(category),
         "summary_scores": evidence.get("summary_scores", {}),
+        "dasha_rule_polarity": dasha_polarity_summary(evidence),
+        "timing_selection": evidence.get("timing_selection", {}),
         "evidence_ledger": evidence.get("evidence_ledger", []),
         "contradictions": evidence.get("contradictions", {}),
         "triggered_rules": _select_rules(evidence.get("triggered_rules", []), category_charts),

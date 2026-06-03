@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import swisseph as swe
@@ -6,81 +6,14 @@ import swisseph as swe
 from .ashtakavarga import build_ashtakavarga
 from .jaimini import build_chara_dasha
 from .yogas import detect_yogas
+from astrology.constants import (
+    NAKSHATRAS,
+    SIGN_LORDS,
+    SIGNS,
+)
+from astrology.calculations.vimshottari import build_vimshottari_dasha
 from astrology.calculations.yogini import build_yogini_periods
 
-
-SIGNS = [
-    "Aries",
-    "Taurus",
-    "Gemini",
-    "Cancer",
-    "Leo",
-    "Virgo",
-    "Libra",
-    "Scorpio",
-    "Sagittarius",
-    "Capricorn",
-    "Aquarius",
-    "Pisces",
-]
-
-SIGN_LORDS = {
-    "Aries": "Mars",
-    "Taurus": "Venus",
-    "Gemini": "Mercury",
-    "Cancer": "Moon",
-    "Leo": "Sun",
-    "Virgo": "Mercury",
-    "Libra": "Venus",
-    "Scorpio": "Mars",
-    "Sagittarius": "Jupiter",
-    "Capricorn": "Saturn",
-    "Aquarius": "Saturn",
-    "Pisces": "Jupiter",
-}
-
-NAKSHATRAS = [
-    ("Ashwini", "Ke"),
-    ("Bharani", "Ve"),
-    ("Krittika", "Su"),
-    ("Rohini", "Mo"),
-    ("Mrigashira", "Ma"),
-    ("Ardra", "Ra"),
-    ("Punarvasu", "Ju"),
-    ("Pushya", "Sa"),
-    ("Ashlesha", "Me"),
-    ("Magha", "Ke"),
-    ("Purva Phalguni", "Ve"),
-    ("Uttara Phalguni", "Su"),
-    ("Hasta", "Mo"),
-    ("Chitra", "Ma"),
-    ("Swati", "Ra"),
-    ("Vishakha", "Ju"),
-    ("Anuradha", "Sa"),
-    ("Jyeshtha", "Me"),
-    ("Mula", "Ke"),
-    ("Purva Ashadha", "Ve"),
-    ("Uttara Ashadha", "Su"),
-    ("Shravana", "Mo"),
-    ("Dhanishta", "Ma"),
-    ("Shatabhisha", "Ra"),
-    ("Purva Bhadrapada", "Ju"),
-    ("Uttara Bhadrapada", "Sa"),
-    ("Revati", "Me"),
-]
-
-DASHA_SEQUENCE = ["Ke", "Ve", "Su", "Mo", "Ma", "Ra", "Ju", "Sa", "Me"]
-DASHA_YEARS = {
-    "Ke": 7,
-    "Ve": 20,
-    "Su": 6,
-    "Mo": 10,
-    "Ma": 7,
-    "Ra": 18,
-    "Ju": 16,
-    "Sa": 19,
-    "Me": 17,
-}
 
 JAIMINI_KARAKAS = [
     "Atmakaraka",
@@ -394,85 +327,6 @@ def _build_houses(asc_sign_index, planets):
     return houses
 
 
-def _dasha_periods(birth_date, moon_longitude):
-    nakshatra_span = 360 / 27
-    nakshatra_index = int(moon_longitude // nakshatra_span)
-    nakshatra_lord = NAKSHATRAS[nakshatra_index][1]
-    elapsed_fraction = (moon_longitude % nakshatra_span) / nakshatra_span
-    remaining_fraction = 1 - elapsed_fraction
-
-    sequence_start = DASHA_SEQUENCE.index(nakshatra_lord)
-    sequence = DASHA_SEQUENCE[sequence_start:] + DASHA_SEQUENCE[:sequence_start]
-    periods = []
-    current = datetime.combine(birth_date, datetime.min.time())
-
-    first_years = DASHA_YEARS[nakshatra_lord] * remaining_fraction
-    first_end = current + timedelta(days=first_years * 365.2425)
-    periods.append(
-        {
-            "lord": nakshatra_lord,
-            "start": current.date().isoformat(),
-            "end": first_end.date().isoformat(),
-            "start_display": _format_date(current.date()),
-            "end_display": _format_date(first_end.date()),
-            "balance": True,
-            "years": round(first_years, 2),
-        }
-    )
-    current = first_end
-
-    cycle = sequence[1:] + sequence
-    for lord in cycle[:8]:
-        end = current + timedelta(days=DASHA_YEARS[lord] * 365.2425)
-        periods.append(
-            {
-                "lord": lord,
-                "start": current.date().isoformat(),
-                "end": end.date().isoformat(),
-                "start_display": _format_date(current.date()),
-                "end_display": _format_date(end.date()),
-                "balance": False,
-                "years": DASHA_YEARS[lord],
-            }
-        )
-        current = end
-
-    return {
-        "system": "Vimshottari",
-        "moon_nakshatra": NAKSHATRAS[nakshatra_index][0],
-        "balance_lord": nakshatra_lord,
-        "periods": periods,
-    }
-
-
-def _add_antardashas(periods):
-    for period in periods:
-        sequence_start = DASHA_SEQUENCE.index(period["lord"])
-        sequence = DASHA_SEQUENCE[sequence_start:] + DASHA_SEQUENCE[:sequence_start]
-        total_days = (datetime.fromisoformat(period["end"]) - datetime.fromisoformat(period["start"])).days
-        current = datetime.fromisoformat(period["start"])
-        antardashas = []
-
-        for index, lord in enumerate(sequence):
-            if index == len(sequence) - 1:
-                end = datetime.fromisoformat(period["end"])
-            else:
-                end = current + timedelta(days=total_days * DASHA_YEARS[lord] / 120)
-            antardashas.append(
-                {
-                    "lord": lord,
-                    "start": current.date().isoformat(),
-                    "end": end.date().isoformat(),
-                    "start_display": _format_date(current.date()),
-                    "end_display": _format_date(end.date()),
-                }
-            )
-            current = end
-
-        period["antardashas"] = antardashas
-    return periods
-
-
 def _assign_jaimini_karakas(planets):
     candidates = [planet for planet in planets if planet["code"] not in {"Ra", "Ke"}]
     ordered = sorted(candidates, key=lambda planet: planet["longitude"] % 30, reverse=True)
@@ -537,8 +391,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
     d60 = _build_divisional_chart(asc_longitude, planets, _shashtiamsa_longitude)
 
     moon = next(planet for planet in planets if planet["code"] == "Mo")
-    vimshottari = _dasha_periods(birth_date, moon["longitude"])
-    vimshottari["periods"] = _add_antardashas(vimshottari["periods"])
+    vimshottari = build_vimshottari_dasha(birth_date, moon["longitude"])
 
     chart_data = {
         "name": name,
