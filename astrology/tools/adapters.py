@@ -76,8 +76,12 @@ def get_dasha_periods(request: DashaRequest, chart):
                 intervals.append((left, right))
     coverage = _coverage(intervals, start, end)
     warnings = [] if coverage["complete"] else ["Stored dasha schedule does not fully cover the requested range."]
-    warnings.append("Legacy lookup helpers disagree on shared end dates; this tool selects source periods as [start,end).")
-    return DashaData(request.system, request.granularity, rows, coverage, deepcopy(source.get("method", {}))), warnings, "ISO calendar dates, not transition instants", "source periods [start,end); requested range inclusive; full intersecting periods retained"
+    instants = all(row.get("start_utc") and row.get("end_utc") for row in rows)
+    if rows and not instants:
+        warnings.append("Stored chart predates exact dasha instants; boundaries are calendar dates only. Recalculate the chart for exact instants.")
+    precision = ("exact transition instants (start_utc/end_utc); start/end are calendar dates in the chart timezone"
+                 if instants else "ISO calendar dates, not transition instants")
+    return DashaData(request.system, request.granularity, rows, coverage, deepcopy(source.get("method", {}))), warnings, precision, "source periods [start,end); requested range inclusive; full intersecting periods retained"
 
 
 def _sanitize_sav(row, chart_data):

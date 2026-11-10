@@ -2,6 +2,8 @@ import re
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from astrology.calculations.periods import select_period
+
 from django.utils import timezone
 
 from charts.jaimini_confirmation import build_jaimini_confirmation
@@ -11,7 +13,7 @@ from charts.vedic_utils import (
     PLANET_IDS, PLANET_NAMES, SIGN_NAMES,
     get_house_lord, get_house_lord_planet,
     get_planet, get_planet_dignity, get_planets, get_sarvashtakavarga_points,
-    parse_iso_date, transit_context_for_lord,
+    transit_context_for_lord,
 )
 
 CATEGORY_RULES = {
@@ -888,17 +890,8 @@ def detect_question_scope(question: str, target_date: date | None = None) -> dic
     return scope
 
 
-def _parse_date(value):
-    return parse_iso_date(value)
-
-
 def _current_period(periods, target_date):
-    for period in periods:
-        start = _parse_date(period["start"])
-        end = _parse_date(period["end"])
-        if start <= target_date <= end:
-            return period
-    return periods[0] if periods else {}
+    return select_period(periods, target_date, fallback="first")  # [start, end)
 
 
 def _current_chara_context(chart_data, target_date):

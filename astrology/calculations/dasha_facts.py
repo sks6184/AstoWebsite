@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 from charts.jaimini_confirmation import build_jaimini_confirmation
@@ -9,23 +9,13 @@ from charts.yogini_event_confirmation import build_event_confirmation
 from charts.yogini_reference_frames import build_reference_frames
 
 from .jaimini import build_enhanced_jaimini_facts
+from .periods import select_period
 from .varga import get_planet_in_varga
 from .yogini import build_yogini_facts
 
 
-def _parse_date(value: str | None) -> date | None:
-    if not value:
-        return None
-    return datetime.fromisoformat(value).date()
-
-
 def _current_period(periods: list[dict[str, Any]], target_date: date) -> dict[str, Any]:
-    for period in periods:
-        start = _parse_date(period.get("start"))
-        end = _parse_date(period.get("end"))
-        if start and end and start <= target_date <= end:
-            return period
-    return {}
+    return select_period(periods, target_date, fallback="none")  # [start, end)
 
 
 def _compact_period(period: dict[str, Any]) -> dict[str, Any]:

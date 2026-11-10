@@ -205,29 +205,34 @@ def _llm_classify(question: str) -> dict:
         logger.debug("Intent LLM skipped — no OPENAI_API_KEY")
         return {"intent": "specific", "horizon": None, "confidence": "low", "method": "llm-skipped"}
 
+    from accounts.provider_meter import accounted_request_active, responses_create
+    if not accounted_request_active():
+        # S-4: never make an unaccounted paid call; fall back to the rule result.
+        logger.info("Intent LLM skipped: no accounted request budget")
+        return {"intent": "specific", "horizon": None, "confidence": "low", "method": "llm-skipped-unmetered"}
+
     try:
         from accounts.provider_transport import IPv4HttpClient
-        client = OpenAI(api_key=settings.OPENAI_API_KEY, http_client=IPv4HttpClient())
-        response = client.chat.completions.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY, timeout=10, max_retries=0, http_client=IPv4HttpClient())
+        response = responses_create(client,
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": _LLM_SYSTEM},
-                {"role": "user", "content": question},
-            ],
-            max_tokens=40,
+            instructions=_LLM_SYSTEM,
+            input=question,
+            max_output_tokens=40,
             temperature=0,
         )
-        raw = response.choices[0].message.content.strip()
+        raw = (response.output_text or "").strip()
         data = json.loads(raw)
         intent = data.get("intent", "specific")
         horizon = data.get("horizon") or None
         result = {"intent": intent, "horizon": horizon, "confidence": "high", "method": "llm"}
         # Cache for 24 h — same question always has the same intent
         cache.set(cache_key, {"intent": intent, "horizon": horizon, "confidence": "high"}, 60 * 60 * 24)
-        logger.info("Intent LLM: %r → intent=%s horizon=%s", question[:60], intent, horizon)
+        # S-3: never log question text or exception bodies.
+        logger.info("Intent LLM classified: intent=%s horizon=%s", intent, horizon)
         return result
     except (OpenAIError, json.JSONDecodeError, Exception) as exc:
-        logger.warning("Intent LLM classify failed: %s", exc)
+        logger.warning("Intent LLM classify failed: error_class=%s", type(exc).__name__)
         return {"intent": "specific", "horizon": None, "confidence": "low", "method": "llm-failed"}
 
 

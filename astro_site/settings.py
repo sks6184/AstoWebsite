@@ -11,6 +11,10 @@ if os.getenv('DJANGO_SETTINGS_MODULE') != 'astro_site.production':
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
+# S-5: never run with DEBUG off on the development secret (or a weak one).
+if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith(("dev-", "django-insecure-"))):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured("DJANGO_DEBUG is false but DJANGO_SECRET_KEY is missing or a development value.")
 GEONAMES_USERNAME = os.getenv("GEONAMES_USERNAME", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()

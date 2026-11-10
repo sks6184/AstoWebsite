@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Any
 
 from charts.vedic_utils import PLANET_NAMES, get_owned_houses, get_planet, get_planet_dignity
@@ -8,6 +8,7 @@ from charts.yogini_baselines import evaluate_yogini_baseline
 from charts.yogini_principles import evaluate_yogini_lord
 from charts.yogini_snapshot import build_yogini_snapshot_checklist
 
+from .periods import add_years, chart_birth_instant, interval_metadata, resolve_timezone, select_period, split_interval, timing_fields
 from .varga import get_planet_in_varga
 
 
@@ -64,30 +65,12 @@ NAKSHATRA_NAMES = [
 ]
 
 
-def _format_date(value: date) -> str:
-    return value.strftime("%d-%b-%Y")
-
-
-def _parse_birth_date(chart_data: dict[str, Any]) -> date | None:
-    value = chart_data.get("birth_date")
-    if not value:
-        return None
-    if isinstance(value, date):
-        return value
-    return datetime.fromisoformat(value).date()
-
-
-def _add_years(value: datetime, years: float) -> datetime:
-    return value + timedelta(days=years * 365.2425)
+YOGINI_YEAR_DAYS = 365.2425
 
 
 def _current_period(periods: list[dict[str, Any]], target_date: date) -> dict[str, Any]:
-    for period in periods:
-        start = datetime.fromisoformat(period["start"]).date()
-        end = datetime.fromisoformat(period["end"]).date()
-        if start <= target_date <= end:
-            return period
-    return periods[-1] if periods else {}
+    # [start, end); out-of-range keeps the pre-M1 fallback (last period).
+    return select_period(periods, target_date, fallback="last")
 
 
 def _yogini_for_nakshatra(nakshatra_number: int) -> str:
@@ -115,36 +98,33 @@ def _moon_nakshatra(moon_longitude: float) -> dict[str, Any]:
     }
 
 
-def _subperiods(major: str, start: datetime, end: datetime) -> list[dict[str, Any]]:
+def _subperiods(major: str, start: datetime, end: datetime, display_zone=None) -> list[dict[str, Any]]:
+    display_zone = display_zone or resolve_timezone(None)
+    start = start if start.tzinfo else start.replace(tzinfo=display_zone)
+    end = end if end.tzinfo else end.replace(tzinfo=display_zone)
     sequence_start = YOGINI_SEQUENCE.index(major)
     sequence = YOGINI_SEQUENCE[sequence_start:] + YOGINI_SEQUENCE[:sequence_start]
-    total_days = (end - start).days
-    current = start
     periods = []
-    for index, yogini in enumerate(sequence):
-        sub_end = end if index == len(sequence) - 1 else current + timedelta(days=total_days * YOGINI_YEARS[yogini] / 36)
+    for yogini, (current, sub_end) in zip(sequence, split_interval(start, end, [YOGINI_YEARS[y] for y in sequence])):
         lord = YOGINI_LORDS[yogini]
         periods.append(
             {
                 "yogini": yogini,
                 "lord": lord,
                 "lord_name": PLANET_NAMES.get(lord, lord),
-                "start": current.date().isoformat(),
-                "end": sub_end.date().isoformat(),
-                "start_display": _format_date(current.date()),
-                "end_display": _format_date(sub_end.date()),
+                **timing_fields(current, sub_end, display_zone),
                 "years": round(YOGINI_YEARS[yogini] * YOGINI_YEARS[major] / 36, 4),
             }
         )
-        current = sub_end
     return periods
 
 
 def build_yogini_periods(chart_data: dict[str, Any], cycles: int = 4) -> dict[str, Any]:
-    birth_date = _parse_birth_date(chart_data)
+    birth = chart_birth_instant(chart_data)
+    display_zone = resolve_timezone(chart_data.get("timezone"))
     moon = get_planet(chart_data, "Mo", "d1")
     moon_longitude = moon.get("longitude")
-    if birth_date is None or moon_longitude is None:
+    if birth is None or moon_longitude is None:
         return {
             "system": "Yogini Dasha",
             "calculation_status": "unavailable",
@@ -157,8 +137,8 @@ def build_yogini_periods(chart_data: dict[str, Any], cycles: int = 4) -> dict[st
     elapsed_fraction = nakshatra["elapsed_degrees"] / NAKSHATRA_SPAN
     remaining_fraction = 1 - elapsed_fraction
     first_years = YOGINI_YEARS[birth_yogini] * remaining_fraction
-    current = datetime.combine(birth_date, datetime.min.time())
-    first_end = _add_years(current, first_years)
+    current = birth
+    first_end = add_years(current, first_years, YOGINI_YEAR_DAYS)
     periods = []
 
     def append_period(yogini: str, start: datetime, end: datetime, balance: bool = False, cycle: int = 1):
@@ -168,15 +148,14 @@ def build_yogini_periods(chart_data: dict[str, Any], cycles: int = 4) -> dict[st
                 "yogini": yogini,
                 "lord": lord,
                 "lord_name": PLANET_NAMES.get(lord, lord),
-                "start": start.date().isoformat(),
-                "end": end.date().isoformat(),
-                "start_display": _format_date(start.date()),
-                "end_display": _format_date(end.date()),
-                "years": round((end - start).days / 365.2425, 4),
+                **timing_fields(start, end, display_zone),
+                "years": round((end - start).total_seconds() / 86400 / YOGINI_YEAR_DAYS, 4),
                 "nominal_years": YOGINI_YEARS[yogini],
                 "balance": balance,
                 "cycle": cycle,
-                "subperiods": _subperiods(yogini, start, end),
+                # Unchanged in M1: the balance period's subperiods divide the
+                # remaining balance only (finding M1-F1, awaiting owner decision).
+                "subperiods": _subperiods(yogini, start, end, display_zone),
             }
         )
 
@@ -190,7 +169,7 @@ def build_yogini_periods(chart_data: dict[str, Any], cycles: int = 4) -> dict[st
         yogini = sequence[index % len(sequence)]
         if yogini == birth_yogini and index:
             cycle += 1
-        end = _add_years(current, YOGINI_YEARS[yogini])
+        end = add_years(current, YOGINI_YEARS[yogini], YOGINI_YEAR_DAYS)
         append_period(yogini, current, end, balance=False, cycle=cycle)
         current = end
 
@@ -204,6 +183,9 @@ def build_yogini_periods(chart_data: dict[str, Any], cycles: int = 4) -> dict[st
             "subperiods": "Natural Yogini order starting from the major Yogini itself, proportionate to Yogini years.",
             "cycle_years": 36,
             "cycles_generated": cycles,
+            "dasha_year_days": YOGINI_YEAR_DAYS,
+            "start_reference": "birth instant",
+            **interval_metadata(display_zone),
         },
         "moon_nakshatra": nakshatra,
         "periods": periods,

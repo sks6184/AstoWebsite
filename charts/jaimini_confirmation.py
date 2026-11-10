@@ -1,3 +1,4 @@
+from astrology.calculations.periods import select_period
 from .vedic_utils import PLANET_NAMES, SIGN_LORDS, get_planets, house_from_sign
 
 
@@ -39,19 +40,8 @@ def _jaimini_aspects(sign_number: int) -> set:
     return set()
 
 
-def _parse_date(value):
-    from datetime import datetime
-
-    return datetime.fromisoformat(value).date()
-
-
 def _current_period(periods, target_date):
-    for period in periods:
-        start = _parse_date(period["start"])
-        end = _parse_date(period["end"])
-        if start <= target_date <= end:
-            return period
-    return {}
+    return select_period(periods, target_date, fallback="none")  # [start, end)
 
 
 def _karaka_planets(chart_data, category):

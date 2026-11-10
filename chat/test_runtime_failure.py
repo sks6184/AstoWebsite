@@ -170,7 +170,9 @@ class RuntimeRequestTests(TestCase):
         self.assertEqual(attempts, [1])  # max_retries=0 must be honored by the real SDK.
         validation.assert_not_called()
         repair.assert_not_called()
-        self.assertIn('Request timed out', outcome.result['answer'])
+        # M1 S-2: the user sees an error code, never the provider's exception text.
+        self.assertIn('APITimeoutError', outcome.result['answer'])
+        self.assertNotIn('Request timed out', outcome.result['answer'])
         self.assertNotIn('Synthetic private transport diagnostic', outcome.result['answer'])
         self.assertNotEqual(outcome.result.get('status'), 'ok')
         row = UsageRequest.objects.get()

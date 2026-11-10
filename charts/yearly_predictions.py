@@ -518,13 +518,20 @@ def _llm_month_predictions(month, contexts, answer_language="English"):
     if not settings.OPENAI_API_KEY:
         return {}
 
+    from accounts.provider_meter import accounted_request_active, responses_create
+    from accounts.usage_policy import BudgetExceeded
+    if not accounted_request_active():
+        # S-4: no unaccounted paid call. The report keeps its deterministic bullets.
+        return {}
+
     payload = _deterministic_prediction_payload(month, contexts)
     from accounts.provider_transport import IPv4HttpClient
-    client = OpenAI(api_key=settings.OPENAI_API_KEY, http_client=IPv4HttpClient())
+    client = OpenAI(api_key=settings.OPENAI_API_KEY, timeout=20, max_retries=0, http_client=IPv4HttpClient())
     prompt = json.dumps(payload, ensure_ascii=False, default=str)
     try:
-        response = client.responses.create(
+        response = responses_create(client,
             model=settings.OPENAI_MODEL or "gpt-4o-mini",
+            max_output_tokens=1200,
             instructions=(
                 "You are AstroGPT, a careful Vedic astrologer writing premium report bullets. "
                 "Keep the tone like a traditional Vedic astrologer: calm, precise, respectful, practical, "
@@ -550,7 +557,7 @@ def _llm_month_predictions(month, contexts, answer_language="English"):
             ],
         )
         parsed = _extract_json_object(response.output_text)
-    except (OpenAIError, ValueError, json.JSONDecodeError):
+    except (OpenAIError, BudgetExceeded, ValueError, json.JSONDecodeError):
         return {}
 
     cleaned = {}

@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from astrology.calculations.periods import select_period
+
 from astrology.calculations.dasha_transit_timeline import (
     build_dasha_transit_timeline, lord_role, segments_in_range, summarize_segments,
 )
@@ -336,37 +338,16 @@ def _window_explanation(
 # ── Multi-dasha convergence ───────────────────────────────────────────────────
 
 def _current_period_at(periods, target_date):
-    """Return the period whose [start, end] contains target_date."""
-    for period in periods:
-        try:
-            start = _parse_date(period.get("start", ""))
-            end = _parse_date(period.get("end", ""))
-            if start <= target_date <= end:
-                return period
-        except (ValueError, TypeError):
-            continue
-    return periods[-1] if periods else {}
+    """Return the period whose [start, end) contains target_date."""
+    return select_period(periods, target_date, fallback="last")
 
 
 def _vimshottari_at(chart_data, target_date):
-    """Return (mahadasha dict, antardasha dict) active at target_date."""
+    """Return (mahadasha dict, antardasha dict) active at target_date, using [start, end)."""
     vimshottari = chart_data.get("dashas", {}).get("vimshottari", {})
-    for md in vimshottari.get("periods", []):
-        try:
-            md_start = _parse_date(md.get("start", ""))
-            md_end = _parse_date(md.get("end", ""))
-        except (ValueError, TypeError):
-            continue
-        if md_start <= target_date < md_end:
-            for ad in md.get("antardashas", []):
-                try:
-                    ad_start = _parse_date(ad.get("start", ""))
-                    ad_end = _parse_date(ad.get("end", ""))
-                except (ValueError, TypeError):
-                    continue
-                if ad_start <= target_date < ad_end:
-                    return md, ad
-    return {}, {}
+    md = select_period(vimshottari.get("periods", []), target_date)
+    ad = select_period(md.get("antardashas", []), target_date) if md else {}
+    return (md, ad) if ad else ({}, {})
 
 
 def _collect_all_dasha_boundaries(chart_data, start_date, end_date):

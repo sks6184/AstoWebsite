@@ -99,6 +99,8 @@ def invoke_tool(user, name: str, arguments: dict) -> dict:
         if input_mismatch:
             warnings.append("Stored calculation inputs differ from chart metadata; results describe stored facts, without recalculation.")
         method.update({"precision": precision, "interval_convention": interval,
+                       "method_profile": chart.chart_data.get("calculation_method") or
+                       {"profile": "unrecorded", "note": "Chart was calculated before M1; ephemeris method was not recorded."},
                        "reference_frame": "Lahiri sidereal; natal whole-sign Lagna houses" if chart.chart_data.get("system") == "vedic_lahiri" else "Unspecified stored chart frame; no frame inferred"})
         partial = _is_partial(data, warnings) or chart.latitude is None or chart.longitude is None or input_mismatch or natal_incomplete
         payload = response(name, "partial" if partial else "ok", data, warnings, method, provenance)

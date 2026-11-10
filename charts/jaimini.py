@@ -1,14 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
+from astrology.calculations.periods import add_years, birth_instant, interval_metadata, resolve_timezone, split_interval, timing_fields
 from astrology.constants import JAIMINI_SIGN_LORD_CODES as SIGN_LORDS
 from astrology.constants import SIGNS
 
+CHARA_YEAR_DAYS = 365.2425
+
 DASHA_DIRECT_LAGNAS = {1, 5, 6, 7, 11, 12}
 COUNT_DIRECT_SIGNS = {1, 2, 3, 7, 8, 9}
-
-
-def _format_date(value):
-    return value.strftime("%d-%b-%Y")
 
 
 def _sign_order(start_sign_number, direct):
@@ -113,56 +112,51 @@ def _period_years(sign_number, planets):
     return _period_calculation(sign_number, planets)["duration_years"]
 
 
-def _subperiods(major_sign_number, start, end, years):
+def _subperiods(major_sign_number, start, end, years, display_zone=None):
+    display_zone = display_zone or resolve_timezone(None)
+    start = start if start.tzinfo else start.replace(tzinfo=display_zone)
+    end = end if end.tzinfo else end.replace(tzinfo=display_zone)
     direct = major_sign_number in DASHA_DIRECT_LAGNAS
     order = _sign_order(major_sign_number, direct)
     order = order[1:] + [major_sign_number]
-    current = start
-    total_days = (end - start).days
     subperiods = []
 
-    for index, sign_number in enumerate(order):
-        sub_end = end if index == len(order) - 1 else current + timedelta(days=total_days / 12)
+    for sign_number, (current, sub_end) in zip(order, split_interval(start, end, [1] * len(order))):
         subperiods.append(
             {
                 "sign_number": sign_number,
                 "sign": SIGNS[sign_number - 1],
-                "start": current.date().isoformat(),
-                "end": sub_end.date().isoformat(),
-                "start_display": _format_date(current.date()),
-                "end_display": _format_date(sub_end.date()),
+                **timing_fields(current, sub_end, display_zone),
                 "duration_months": years,
                 "order_direction": "direct" if direct else "indirect",
             }
         )
-        current = sub_end
     return subperiods
 
 
-def build_chara_dasha(birth_date, ascendant, planets, cycles=2):
+def build_chara_dasha(birth, ascendant, planets, cycles=2, timezone_name=None):
+    """Chara dasha from the birth instant (``birth`` may be an aware datetime or a date)."""
+    display_zone = resolve_timezone(timezone_name)
     asc_sign_number = ascendant["sign_number"]
     direct = asc_sign_number in DASHA_DIRECT_LAGNAS
     order = _sign_order(asc_sign_number, direct)
-    current = datetime.combine(birth_date, datetime.min.time())
+    current = birth_instant(birth, timezone_name)
     periods = []
 
     for cycle in range(1, cycles + 1):
         for sign_number in order:
             calculation = _period_calculation(sign_number, planets)
             years = calculation["duration_years"]
-            end = current + timedelta(days=years * 365.2425)
+            end = add_years(current, years, CHARA_YEAR_DAYS)
             periods.append(
                 {
                     "cycle": cycle,
                     "sign_number": sign_number,
                     "sign": SIGNS[sign_number - 1],
-                    "start": current.date().isoformat(),
-                    "end": end.date().isoformat(),
-                    "start_display": _format_date(current.date()),
-                    "end_display": _format_date(end.date()),
+                    **timing_fields(current, end, display_zone),
                     "duration_years": years,
                     "calculation": calculation,
-                    "subperiods": _subperiods(sign_number, current, end, years),
+                    "subperiods": _subperiods(sign_number, current, end, years, display_zone),
                 }
             )
             current = end
@@ -178,6 +172,10 @@ def build_chara_dasha(birth_date, ascendant, planets, cycles=2):
             "period_length_count": "Count from each sign to its selected lord, then deduct one year.",
             "subperiod_order": "Use the major sign group and place the major sign itself last.",
             "repeat_rule": "Repeat the same twelve-sign sequence when a second cycle is needed.",
+            "school": "K.N. Rao (declared source: Predicting Through Jaimini's Chara Dasha); no independent reference yet: UNVERIFIED",
+            "dasha_year_days": CHARA_YEAR_DAYS,
+            "start_reference": "birth instant" if isinstance(birth, datetime) else "local midnight of the birth date",
+            **interval_metadata(display_zone),
         },
         "periods": periods,
     }

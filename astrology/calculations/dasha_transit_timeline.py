@@ -9,6 +9,8 @@ from datetime import date, datetime, timedelta, timezone
 
 from charts.vedic_utils import PLANET_NAMES, SIGN_NAMES, house_from_sign, transit_longitude
 
+from .periods import select_period
+
 
 def _date(value):
     return date.fromisoformat(value[:10]) if value else None
@@ -21,14 +23,12 @@ def lord_role(lord, md, ad):
 
 
 def _active_pair(periods, day):
-    # Start dates take precedence on shared boundaries.
-    for md in reversed(sorted(periods, key=lambda p: p.get("start", ""))):
-        if _date(md.get("start")) and _date(md.get("end")) and _date(md["start"]) <= day < _date(md["end"]):
-            for ad in reversed(sorted(md.get("antardashas", []), key=lambda p: p.get("start", ""))):
-                if _date(ad.get("start")) and _date(ad.get("end")) and _date(ad["start"]) <= day < _date(ad["end"]):
-                    return md.get("lord"), ad.get("lord")
-            return md.get("lord"), None
-    return None, None
+    # Shared [start, end) selector: start dates take precedence on shared boundaries.
+    md = select_period(periods, day)
+    if not md:
+        return None, None
+    ad = select_period(md.get("antardashas", []), day)
+    return md.get("lord"), ad.get("lord") if ad else None
 
 
 def build_dasha_transit_timeline(chart_data, start, end, category_houses):

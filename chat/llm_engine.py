@@ -630,6 +630,12 @@ def _usage_counts(response):
     return prompt_tokens, completion_tokens
 
 
+def _public_provider_reason(exc):
+    """User-safe reason for a provider failure. The exception text is never shown or stored (S-2)."""
+    logger.warning("Provider call failed: error_class=%s", type(exc).__name__)
+    return f"The answer service is temporarily unavailable (error code: {type(exc).__name__}). No credit was used."
+
+
 def _fallback_answer(question, payload, model, reason):
     evidence = payload.get("evidence_payload", {})
     systems = evidence.get("system_evidence", {})
@@ -957,7 +963,7 @@ def _generate_rashifal_answer(question, chart_data, horizon, depth_level, answer
             ],
         )
     except OpenAIError as exc:
-        return _fallback_answer(question, payload, model, f"OpenAI API error: {exc}")
+        return _fallback_answer(question, payload, model, _public_provider_reason(exc))
 
     prompt_tokens, completion_tokens = _usage_counts(response)
     answer_text = response.output_text
@@ -1035,7 +1041,7 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
             ],
         )
     except OpenAIError as exc:
-        return _fallback_answer(question, payload, model, f"OpenAI API error: {exc}")
+        return _fallback_answer(question, payload, model, _public_provider_reason(exc))
 
     prompt_tokens, completion_tokens = _usage_counts(response)
     answer_text = response.output_text

@@ -4,8 +4,8 @@ Yogini Dasha alignment check for timing windows.
 Reads from pre-computed chart_data["dashas"]["yogini"] (built by astro_engine).
 Pattern mirrors jaimini_confirmation.py — called per timing window at midpoint date.
 """
-from datetime import datetime
 from typing import Any
+from astrology.calculations.periods import select_period
 
 from .divisional_confirmation import CHAPTER_FIVE_REFERENCE, evaluate_divisional_confirmation
 from .planetary_dasha_principles import CHAPTER_SIX_REFERENCE, evaluate_planetary_dasha_pair
@@ -15,17 +15,8 @@ from .yogini_principles import CHAPTER_FOUR_REFERENCE, SOURCE_REFERENCE, evaluat
 from .yogini_snapshot import CHAPTER_EIGHT_REFERENCE, build_yogini_snapshot_checklist
 
 
-def _parse_date(value: str) -> Any:
-    return datetime.fromisoformat(value).date()
-
-
 def _current_period(periods: list[dict], target_date: Any) -> dict:
-    for period in periods:
-        start = _parse_date(period["start"])
-        end = _parse_date(period["end"])
-        if start <= target_date <= end:
-            return period
-    return periods[-1] if periods else {}
+    return select_period(periods, target_date, fallback="last")  # [start, end)
 
 
 def build_yogini_alignment(

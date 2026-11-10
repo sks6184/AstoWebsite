@@ -16,6 +16,8 @@ from calendar import monthrange
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from astrology.calculations.periods import select_period
+
 from charts.transit_priority import build_transit_priority_context
 from charts.vedic_utils import PLANET_NAMES, SIGN_NAMES, natal_mutual_aspects, transit_longitude
 
@@ -60,12 +62,7 @@ def _parse_date(value):
 
 
 def _current_period(periods, target_date):
-    for period in periods:
-        start = _parse_date(period["start"])
-        end = _parse_date(period["end"])
-        if start <= target_date <= end:
-            return period
-    return periods[0] if periods else {}
+    return select_period(periods, target_date, fallback="first")  # [start, end)
 
 
 def _get_dasha_for_date(chart_data, target_date):

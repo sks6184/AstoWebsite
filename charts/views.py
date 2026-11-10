@@ -11,7 +11,7 @@ from django.template.loader import render_to_string
 
 from astro_site.localization import SUPPORTED_LANGUAGES, normalize_language
 
-from .astro_engine import build_placeholder_chart, build_vedic_chart
+from .astro_engine import CHART_TEMPLATE, build_placeholder_chart, build_vedic_chart
 from .forms import SavedChartForm
 from .geocoding import search_places
 from .report_context import build_chart_report_context
@@ -89,13 +89,16 @@ def _pdf_with_weasyprint(html, request):
 
 
 def _refresh_chart_calculation(chart):
-    first_planet = (chart.chart_data.get("d1", {}).get("planets") or [{}])[0]
+    # The Ascendant row (always first) never carries a Jaimini karaka, so the
+    # karaka/sign-lord checks look at the first real planet row.
+    first_planet = next((row for row in chart.chart_data.get("d1", {}).get("planets") or []
+                         if row.get("code") != "Asc"), {})
     first_dasha = (
         chart.chart_data.get("dashas", {}).get("vimshottari", {}).get("periods") or [{}]
     )[0]
     needs_calculation = (
         chart.chart_data.get("system") != "vedic_lahiri"
-        or chart.chart_data.get("chart_template") != "north_indian_clear_sign_positions_v9_d4_extra_vargas"
+        or chart.chart_data.get("chart_template") != CHART_TEMPLATE
         or "d2" not in chart.chart_data
         or "d4" not in chart.chart_data
         or "d7" not in chart.chart_data
@@ -267,7 +270,7 @@ def chart_report_pdf(request, chart_id):
         return response
     except (subprocess.SubprocessError, OSError) as exc:
         return HttpResponse(
-            f"PDF generation failed: {exc}",
+            f"PDF generation failed (error code: {type(exc).__name__}).",
             status=500,
             content_type="text/plain",
         )

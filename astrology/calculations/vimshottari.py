@@ -1,7 +1,10 @@
 """Deterministic Vimshottari Dasha calculation engine."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
+
+from .periods import add_years, birth_instant, interval_metadata, resolve_timezone, split_interval, timing_fields
 
 from astrology.constants import (
     NAKSHATRAS,
@@ -14,14 +17,6 @@ from astrology.constants import (
 NAKSHATRA_SPAN = 360 / 27
 VIMSHOTTARI_CYCLE_YEARS = 120
 SOLAR_YEAR_DAYS = 365.2425
-
-
-def _format_date(value: date) -> str:
-    return value.strftime("%d-%b-%Y")
-
-
-def _add_years(value: datetime, years: float) -> datetime:
-    return value + timedelta(days=years * SOLAR_YEAR_DAYS)
 
 
 def _period_year_month_day(years: float) -> dict[str, int]:
@@ -82,29 +77,28 @@ def birth_mahadasha(moon_longitude: float) -> dict[str, Any]:
     }
 
 
+def _aware(value: datetime, display_zone: ZoneInfo) -> datetime:
+    return value if value.tzinfo is not None else value.replace(tzinfo=display_zone)
+
+
 def generate_antardashas(
     mahadasha_lord: str,
     start: datetime,
     end: datetime,
+    display_zone: ZoneInfo | None = None,
 ) -> list[dict[str, Any]]:
+    """Divide ``[start, end)`` in Vimshottari order, in exact proportion to planetary years."""
+    display_zone = display_zone or resolve_timezone(None)
+    start, end = _aware(start, display_zone), _aware(end, display_zone)
     sequence = vimshottari_sequence_from(mahadasha_lord)
-    total_days = (end - start).days
-    current = start
     periods = []
-
-    for index, lord in enumerate(sequence):
-        sub_end = end if index == len(sequence) - 1 else current + timedelta(
-            days=total_days * VIMSHOTTARI_YEARS[lord] / VIMSHOTTARI_CYCLE_YEARS
-        )
-        years = (sub_end - current).days / SOLAR_YEAR_DAYS
+    for lord, (current, sub_end) in zip(sequence, split_interval(start, end, [VIMSHOTTARI_YEARS[lord] for lord in sequence])):
+        years = (sub_end - current).total_seconds() / 86400 / SOLAR_YEAR_DAYS
         periods.append(
             {
                 "lord": lord,
                 "lord_name": PLANET_NAMES.get(lord, lord),
-                "start": current.date().isoformat(),
-                "end": sub_end.date().isoformat(),
-                "start_display": _format_date(current.date()),
-                "end_display": _format_date(sub_end.date()),
+                **timing_fields(current, sub_end, display_zone),
                 "years": round(years, 4),
                 "nominal_fraction_years": round(
                     VIMSHOTTARI_YEARS[mahadasha_lord] * VIMSHOTTARI_YEARS[lord] / VIMSHOTTARI_CYCLE_YEARS,
@@ -112,41 +106,45 @@ def generate_antardashas(
                 ),
             }
         )
-        current = sub_end
-
     return periods
 
 
 def generate_mahadasha_timeline(
-    birth_date: date,
+    birth: date | datetime,
     moon_longitude: float,
     cycles: int = 1,
     include_antardashas: bool = True,
+    timezone_name: str | None = None,
 ) -> list[dict[str, Any]]:
+    """Mahadasha timeline from the birth instant.
+
+    ``birth`` may be an aware datetime (exact birth moment) or a date, which
+    means local midnight in ``timezone_name`` (the pre-M1 behaviour).
+    """
+    display_zone = resolve_timezone(timezone_name)
     birth_dasha = birth_mahadasha(moon_longitude)
     birth_lord = birth_dasha["lord"]
-    current = datetime.combine(birth_date, datetime.min.time())
+    current = birth_instant(birth, timezone_name)
     periods = []
 
     def append_period(lord: str, start: datetime, end: datetime, balance: bool, cycle: int) -> None:
-        years = (end - start).days / SOLAR_YEAR_DAYS
+        years = (end - start).total_seconds() / 86400 / SOLAR_YEAR_DAYS
         period = {
             "lord": lord,
             "lord_name": PLANET_NAMES.get(lord, lord),
-            "start": start.date().isoformat(),
-            "end": end.date().isoformat(),
-            "start_display": _format_date(start.date()),
-            "end_display": _format_date(end.date()),
+            **timing_fields(start, end, display_zone),
             "balance": balance,
             "years": round(years, 2),
             "nominal_years": VIMSHOTTARI_YEARS[lord],
             "cycle": cycle,
         }
         if include_antardashas:
-            period["antardashas"] = generate_antardashas(lord, start, end)
+            # Unchanged in M1: the balance Mahadasha's antardashas divide the
+            # remaining balance only (finding M1-F1, awaiting owner decision).
+            period["antardashas"] = generate_antardashas(lord, start, end, display_zone)
         periods.append(period)
 
-    first_end = _add_years(current, birth_dasha["remaining_years"])
+    first_end = add_years(current, birth_dasha["remaining_years"], SOLAR_YEAR_DAYS)
     append_period(birth_lord, current, first_end, balance=True, cycle=1)
     current = first_end
 
@@ -158,7 +156,7 @@ def generate_mahadasha_timeline(
         lord = remaining_sequence[index % len(remaining_sequence)]
         if lord == birth_lord:
             cycle += 1
-        end = _add_years(current, VIMSHOTTARI_YEARS[lord])
+        end = add_years(current, VIMSHOTTARI_YEARS[lord], SOLAR_YEAR_DAYS)
         append_period(lord, current, end, balance=False, cycle=cycle)
         current = end
 
@@ -166,17 +164,19 @@ def generate_mahadasha_timeline(
 
 
 def build_vimshottari_dasha(
-    birth_date: date,
+    birth: date | datetime,
     moon_longitude: float,
     cycles: int = 1,
     include_antardashas: bool = True,
+    timezone_name: str | None = None,
 ) -> dict[str, Any]:
     birth_dasha = birth_mahadasha(moon_longitude)
     periods = generate_mahadasha_timeline(
-        birth_date,
+        birth,
         moon_longitude,
         cycles=cycles,
         include_antardashas=include_antardashas,
+        timezone_name=timezone_name,
     )
 
     return {
@@ -189,6 +189,9 @@ def build_vimshottari_dasha(
             "cycle_years": VIMSHOTTARI_CYCLE_YEARS,
             "cycles_generated": cycles,
             "pratyantardasha": "Not generated yet.",
+            "dasha_year_days": SOLAR_YEAR_DAYS,
+            "start_reference": "birth instant" if isinstance(birth, datetime) else "local midnight of the birth date",
+            **interval_metadata(resolve_timezone(timezone_name)),
         },
         "moon_nakshatra": birth_dasha["moon_nakshatra"]["name"],
         "moon_nakshatra_details": birth_dasha["moon_nakshatra"],

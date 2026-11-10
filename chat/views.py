@@ -133,6 +133,11 @@ def ask_question(request):
             )
             outcome = append_turn(request.user, conversation.pk, question, request_id=request_id,
                                   expected_revision=0, generator=generate_question_answer)
+            if outcome.http_status in (403, 409):
+                # S-9: a rejected first turn (for example, no credits) rolls back its reservation;
+                # remove the conversation created above if nothing was recorded in it.
+                Conversation.objects.filter(pk=conversation.pk, user=request.user,
+                                            messages__isnull=True, turns__isnull=True).delete()
             result = outcome.result or {}
             if result.get("status") == "error":
                 messages.error(request, strip_tags(result["answer"])[:2000])

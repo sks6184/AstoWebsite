@@ -105,6 +105,12 @@ def request_budget(row):
         CURRENT.reset(token)
 
 
+def accounted_request_active():
+    """True only inside ``request_budget`` for a persisted UsageRequest (ledger rows are written)."""
+    budget = CURRENT.get()
+    return budget is not None and bool(budget.request_pk)
+
+
 def responses_create(client, **kwargs):
     from .pilot_ops import progress
     progress('sources' if kwargs.get('tool_choice') == {'type': 'file_search'} else 'answer')

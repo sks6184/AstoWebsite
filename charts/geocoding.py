@@ -49,7 +49,7 @@ def search_places(query, max_rows=8):
         return {
             "configured": True,
             "results": [],
-            "error": f"Place search is temporarily unavailable. Please try again in a moment. Details: {exc}",
+            "error": f"Place search is temporarily unavailable. Please try again in a moment. (error code: {type(exc).__name__})",
         }
 
     status = payload.get("status")

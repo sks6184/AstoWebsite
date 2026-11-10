@@ -11,8 +11,13 @@ from astrology.constants import (
     SIGN_LORDS,
     SIGNS,
 )
+from astrology.calculations.method_profile import build_method_profile, ephemeris_from_flags
 from astrology.calculations.vimshottari import build_vimshottari_dasha
 from astrology.calculations.yogini import build_yogini_periods
+
+# Bump whenever the stored chart_data structure or calculation conventions
+# change. Saved charts are recalculated only when their stored value differs.
+CHART_TEMPLATE = "north_indian_clear_sign_positions_v11_exact_dasha_instants"
 
 
 JAIMINI_KARAKAS = [
@@ -364,8 +369,10 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
 
     ascendant = _planet_row("Ascendant", "Asc", asc_longitude, 0, asc_sign_index)
     planets = []
+    return_flags = []
     for planet_name, planet_code, planet_id in PLANETS:
-        values, _ = swe.calc_ut(jd_ut, planet_id, flags)
+        values, return_flag = swe.calc_ut(jd_ut, planet_id, flags)
+        return_flags.append(return_flag)
         planets.append(_planet_row(planet_name, planet_code, values[0] % 360, values[3], asc_sign_index))
 
     rahu = next(planet for planet in planets if planet["code"] == "Ra")
@@ -391,7 +398,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
     d60 = _build_divisional_chart(asc_longitude, planets, _shashtiamsa_longitude)
 
     moon = next(planet for planet in planets if planet["code"] == "Mo")
-    vimshottari = build_vimshottari_dasha(birth_date, moon["longitude"])
+    vimshottari = build_vimshottari_dasha(utc_dt, moon["longitude"], timezone_name=timezone)
 
     chart_data = {
         "name": name,
@@ -403,8 +410,10 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         "timezone": timezone,
         "system": "vedic_lahiri",
         "ayanamsa": "Lahiri",
-        "chart_template": "north_indian_clear_sign_positions_v10_shodashvarga",
+        "chart_template": CHART_TEMPLATE,
         "julian_day_ut": jd_ut,
+        "birth_instant_utc": utc_dt.isoformat().replace("+00:00", "Z"),
+        "calculation_method": build_method_profile(ephemeris_from_flags(return_flags)),
         "ascendant": ascendant,
         "d1": {"houses": houses, "planets": [ascendant] + planets},
         "d2": d2,
@@ -423,7 +432,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         "d45": d45,
         "d60": d60,
         "ashtakavarga": build_ashtakavarga(ascendant, planets),
-        "jaimini": {"chara_dasha": build_chara_dasha(birth_date, ascendant, planets)},
+        "jaimini": {"chara_dasha": build_chara_dasha(utc_dt, ascendant, planets, timezone_name=timezone)},
         "dashas": {"vimshottari": vimshottari},
     }
     chart_data["dashas"]["yogini"] = build_yogini_periods(chart_data)
