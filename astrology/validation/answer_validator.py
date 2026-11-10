@@ -178,6 +178,30 @@ def _business_evidence_missing(answer: str, evidence: dict[str, Any]) -> list[st
     return missing
 
 
+def _vehicle_evidence_missing(answer: str, evidence: dict[str, Any]) -> list[str]:
+    lowered = answer.lower()
+    missing = []
+    required_terms = {
+        "D16/Shodashamsha evidence": ["d16", "shodashamsha"],
+        "4th house or 4th lord": ["4th house", "4th lord", "fourth house", "fourth lord"],
+        "Venus vehicle karaka": ["venus"],
+        "Moon comfort/enjoyment factor": ["moon"],
+        "Mars machinery/vehicle factor": ["mars"],
+        "dasha basis": ["mahadasha", "antardasha", "dasha"],
+        "transit house/sign/bindu detail": ["transit", "house", "bindu", "sarvashtakavarga"],
+    }
+    for label, terms in required_terms.items():
+        if label == "transit house/sign/bindu detail":
+            present = "transit" in lowered and ("house" in lowered or "sign" in lowered) and (
+                "bindu" in lowered or "sarvashtakavarga" in lowered or "points" in lowered
+            )
+        else:
+            present = any(term in lowered for term in terms)
+        if not present:
+            missing.append(label)
+    return missing
+
+
 def _unsupported_claims(answer: str) -> list[str]:
     lowered = answer.lower()
     claims = []
@@ -252,6 +276,7 @@ def validate_astrology_answer(answer: str, evidence: dict[str, Any], pass_thresh
     lowered = (answer or "").lower()
     timing = is_timing_question(question)
     business = is_business_question(question) or evidence.get("question", {}).get("category") == "business"
+    vehicle = evidence.get("question", {}).get("category") == "vehicle"
     issues: list[str] = []
     missing_evidence: list[str] = []
     unsupported_claims = _unsupported_claims(answer)
@@ -293,6 +318,12 @@ def validate_astrology_answer(answer: str, evidence: dict[str, Any], pass_thresh
         for item in business_missing:
             if item not in {"D10 evidence", "dasha basis"}:
                 score -= 5
+
+    if vehicle:
+        vehicle_missing = _vehicle_evidence_missing(answer, evidence)
+        missing_evidence.extend(vehicle_missing)
+        for item in vehicle_missing:
+            score -= 8 if item in {"D16/Shodashamsha evidence", "4th house or 4th lord"} else 5
 
     if any("Parashari" in claim for claim in unsupported_claims):
         score -= 10

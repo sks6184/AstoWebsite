@@ -162,24 +162,15 @@ def chart_create(request):
         if form.is_valid():
             chart = form.save(commit=False)
             chart.user = request.user
-            if chart.latitude is not None and chart.longitude is not None:
-                chart.chart_data = build_vedic_chart(
-                    chart.name,
-                    chart.birth_date,
-                    chart.birth_time,
-                    chart.birth_place,
-                    chart.latitude,
-                    chart.longitude,
-                    chart.timezone,
-                )
-            else:
-                chart.chart_data = build_placeholder_chart(
-                    chart.name,
-                    chart.birth_date,
-                    chart.birth_time,
-                    chart.birth_place,
-                )
+            try:
+                chart.chart_data = build_vedic_chart(chart.name, chart.birth_date, chart.birth_time,
+                    chart.birth_place, chart.latitude, chart.longitude, chart.timezone)
+            except Exception:
+                form.add_error(None, 'The chart could not be calculated. Check the birth inputs and try again; no chart was saved.')
+                return render(request, 'charts/chart_form.html', {'form': form}, status=400)
             chart.save()
+            from accounts.pilot_ops import metric
+            metric('chart_created')
             messages.success(request, "Chart saved.")
             return redirect("chart_list")
     else:

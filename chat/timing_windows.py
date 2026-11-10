@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from astrology.calculations.dasha_transit_timeline import (
+    build_dasha_transit_timeline, lord_role, segments_in_range, summarize_segments,
+)
+
 from charts.jaimini_confirmation import build_jaimini_confirmation
 from charts.yogini_alignment import build_yogini_alignment
 from charts.yogini_event_confirmation import build_event_confirmation
@@ -23,6 +27,7 @@ _CATEGORY_PRIMARY_VARGA = {
     "children": "d7",
     "health": "d30",
     "education": "d24",
+    "vehicle": "d16",
     "property": "d4",
     "family": "d12",
     "foreign_travel": "d4",
@@ -182,6 +187,8 @@ def _transit_score(chart_data, planet_code, target_date, category_houses):
 
 
 def _lord_role(planet_code, mahadasha_lord, antardasha_lord):
+    if planet_code == mahadasha_lord == antardasha_lord:
+        return lord_role(planet_code, mahadasha_lord, antardasha_lord)
     if planet_code == mahadasha_lord:
         return "Mahadasha lord"
     if planet_code == antardasha_lord:
@@ -295,22 +302,16 @@ def _window_explanation(
     changing_segments = [
         segment
         for segment in (transit_segments or [])
-        if segment["start"] != segment["end"]
     ]
     if changing_segments:
         parts.append("Do not treat this whole period as one fixed transit. Transit segments inside this period:")
-        for segment in changing_segments[:10]:
+        for segment in changing_segments:
             parts.append(
                 f"{segment['role']} {segment['lord_name']}: {segment['start_display']} to {segment['end_display']} "
                 f"house {segment['transit_house_from_lagna']} with SAV {segment['sarvashtakavarga_points']}."
             )
     else:
-        for check in transit_checks:
-            parts.append(
-                f"{check['role']} {check['lord_name']} transits house {check['transit_house_from_lagna']} "
-                f"with Sarvashtakavarga {check['sarvashtakavarga_points']} "
-                f"(threshold {check['ashtakavarga_threshold']})."
-            )
+        parts.append("Period-specific transit evidence is unavailable; timing is preliminary.")
 
     if yogini_alignment and yogini_alignment.get("calculation_status") == "active":
         major = yogini_alignment.get("yogini")
@@ -356,43 +357,49 @@ def _vimshottari_at(chart_data, target_date):
             md_end = _parse_date(md.get("end", ""))
         except (ValueError, TypeError):
             continue
-        if md_start <= target_date <= md_end:
+        if md_start <= target_date < md_end:
             for ad in md.get("antardashas", []):
                 try:
                     ad_start = _parse_date(ad.get("start", ""))
                     ad_end = _parse_date(ad.get("end", ""))
                 except (ValueError, TypeError):
                     continue
-                if ad_start <= target_date <= ad_end:
+                if ad_start <= target_date < ad_end:
                     return md, ad
     return {}, {}
 
 
 def _collect_all_dasha_boundaries(chart_data, start_date, end_date):
     """Collect all period boundary dates from Vimshottari, Jaimini, and Yogini."""
-    boundaries = {start_date, end_date}
+    boundaries = {start_date, end_date + timedelta(days=1)}
 
     def _add(date_str):
         if not date_str:
             return
         try:
             d = _parse_date(date_str)
-            if start_date < d < end_date:
+            if start_date < d <= end_date:
                 boundaries.add(d)
         except (ValueError, TypeError):
             pass
 
     for md in chart_data.get("dashas", {}).get("vimshottari", {}).get("periods", []):
+        _add(md.get("start"))
+        _add(md.get("end"))
         for ad in md.get("antardashas", []):
             _add(ad.get("start"))
             _add(ad.get("end"))
 
     for md in chart_data.get("jaimini", {}).get("chara_dasha", {}).get("periods", []):
+        _add(md.get("start"))
+        _add(md.get("end"))
         for sub in md.get("subperiods", []):
             _add(sub.get("start"))
             _add(sub.get("end"))
 
     for md in chart_data.get("dashas", {}).get("yogini", {}).get("periods", []):
+        _add(md.get("start"))
+        _add(md.get("end"))
         for sub in md.get("subperiods", []):
             _add(sub.get("start"))
             _add(sub.get("end"))
@@ -400,8 +407,8 @@ def _collect_all_dasha_boundaries(chart_data, start_date, end_date):
     return sorted(boundaries)
 
 
-def _score_micro_period(chart_data, category, category_houses, period_start, period_end):
-    """Score a micro-period at its midpoint across all 3 dasha systems + varga (fast, no day-by-day segments)."""
+def _score_micro_period(chart_data, category, category_houses, period_start, period_end, transit_timeline=None):
+    """Use precomputed MD/AD transit segments and sample the other systems at midpoint."""
     midpoint = period_start + timedelta(days=(period_end - period_start).days // 2)
 
     md, ad = _vimshottari_at(chart_data, midpoint)
@@ -412,9 +419,18 @@ def _score_micro_period(chart_data, category, category_houses, period_start, per
     reasons = []
     if md_lord or ad_lord:
         reasons.append(f"Runs during {md_lord}/{ad_lord} Vimshottari period.")
+    period_checks = {
+        check["lord"]: check for check in summarize_segments(
+            segments_in_range(transit_timeline or {}, period_start, period_end)
+        )
+    }
     for lord in dict.fromkeys([l for l in [md_lord, ad_lord] if l]):
         lord_score, lord_reasons = _house_score(chart_data, lord, category_houses, category)
-        transit_s, transit_r, _ = _transit_score(chart_data, lord, midpoint, category_houses)
+        if transit_timeline is not None:
+            check = period_checks.get(lord, {})
+            transit_s, transit_r = check.get("transit_score", 0), check.get("reasons", [])
+        else:
+            transit_s, transit_r, _ = _transit_score(chart_data, lord, midpoint, category_houses)
         score += lord_score + transit_s
         reasons.extend(lord_reasons)
         reasons.extend(transit_r)
@@ -513,6 +529,8 @@ def _build_convergence_window(group):
     last = group[-1]
     md_lord = first.get("mahadasha_lord")
     ad_lord = first.get("antardasha_lord")
+    md_lord_name = PLANET_NAMES.get(md_lord, md_lord)
+    ad_lord_name = PLANET_NAMES.get(ad_lord, ad_lord)
     best = max(group, key=lambda m: m.get("composite_score", 0))
     composite_score = best.get("composite_score", 0)
 
@@ -556,9 +574,13 @@ def _build_convergence_window(group):
         "end": last["end"],
         "start_display": first["start_display"],
         "end_display": last["end_display"],
-        "label": f"{md_lord}/{ad_lord}",
+        "label": f"{md_lord_name}/{ad_lord_name}",
+        "code_label": f"{md_lord}/{ad_lord}",
+        "vimshottari_display": f"{md_lord_name} Mahadasha / {ad_lord_name} Antardasha",
         "mahadasha_lord": md_lord,
+        "mahadasha_lord_name": md_lord_name,
         "antardasha_lord": ad_lord,
+        "antardasha_lord_name": ad_lord_name,
         "jaimini_active_sign": jaimini_active_sign,
         "jaimini_active_sign_house_from_lagna": jaimini_active_sign_house,
         "jaimini_active_sub_sign": jaimini_active_sub_sign,
@@ -568,7 +590,9 @@ def _build_convergence_window(group):
         "active_dasha": {
             "mahadasha": md_lord,
             "antardasha": ad_lord,
-            "label": f"{md_lord}/{ad_lord}",
+            "label": f"{md_lord_name}/{ad_lord_name}",
+            "code_label": f"{md_lord}/{ad_lord}",
+            "display": f"{md_lord_name} Mahadasha / {ad_lord_name} Antardasha",
         },
         "score": composite_score,
         "composite_score": composite_score,
@@ -615,23 +639,19 @@ def _merge_adjacent_convergence_windows(micro_periods):
     return merged
 
 
-def _enrich_with_transit_segments(chart_data, windows, category):
-    """Add day-by-day transit segments and required_explanation to the top windows (expensive step)."""
+def _enrich_with_transit_segments(chart_data, windows, category, transit_timeline=None):
+    """Attach the complete precomputed transit evidence to selected windows."""
     category_houses = CATEGORY_RULES.get(category, {}).get("houses", [])
     for window in windows:
         md_lord = window.get("mahadasha_lord")
         ad_lord = window.get("antardasha_lord")
         window_start = _parse_date(window["start"])
         window_end = _parse_date(window["end"])
-        midpoint = window_start + timedelta(days=(window_end - window_start).days // 2)
-
-        transit_checks = _dasha_lord_transit_checks(
-            chart_data, [md_lord, ad_lord], midpoint, category_houses, md_lord, ad_lord
+        timeline = transit_timeline if transit_timeline is not None else build_dasha_transit_timeline(
+            chart_data, window_start, window_end, category_houses
         )
-        transit_segs = _transit_segments(
-            chart_data, [md_lord, ad_lord], window_start, window_end,
-            category_houses, md_lord, ad_lord,
-        )
+        transit_segs = segments_in_range(timeline, window_start, window_end)
+        transit_checks = summarize_segments(transit_segs)
         window["dasha_lord_transit_checks"] = transit_checks
         window["transit_segments"] = transit_segs
         window["required_explanation"] = _window_explanation(
@@ -645,15 +665,22 @@ def _enrich_with_transit_segments(chart_data, windows, category):
     return windows
 
 
-def build_timing_windows(question, chart_data, category, start_date, months=60, end_date=None):
+def build_timing_windows(question, chart_data, category, start_date, months=36, end_date=None, transit_timeline=None):
     if category == "general":
         return []
 
     end_date = end_date or _add_months(start_date, months)
     category_houses = CATEGORY_RULES.get(category, {}).get("houses", [])
+    if transit_timeline is None:
+        transit_timeline = build_dasha_transit_timeline(chart_data, start_date, end_date, category_houses)
 
     # Slice the timeline at every period boundary from all 3 dasha systems
-    boundaries = _collect_all_dasha_boundaries(chart_data, start_date, end_date)
+    boundaries = set(_collect_all_dasha_boundaries(chart_data, start_date, end_date))
+    for row in transit_timeline.get("intervals", []):
+        for segment in row["transit_segments"]:
+            boundaries.add(_parse_date(segment["start"]))
+            boundaries.add(_parse_date(segment["end"]) + timedelta(days=1))
+    boundaries = sorted(boundaries)
 
     micro_periods = []
     for i in range(len(boundaries) - 1):
@@ -662,7 +689,7 @@ def build_timing_windows(question, chart_data, category, start_date, months=60, 
         if mp_start > mp_end:
             continue
         micro_periods.append(
-            _score_micro_period(chart_data, category, category_houses, mp_start, mp_end)
+            _score_micro_period(chart_data, category, category_houses, mp_start, mp_end, transit_timeline)
         )
 
     if not micro_periods:
@@ -672,6 +699,6 @@ def build_timing_windows(question, chart_data, category, start_date, months=60, 
     merged = _merge_adjacent_convergence_windows(micro_periods)
     merged.sort(key=lambda w: (w.get("confirmation_count", 0), w.get("composite_score", 0), w["start"]), reverse=True)
     top_windows = merged[:8]
-    _enrich_with_transit_segments(chart_data, top_windows, category)
+    _enrich_with_transit_segments(chart_data, top_windows, category, transit_timeline)
 
     return top_windows

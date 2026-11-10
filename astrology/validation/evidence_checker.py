@@ -98,6 +98,75 @@ def _dasha_polarity_claim_issues(answer: str, evidence: dict) -> list[str]:
     return issues
 
 
+def _dasha_label_issues(answer: str, evidence: dict) -> list[str]:
+    card = evidence.get("evidence_card", {})
+    expected = (card.get("best_window") or {}).get("vimshottari_display") or (
+        card.get("vimshottari_basis") or {}
+    ).get("must_copy_display_label")
+    if not expected:
+        return []
+    lowered = answer.lower()
+    if "best window" in lowered and "mahadasha" in lowered and expected.lower() not in lowered:
+        return [f"Best-window dasha label must be copied exactly as '{expected}'."]
+    return []
+
+
+def _transit_specificity_issues(answer: str, evidence: dict) -> list[str]:
+    lowered = answer.lower()
+    if not any(term in lowered for term in ["transit", "ashtakavarga", "sarvashtakavarga", "bindu"]):
+        return []
+    card = evidence.get("evidence_card", {})
+    basis = card.get("transit_ashtakavarga_basis", [])
+    has_payload_detail = any(item.get("house_from_lagna") or item.get("house_from_moon") for item in basis)
+    has_answer_detail = (
+        ("house" in lowered or "sign" in lowered)
+        and ("bindu" in lowered or "sarvashtakavarga" in lowered or "points" in lowered)
+    )
+    if has_payload_detail and not has_answer_detail:
+        return ["Transit/Ashtakavarga claim lacks specific house/sign and bindu/SAV detail."]
+    return []
+
+
+def _transit_period_issues(answer: str, evidence: dict) -> list[str]:
+    """Require both window lords in a dedicated transit explanation."""
+    best = (evidence.get("timing_selection") or {}).get("best_window") or {}
+    pair = best.get("vimshottari") or {}
+    if not best.get("transit_segments"):
+        return []
+    paragraphs = re.split(r"\n\s*\n", answer)
+    transit_text = " ".join(p for p in paragraphs if re.search(
+        r"(?:\*\*|^|#{1,4}\s*)transits?(?:\s*&\s*ashtakavarga)?\s*[:*]", p, re.I
+    )).lower()
+    if not transit_text:
+        return []  # General specificity checks handle missing transit sections.
+    expected = set(filter(None, [pair.get("mahadasha_lord_name"), pair.get("antardasha_lord_name")]))
+    missing = sorted(name for name in expected if name.lower() not in transit_text)
+    if missing:
+        return [f"Transit explanation for {best.get('start')} to {best.get('end')} must assess the active window lords: {', '.join(missing)}. Use this window's transit_segments, not range-start dasha lords."]
+    return []
+
+
+def _transit_coverage_issues(answer: str, evidence: dict) -> list[str]:
+    timeline = (evidence.get("transits") or {}).get("future_timing", {}).get("dasha_transit_timeline", {})
+    if timeline.get("status") == "preliminary" and "preliminary" not in answer.lower():
+        return ["Timing must be marked preliminary because dasha/transit/Ashtakavarga coverage is incomplete."]
+    return []
+
+
+def _travel_logic_issues(answer: str, evidence: dict) -> list[str]:
+    category = (evidence.get("question") or {}).get("category", "")
+    if category != "foreign_travel":
+        return []
+    lowered = answer.lower()
+    issues = []
+    for house in ["3rd", "4th", "7th", "9th", "12th"]:
+        if house not in lowered:
+            issues.append(f"Travel answer does not mention required {house} house logic.")
+    if re.search(r"8th[^.]{0,80}(directly relates|foreign journey|foreign journeys|travel)", lowered):
+        issues.append("Jaimini/travel logic incorrectly treats the 8th house as direct foreign-travel proof.")
+    return issues
+
+
 def check_evidence(answer: str, evidence: dict) -> list[str]:
     issues = []
     lowered = answer.lower()
@@ -173,7 +242,7 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
         phrase in (evidence.get("question") or {}).get("text", "").lower()
         for phrase in ["when", "promotion", "promoted", "job change", "job switch", "switch job"]
     )
-    if timing_question and evidence.get("transits", {}).get("future_timing", {}).get("scan_months") == 60:
+    if timing_question and evidence.get("transits", {}).get("future_timing", {}).get("windows"):
         if "**" not in answer:
             issues.append("Timing answer should bold important timing windows.")
 
@@ -181,6 +250,11 @@ def check_evidence(answer: str, evidence: dict) -> list[str]:
         issues.append("Answer does not mention dasha timing.")
 
     issues.extend(_dasha_polarity_claim_issues(answer, evidence))
+    issues.extend(_dasha_label_issues(answer, evidence))
+    issues.extend(_transit_specificity_issues(answer, evidence))
+    issues.extend(_transit_period_issues(answer, evidence))
+    issues.extend(_transit_coverage_issues(answer, evidence))
+    issues.extend(_travel_logic_issues(answer, evidence))
 
     # ── Relocation / return-to-homeland rules ──────────────────────────────────
     q_text = _question_text(evidence)

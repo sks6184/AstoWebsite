@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import Conversation, Message
+from accounts.private_admin import PrivateDataAdmin
 
 
 class MessageInline(admin.TabularInline):
@@ -10,15 +11,15 @@ class MessageInline(admin.TabularInline):
 
 
 @admin.register(Conversation)
-class ConversationAdmin(admin.ModelAdmin):
-    list_display = ("title", "user", "depth_level", "answer_language", "chart", "updated_at")
-    list_filter = ("depth_level", "answer_language", "created_at")
+class ConversationAdmin(PrivateDataAdmin):
+    list_display = ("title", "user", "answer_language", "chart", "updated_at")
+    list_filter = ("answer_language", "created_at")
     search_fields = ("title", "user__username", "user__email")
     inlines = [MessageInline]
 
 
 @admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
+class MessageAdmin(PrivateDataAdmin):
     list_display = ("conversation", "role", "model_name", "created_at")
     list_filter = ("role", "model_name", "created_at")
     search_fields = ("content",)

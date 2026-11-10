@@ -15,11 +15,12 @@
       <summary class="history-summary">
         <span>
           <strong>{{ conversation.title }}</strong>
-          <small>{{ conversation.chart.name|default:"No chart" }} - {{ conversation.get_depth_level_display }}</small>
+          <small>{% if conversation.chart.user_id == user.id %}{{ conversation.chart.name }}{% else %}Chart unavailable{% endif %}</small>
         </span>
         <time>{{ conversation.updated_at|date:"d-M-Y H:i" }}</time>
       </summary>
       <div class="history-answer">
+        <p><a class="button secondary" href="{% url 'conversation_detail' conversation.id %}">Continue / manage memory</a></p>
         {% for message in conversation.messages.all %}
           <article class="message {{ message.role }}">
             <strong>{% if message.role == "assistant" %}Jyotish Analysis{% else %}{{ message.get_role_display }}{% endif %}</strong>

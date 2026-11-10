@@ -150,6 +150,26 @@ CATEGORY_RULES = {
         "divisional_charts": ["d1", "d7"],
         "natural_karakas": ["Ju"],  # Jupiter=primary karaka for children/progeny
     },
+    "vehicle": {
+        "keywords": [
+            "car",
+            "vehicle",
+            "vehicles",
+            "bike",
+            "motorcycle",
+            "scooter",
+            "auto",
+            "automobile",
+            "conveyance",
+            "luxury vehicle",
+            "new car",
+            "buy a car",
+            "purchase a car",
+        ],
+        "houses": [2, 4, 6, 9, 11, 12],
+        "divisional_charts": ["d1", "d16", "d4"],
+        "natural_karakas": ["Ve", "Mo", "Ma"],  # Venus=vehicle/luxury, Moon=comfort, Mars=machinery
+    },
     "property": {
         "keywords": [
             "property",
@@ -157,7 +177,6 @@ CATEGORY_RULES = {
             "house",
             "land",
             "real estate",
-            "vehicle",
             "buy",
             "purchase",
             "apartment",
@@ -196,6 +215,12 @@ CATEGORY_RULES = {
             "visa",
             "abroad",
             "travel",
+            "trip",
+            "journey",
+            "visit",
+            "fly",
+            "flight",
+            "go to",
             "stay",
             "stay here",
             "long time",
@@ -297,6 +322,39 @@ _FOREIGN_TRAVEL_OVERRIDES = frozenset({
     "forever in india", "forever back", "return for good",
     "go back for good", "move back for good",
 })
+
+_TRAVEL_MOVEMENT_WORDS = frozenset({
+    "go",
+    "going",
+    "visit",
+    "visiting",
+    "trip",
+    "travel",
+    "traveling",
+    "travelling",
+    "journey",
+    "fly",
+    "flight",
+    "return",
+    "returning",
+    "move",
+    "moving",
+    "come",
+    "coming",
+})
+
+
+def _looks_like_location_travel(question: str) -> bool:
+    """
+    Detect practical travel questions like "when will I go India for a trip".
+    This is movement+location based so "property in India" does not become a
+    travel question.
+    """
+    lowered = question.lower()
+    has_location = any(loc in lowered for loc in _KNOWN_LOCATIONS)
+    if not has_location:
+        return False
+    return any(re.search(rf"\b{re.escape(word)}\b", lowered) for word in _TRAVEL_MOVEMENT_WORDS)
 
 
 def build_natural_karaka_assessment(chart_data: dict, category: str) -> dict:
@@ -545,7 +603,7 @@ def classify_question(question):
     lowered = question.lower()
     # Foreign travel / relocation phrases take priority — they overlap with career
     # ("working abroad") and property ("home") keywords that would otherwise win.
-    if any(phrase in lowered for phrase in _FOREIGN_TRAVEL_OVERRIDES):
+    if any(phrase in lowered for phrase in _FOREIGN_TRAVEL_OVERRIDES) or _looks_like_location_travel(question):
         return "foreign_travel"
     for category, rules in CATEGORY_RULES.items():
         if any(keyword in lowered for keyword in rules["keywords"]):
@@ -659,12 +717,12 @@ def _time_scope(question, target_date):
             "instruction": "Only consider the current calendar month.",
         }
     return {
-        "phrase": "default_next_5_years",
+        "phrase": "default_next_3_years",
         "start": target_date,
-        "end": _add_months(target_date, 60),
-        "months": 60,
+        "end": _add_months(target_date, 36),
+        "months": 36,
         "is_default": True,
-        "instruction": "No explicit time phrase was found; scan the next 5 years using dasha, transit, and Jaimini confirmation.",
+        "instruction": "No explicit time phrase was found; scan at most the next 3 years using dasha, transit, and Jaimini confirmation.",
     }
 
 
@@ -786,10 +844,10 @@ def detect_question_scope(question: str, target_date: date | None = None) -> dic
             if year >= target_date.year:
                 return _scope(str(year), date(year, 1, 1), date(year, 12, 31), None, True,
                               f"Only consider {year}: 01-Jan-{year} to 31-Dec-{year}.")
-        # No specific future date found — scan 5 years forward
-        end = _add_months(target_date, 60)
-        return _scope("default_next_5_years", target_date, end, 60, False,
-                      "Future question with no specific target date; scan the next 5 years.")
+        # No specific future date found — scan 3 years forward
+        end = _add_months(target_date, 36)
+        return _scope("default_next_3_years", target_date, end, 36, False,
+                      "Future question with no specific target date; scan at most the next 3 years.")
 
     # Past intent: detect "last N years" / "past N years" lookback patterns
     if intent == "past":
@@ -928,7 +986,7 @@ def build_prediction_context(question, chart_data, target_date=None, answer_lang
         chart_data,
         category,
         time_scope["start"],
-        months=time_scope.get("months") or 60,
+        months=time_scope.get("months") or 36,
         end_date=time_scope["end"],
     )
     for window in timing_windows:

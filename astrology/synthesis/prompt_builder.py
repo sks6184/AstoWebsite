@@ -31,12 +31,16 @@ Conflicting Signals, or Confidence Level. Weave those concepts into Jyotish Anal
 Do not claim Parashari/Jaimini/D10/Yogini support unless that evidence is present in input JSON.
 Do not call Vimshottari, Mahadasha, or Antardasha favorable/supportive unless dasha_rule_polarity.has_positive is true.
 Do not call Vimshottari, Mahadasha, or Antardasha unfavorable/difficult/weak unless dasha_rule_polarity.has_pressure is true.
+Use evidence_card as the primary answer contract. Copy evidence_card.best_window.vimshottari_display exactly.
+Do not create the "Why We Suggest" section freely; use evidence_card fields and triggered_rules only.
 Vimshottari is a Parashari dasha, not a separate system. Chara is a Jaimini dasha, not a separate system.
 Do not call a transit unfavorable unless you name the actual planet, sign, house, Sarvashtakavarga points,
 and the payload shows weak support.
 If exact muhurta facts are missing, say the recommendation is preliminary.
 For startup/business website questions require D10, D9, 2nd/7th/10th/11th house logic, Mercury,
 Rahu for online/technology scaling, Jupiter for advisory/astrology wisdom, and Yogini/Vimshottari timing where available.
+For vehicle/car questions require D16/Shodashamsha as the primary divisional chart, D4 only as secondary,
+and mention the 4th house/4th lord, Venus, Moon, Mars, active Mahadasha/Antardasha, and transit house/sign/bindu evidence.
 If the user asks "when should I start", provide a specific better date, better date window,
 or a clear statement that exact date selection cannot be completed until muhurta calculations are available.
 For timing answers, clearly separate these concepts inside Jyotish Analysis:
@@ -44,6 +48,17 @@ For timing answers, clearly separate these concepts inside Jyotish Analysis:
 - Overall Auspiciousness
 - Recommended Action
 - Soft Launch vs Public Launch distinction
+Intersection Timing Explanation Rules:
+When giving a date range, always explain whether it comes from dasha alone, transit alone, or intersection of multiple factors.
+If it is an intersection, clearly say which factors overlap and why the start and end dates were selected.
+Use this hierarchy: Dasha = permission/background theme; Transit = event trigger; Ashtakavarga = strength filter; Divisional chart = confirmation; RAG/classical rule = interpretive support.
+Do not treat one dasha or one transit as sufficient for timing.
+Use only evidence_card.intersection_timing and timing_selection candidate windows. Do not invent intersections.
+If only one timing system supports the event, say: "This is a single-factor indication, so confidence is lower."
+If two or more systems overlap, say: "This is an intersection window, so confidence is stronger."
+If timing systems conflict, say the period is mixed because some indicators support the event while others delay or weaken it.
+Never give an exact date unless the supplied data contains that date.
+Do not say the event is guaranteed; use probability language.
 If the best checked date is still not truly auspicious, say so plainly. Use wording like:
 "Best Available Option in Checked Window: May 15, 2026. Overall Recommendation: Postpone public launch beyond May 2026. Suggested Use: Soft launch / testing only."
 For business money questions, directly answer:
@@ -153,6 +168,7 @@ def build_prompt_payload(evidence: dict[str, Any], rag_context: dict[str, Any] |
         "summary_scores": evidence.get("summary_scores", {}),
         "dasha_rule_polarity": dasha_polarity_summary(evidence),
         "timing_selection": evidence.get("timing_selection", {}),
+        "evidence_card": evidence.get("evidence_card", {}),
         "evidence_ledger": evidence.get("evidence_ledger", []),
         "contradictions": evidence.get("contradictions", {}),
         "triggered_rules": _select_rules(evidence.get("triggered_rules", []), category_charts),

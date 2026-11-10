@@ -519,7 +519,8 @@ def _llm_month_predictions(month, contexts, answer_language="English"):
         return {}
 
     payload = _deterministic_prediction_payload(month, contexts)
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    from accounts.provider_transport import IPv4HttpClient
+    client = OpenAI(api_key=settings.OPENAI_API_KEY, http_client=IPv4HttpClient())
     prompt = json.dumps(payload, ensure_ascii=False, default=str)
     try:
         response = client.responses.create(

@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+if os.getenv('DJANGO_SETTINGS_MODULE') != 'astro_site.production':
+    load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
@@ -29,11 +30,11 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if os.getenv('ASTROGPT_TRUST_PROXY') == 'true' else None
+USE_X_FORWARDED_HOST = False
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "astro_site.admin_config.PilotAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -56,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "astro_site.pilot_middleware.PilotMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -117,8 +119,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SITE_ID = 1
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "dashboard"
+LOGIN_REDIRECT_URL = "post_login_redirect"
 LOGOUT_REDIRECT_URL = "home"
+ACCOUNT_LOGIN_REDIRECT_URL = "post_login_redirect"
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
@@ -148,3 +151,14 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
+
+# P3 is opt-in; disabling this flag preserves the existing one-shot pipeline.
+ASTROGPT_AGENT_ENABLED = os.getenv("ASTROGPT_AGENT_ENABLED", "false").lower() in {"1", "true", "yes"}
+ASTROGPT_RATE_LIMITS_ENABLED = True
+DATA_UPLOAD_MAX_MEMORY_SIZE = 65536
+ASTROGPT_TRANSCRIPT_RETENTION_DAYS = 30
+ASTROGPT_METRIC_RETENTION_DAYS = 90
+LOGGING = {'version': 1, 'disable_existing_loggers': False,
+    'formatters': {'safe': {'()': 'astro_site.pilot_middleware.SafeJsonFormatter'}},
+    'handlers': {'safe_console': {'class': 'logging.StreamHandler', 'formatter': 'safe'}},
+    'loggers': {'astrogpt.operations': {'handlers': ['safe_console'], 'level': 'INFO', 'propagate': False}}}

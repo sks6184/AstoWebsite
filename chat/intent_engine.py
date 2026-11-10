@@ -206,7 +206,8 @@ def _llm_classify(question: str) -> dict:
         return {"intent": "specific", "horizon": None, "confidence": "low", "method": "llm-skipped"}
 
     try:
-        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        from accounts.provider_transport import IPv4HttpClient
+        client = OpenAI(api_key=settings.OPENAI_API_KEY, http_client=IPv4HttpClient())
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[

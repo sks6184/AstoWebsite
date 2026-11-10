@@ -16,7 +16,7 @@
       </p>
       <div class="actions">
         {% if user.is_authenticated %}
-          <a class="button icon-dashboard" href="{% url 'dashboard' %}">Open dashboard</a>
+          <a class="button icon-ask" href="{% url 'post_login_redirect' %}">Continue</a>
         {% else %}
           <a class="button icon-login" href="{% url 'login' %}">Login</a>
         {% endif %}

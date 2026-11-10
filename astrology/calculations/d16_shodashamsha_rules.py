@@ -158,12 +158,36 @@ def _planets_in_house(chart: dict[str, Any], house: int) -> list[str]:
     return [p["code"] for p in chart.get("planets", []) if p.get("house") == house and p.get("code")]
 
 
-def _d16_part(degree: float) -> int:
-    """Return shodashamsha part (1–16) from degree within D1 sign (0–30°)."""
+def _degree_to_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    text = str(value).strip()
     try:
-        return min(int(float(degree) / 1.875), 15) + 1  # clamp 0-15 then +1
-    except (TypeError, ValueError):
+        return float(text)
+    except ValueError:
+        pass
+    parts = text.replace("°", "-").replace("'", "-").replace('"', "").split("-")
+    try:
+        numbers = [float(part) for part in parts if part != ""]
+    except ValueError:
+        return None
+    if not numbers:
+        return None
+    degrees = numbers[0]
+    minutes = numbers[1] if len(numbers) > 1 else 0
+    seconds = numbers[2] if len(numbers) > 2 else 0
+    sign = -1 if degrees < 0 else 1
+    return sign * (abs(degrees) + minutes / 60 + seconds / 3600)
+
+
+def _d16_part(degree: Any) -> int:
+    """Return shodashamsha part (1–16) from degree within D1 sign (0–30°)."""
+    parsed = _degree_to_float(degree)
+    if parsed is None:
         return 0
+    return min(int(parsed / 1.875), 15) + 1  # clamp 0-15 then +1
 
 
 def _parashari_lord(sign_number: int, part: int) -> str:
@@ -204,7 +228,7 @@ def _d16_s1_lords(d16_chart: dict[str, Any], d1_chart: dict[str, Any]) -> list[d
         sign_num = planet_data.get("sign_number")
         if deg is None or sign_num is None:
             return result
-        part = _d16_part(float(deg))
+        part = _d16_part(deg)
         if part < 1:
             return result
 
@@ -264,7 +288,7 @@ def _d16_s1_lords(d16_chart: dict[str, Any], d1_chart: dict[str, Any]) -> list[d
         deg = sun_d1.get("degree")
         sign_num = sun_d1.get("sign_number")
         if deg is not None and sign_num is not None:
-            part = _d16_part(float(deg))
+            part = _d16_part(deg)
             p_lord = _parashari_lord(int(sign_num), part) if part > 0 else ""
             if p_lord:
                 ptheme_type, ptheme = _PARASHARI_THEMES.get(p_lord, ("neutral", ""))
@@ -292,7 +316,7 @@ def _d16_s1_lords(d16_chart: dict[str, Any], d1_chart: dict[str, Any]) -> list[d
         sign_num = d1_pdata.get("sign_number")
         if deg is None or sign_num is None:
             continue
-        part = _d16_part(float(deg))
+        part = _d16_part(deg)
         p_lord = _parashari_lord(int(sign_num), part) if part > 0 else ""
         t_name, t_qual, _ = _tithi_lord_info(part)
         is_cruel_p = (p_lord == _CRUEL_PARASHARI)
@@ -363,7 +387,7 @@ def _d16_s2_core(d16_chart: dict[str, Any], d1_chart: dict[str, Any]) -> list[di
         v_deg = ven_d1.get("degree")
         v_sign = ven_d1.get("sign_number")
         if v_deg is not None and v_sign is not None:
-            part = _d16_part(float(v_deg))
+            part = _d16_part(v_deg)
             p_lord = _parashari_lord(int(v_sign), part) if part > 0 else ""
             if p_lord == "Mahesh":
                 triggered.append(_rule(

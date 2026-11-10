@@ -4,6 +4,9 @@ from typing import Any
 from chat.timing_windows import build_timing_windows
 from charts.transit_priority import build_transit_priority_context
 from charts.yogini_transit_convergence import evaluate_transit_convergence
+from astrology.constants import PLANET_NAMES
+from astrology.calculations.dasha_transit_timeline import build_dasha_transit_timeline
+from chat.prediction_context import CATEGORY_RULES
 
 
 def _add_months(value: date, months: int) -> date:
@@ -76,12 +79,10 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "reasons": yog.get("reasons", [])[:2],
     }
 
-    # Cap transit_segments to 4 total (representative sign transitions only)
+    # Preserve every segment for BOTH lords; truncation can erase the AD lord.
     segs = window.get("transit_segments", [])
     segs_compact = [
-        {k: s[k] for k in ("lord_name", "role", "start_display", "end_display",
-                            "transit_house_from_lagna", "sarvashtakavarga_points") if k in s}
-        for s in segs[:4]
+        dict(s) for s in segs
     ]
 
     return {
@@ -90,6 +91,8 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "start_display": window.get("start_display"),
         "end_display": window.get("end_display"),
         "label": window.get("label"),
+        "code_label": window.get("code_label"),
+        "vimshottari_display": window.get("vimshottari_display"),
         "composite_score": window.get("composite_score", window.get("score", 0)),
         "score": window.get("score", 0),
         "vimshottari_score": window.get("vimshottari_score", 0),
@@ -99,7 +102,9 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "confirmation_count": window.get("confirmation_count", 0),
         "intersection_tier": window.get("intersection_tier"),
         "mahadasha_lord": window.get("mahadasha_lord"),
+        "mahadasha_lord_name": window.get("mahadasha_lord_name") or PLANET_NAMES.get(window.get("mahadasha_lord"), window.get("mahadasha_lord")),
         "antardasha_lord": window.get("antardasha_lord"),
+        "antardasha_lord_name": window.get("antardasha_lord_name") or PLANET_NAMES.get(window.get("antardasha_lord"), window.get("antardasha_lord")),
         "jaimini_active_sign": window.get("jaimini_active_sign"),
         "jaimini_active_sign_house_from_lagna": window.get("jaimini_active_sign_house_from_lagna"),
         "jaimini_active_sub_sign": window.get("jaimini_active_sub_sign"),
@@ -112,6 +117,7 @@ def _compact_future_window(window: dict[str, Any]) -> dict[str, Any]:
         "transit_convergence": window.get("transit_convergence", {}),
         "sub_period_breakdown": top_breakdown,
         "transit_segments": segs_compact,
+        "dasha_lord_transit_checks": window.get("dasha_lord_transit_checks", []),
     }
 
 
@@ -122,8 +128,11 @@ def build_future_transit_windows(
     start_date: date,
     months: int = 36,
     end_date: date | None = None,
+    category_houses: list[int] | None = None,
 ) -> dict[str, Any]:
     end_date = end_date or _add_months(start_date, months)
+    houses = category_houses if category_houses is not None else CATEGORY_RULES.get(category, {}).get("houses", [])
+    timeline = build_dasha_transit_timeline(chart_data, start_date, end_date, houses)
     windows = build_timing_windows(
         question,
         chart_data,
@@ -131,6 +140,7 @@ def build_future_transit_windows(
         start_date,
         months=months,
         end_date=end_date,
+        transit_timeline=timeline,
     )
     compact = [_compact_future_window(window) for window in windows]
     return {
@@ -139,6 +149,7 @@ def build_future_transit_windows(
         "start": start_date.isoformat(),
         "end": end_date.isoformat(),
         "windows": compact,
+        "dasha_transit_timeline": timeline,
     }
 
 
@@ -154,6 +165,11 @@ def build_transit_facts(
     end_date: date | None = None,
 ) -> dict[str, Any]:
     target_date = target_date or date.today()
+    # Establish the complete period-specific timeline before any summary snapshot.
+    future_timing = build_future_transit_windows(
+        question, chart_data, category, target_date,
+        months=future_months, end_date=end_date, category_houses=category_houses,
+    )
     vimshottari = dasha_facts.get("parashari_vimshottari", {})
     mahadasha_lord = vimshottari.get("current_mahadasha", {}).get("lord")
     antardasha_lord = vimshottari.get("current_antardasha", {}).get("lord")
@@ -178,16 +194,12 @@ def build_transit_facts(
     pressure_score = sum(abs(min(event.get("score", 0), 0)) for event in pressure[:5])
     score = max(0, min(100, positive_score - pressure_score))
     transit_convergence = evaluate_transit_convergence(chart_data, category_houses, target_date)
-    future_timing = build_future_transit_windows(
-        question, chart_data, category, target_date,
-        months=future_months, end_date=end_date,
-    )
-
     return {
         "system": "Transit",
         "status": "active",
         "horizon": horizon,
         "target_date": target_date.isoformat(),
+        "snapshot_scope": "Range-start snapshot only; never use this to explain another dasha interval. Use future_timing.dasha_transit_timeline and each window's transit_segments.",
         "relevant_transits": events[:12],
         "dasha_lord_transits": dasha_lord_events[:6],
         "transit_convergence": transit_convergence,

@@ -932,6 +932,7 @@ class AstrologyEngineTests(TestCase):
         amk_code = (karakas.get("amatyakaraka") or {}).get("planet", "Mo")
         ak_name = PLANET_NAMES.get(ak_code, ak_code)
         amk_name = PLANET_NAMES.get(amk_code, amk_code)
+        transit = evidence["evidence_card"]["transit_ashtakavarga_basis"][0]
         answer = "\n".join(
             [
                 "### Jyotish Analysis",
@@ -941,7 +942,10 @@ class AstrologyEngineTests(TestCase):
                 f"D10 (Dashamsha) is central for this career question.",
                 "### Why We Advise That",
                 f"Parashari/Vimshottari: The active dasha is {md_name} Mahadasha / {ad_name} Antardasha "
-                f"({md_start} to {md_end}). Transit timing and Sarvashtakavarga points support this window. "
+                f"({md_start} to {md_end}). "
+                f"The period-specific transit evidence places {transit['planet']} in {transit['transit_sign']}, "
+                f"house {transit['house_from_lagna']}, with Sarvashtakavarga {transit['sarvashtakavarga_points']} points "
+                f"from {transit['start']} to {transit['end']}. "
                 f"Jaimini/Chara: {ak_name} as Atmakaraka and {amk_name} as Amatyakaraka are assessed through "
                 f"Chara Dasha and Arudha factors. "
                 f"Yogini: The active {yogini_name} Yogini major period with {sub_yogini} sub-period is considered. "

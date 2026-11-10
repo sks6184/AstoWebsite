@@ -38,7 +38,7 @@ class SavedChart(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.name} - {self.birth_date}"
+        return f"Chart {self.pk}"
 
 
 class MonthlyPrediction(models.Model):

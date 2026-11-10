@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Delete your account</h1>
+<p>Pilot retention: inactive conversations are eligible for cleanup after 30 days; anonymous operational counts after 90 days. These periods depend on scheduled operator cleanup. Credit/usage records remain until account deletion. Enabling conversation memory sends bounded earlier turns to the answer provider; other interpretive answers may send calculated chart evidence. Factual lookups can stay local.</p>
+<p>This removes your account, charts, conversations, summaries, feedback and linked credit/usage records from the active database. Anonymous daily statistics remain. Backups and external provider/payment records follow their separate retention policies. Deletion cannot be undone through this app.</p>
+<form method="post">{% csrf_token %}
+<label>Type DELETE <input name="confirmation" required autocomplete="off"></label>
+{% if user.has_usable_password %}<label>Current password <input type="password" name="password" required autocomplete="current-password"></label>{% else %}<p>A social sign-in within the last 15 minutes is required.</p>{% endif %}
+<button type="submit">Permanently delete account</button></form>
+{% endblock %}

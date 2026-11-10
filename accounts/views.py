@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 from accounts.credits import question_credit_status
 from accounts.models import Plan
@@ -18,7 +18,73 @@ def _fallback_plans():
 
 
 @login_required
+def post_login_redirect(request):
+    if SavedChart.objects.filter(user=request.user).exists():
+        return redirect("ask_question")
+    return redirect("chart_list")
+
+
+@login_required
 def dashboard(request):
+    return post_login_redirect(request)
+
+
+@login_required
+def pilot_analytics(request):
+    from django.http import HttpResponseForbidden
+    from .models import PilotMetric
+    if not request.user.is_active or not request.user.is_superuser: return HttpResponseForbidden('Pilot analytics are restricted.')
+    return render(request, 'accounts/pilot_analytics.html', {'metrics': PilotMetric.objects.order_by('-day', 'event', 'outcome')[:500]})
+
+
+@login_required
+def account_delete(request):
+    from django.contrib.auth import logout
+    from django.db import transaction
+    from django.http import HttpResponse
+    from django.utils import timezone
+    from payments.models import PaymentEvent
+    from .pilot_ops import metric
+    if request.method == 'POST':
+        fresh = 0 <= timezone.now().timestamp() - request.session.get('privacy_authenticated_at', 0) <= 900
+        verified = request.user.check_password(request.POST.get('password', '')) if request.user.has_usable_password() else fresh
+        if request.POST.get('confirmation') != 'DELETE' or not verified:
+            return HttpResponse('Deletion requires DELETE and your current password, or a recent social sign-in.', status=400)
+        with transaction.atomic():
+            from django.contrib.admin.models import LogEntry
+            from django.contrib.contenttypes.models import ContentType
+            from django.contrib.auth import get_user_model
+            from .models import UserProfile
+            from chat.models import Message
+            owned = [(SavedChart, SavedChart.objects.filter(user=request.user).values_list('pk', flat=True)),
+                (Conversation, Conversation.objects.filter(user=request.user).values_list('pk', flat=True)),
+                (Message, Message.objects.filter(conversation__user=request.user).values_list('pk', flat=True)),
+                (UserProfile, UserProfile.objects.filter(user=request.user).values_list('pk', flat=True)),
+                (get_user_model(), [request.user.pk])]
+            for model, identifiers in owned:
+                LogEntry.objects.filter(content_type=ContentType.objects.get_for_model(model),
+                    object_id__in=[str(pk) for pk in identifiers]).delete()
+            PaymentEvent.objects.filter(user=request.user).delete()
+            request.user.delete()
+        logout(request)
+        metric('account_deleted')
+        return redirect('home')
+    return render(request, 'accounts/delete.html')
+
+
+@login_required
+def contribution_dashboard(request):
+    from django.http import HttpResponseForbidden
+    from .reporting import contribution_report
+    if not request.user.is_active or not request.user.is_superuser:
+        return HttpResponseForbidden('Financial reporting is restricted.')
+    response = render(request, 'accounts/contribution.html', {'report': contribution_report()})
+    response['Cache-Control'] = 'no-store, private'
+    return response
+
+
+@login_required
+def legacy_dashboard(request):
     charts = SavedChart.objects.filter(user=request.user)[:5]
     conversations = Conversation.objects.filter(user=request.user)[:5]
     credit_status = question_credit_status(request.user)

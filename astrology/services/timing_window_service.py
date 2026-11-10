@@ -14,6 +14,7 @@ from datetime import date, datetime
 from typing import Any
 
 from chat.timing_windows import build_timing_windows
+from astrology.constants import PLANET_NAMES
 
 
 TIER_RANK = {
@@ -85,12 +86,18 @@ def _ranking_score(window: dict[str, Any], start_date: date, practical_months: i
 
 def _compact_window(window: dict[str, Any], start_date: date, practical_months: int) -> dict[str, Any]:
     ranking_score = _ranking_score(window, start_date, practical_months)
+    md_lord = window.get("mahadasha_lord")
+    ad_lord = window.get("antardasha_lord")
+    md_lord_name = window.get("mahadasha_lord_name") or PLANET_NAMES.get(md_lord, md_lord)
+    ad_lord_name = window.get("antardasha_lord_name") or PLANET_NAMES.get(ad_lord, ad_lord)
     return {
         "start": window.get("start"),
         "end": window.get("end"),
         "start_display": window.get("start_display"),
         "end_display": window.get("end_display"),
-        "label": window.get("label"),
+        "label": window.get("label") or f"{md_lord_name}/{ad_lord_name}",
+        "code_label": window.get("code_label") or f"{md_lord}/{ad_lord}",
+        "vimshottari_display": window.get("vimshottari_display") or f"{md_lord_name} Mahadasha / {ad_lord_name} Antardasha",
         "confidence": _confidence_for(window),
         "ranking_score": ranking_score,
         "composite_score": window.get("composite_score", window.get("score", 0)),
@@ -98,8 +105,11 @@ def _compact_window(window: dict[str, Any], start_date: date, practical_months: 
         "confirmation_count": window.get("confirmation_count", 0),
         "confirmed_systems": (window.get("event_confirmation") or {}).get("confirmed_systems", []),
         "vimshottari": {
-            "mahadasha_lord": window.get("mahadasha_lord"),
-            "antardasha_lord": window.get("antardasha_lord"),
+            "mahadasha_lord": md_lord,
+            "mahadasha_lord_name": md_lord_name,
+            "antardasha_lord": ad_lord,
+            "antardasha_lord_name": ad_lord_name,
+            "display": window.get("vimshottari_display") or f"{md_lord_name} Mahadasha / {ad_lord_name} Antardasha",
             "score": window.get("vimshottari_score", 0),
         },
         "jaimini": {
@@ -114,6 +124,8 @@ def _compact_window(window: dict[str, Any], start_date: date, practical_months: 
         },
         "varga_score": window.get("varga_score", 0),
         "transit_convergence": window.get("transit_convergence", {}),
+        "transit_segments": window.get("transit_segments", []),
+        "dasha_lord_transit_checks": window.get("dasha_lord_transit_checks", []),
         "reasons": window.get("reasons", [])[:6],
     }
 
@@ -123,9 +135,9 @@ def build_timing_window_selection(
     question: str,
     category: str,
     start_date: date,
-    months: int = 60,
+    months: int = 36,
     end_date: date | None = None,
-    practical_months: int = 60,
+    practical_months: int = 36,
     precomputed_windows: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     if category == "general":
@@ -156,7 +168,7 @@ def build_timing_window_selection(
     practical = [
         window
         for window in compact
-        if (_parse_date(window.get("start")) or start_date) <= (end_date or start_date.replace(year=start_date.year + 5))
+        if (_parse_date(window.get("start")) or start_date) <= (end_date or start_date.replace(year=start_date.year + 3))
     ]
     best_pool = practical or compact
     best = best_pool[0] if best_pool else {}
@@ -183,4 +195,3 @@ def build_timing_window_selection(
             "no_intersection": buckets["no_intersection"][:3],
         },
     }
-

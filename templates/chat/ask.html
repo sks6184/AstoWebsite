@@ -25,23 +25,42 @@
       {% endif %}
       <form method="post" action="{% url 'ask_question' %}" data-ask-form autocomplete="off">
         {% csrf_token %}
+        {{ form.request_id }}
+        {% if form.errors %}
+          <div class="form-error" role="alert">
+            {{ form.non_field_errors }}
+            {% for field in form %}
+              {% for error in field.errors %}
+                <p>{{ field.label }}: {{ error }}</p>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
         <label for="chart-select">Chart</label>
-        <select id="chart-select" name="chart_id" required>
-          <option value="">— Select a chart —</option>
-          {% for chart in charts %}
-            <option value="{{ chart.id }}" {% if selected_chart_id == chart.id %}selected{% endif %}>
-              {{ chart.name }} - {{ chart.birth_place }}
-            </option>
-          {% endfor %}
-        </select>
-        <p id="chart-select-error" class="form-error" hidden></p>
-        {{ form.depth_level.label_tag }}
-        {{ form.depth_level }}
-        {{ form.answer_language.label_tag }}
-        {{ form.answer_language }}
-        {{ form.question.label_tag }}
-        {{ form.question }}
-        <button class="button icon-ask" type="submit">Ask</button>
+        {% if charts %}
+          <select id="chart-select" name="chart_id" required>
+            <option value="">-- Select a chart --</option>
+            {% for chart in charts %}
+              <option value="{{ chart.id }}" {% if selected_chart_id == chart.id %}selected{% endif %}>
+                {{ chart.name }} - {{ chart.birth_place }}
+              </option>
+            {% endfor %}
+          </select>
+          <p id="chart-select-error" class="form-error" hidden></p>
+          {{ form.answer_language.label_tag }}
+          {{ form.answer_language }}
+          {{ form.question.label_tag }}
+          {{ form.question }}
+          <p>{{ form.memory_enabled }} {{ form.memory_enabled.label_tag }}</p>
+          <p class="chart-note">Optional: send a bounded summary and recent messages from this conversation to the answer provider. Memory stays with this chart. You can view, reset, or delete it below. Inactive conversations may be removed under the pilot retention policy.</p>
+          {% if not agent_enabled %}<p class="chart-note">Contextual answers are currently unavailable; questions are processed individually.</p>{% endif %}
+          <button class="button icon-ask" type="submit">Ask</button>
+        {% else %}
+          <div class="empty-chart-callout">
+            <p>Create your first birth chart before asking a Jyotish question.</p>
+            <a class="button icon-new" href="{% url 'chart_create' %}">+ Create chart</a>
+          </div>
+        {% endif %}
       </form>
     </section>
   {% endif %}
@@ -50,15 +69,16 @@
     <div class="answer-panel__header">
       <h2>Jyotish Reading</h2>
       {% if conversation %}
-        <span>{{ conversation.get_depth_level_display }}</span>
-        <a class="button secondary" href="{% url 'ask_question' %}">Ask another question</a>
+        <a class="button secondary" href="{% url 'ask_question' %}">New conversation / another chart</a>
       {% endif %}
     </div>
 
     {% if conversation %}
+      {% if latest_request_summary %}<p role="status">{{ latest_request_summary.label }}</p>{% endif %}
       <div class="answer-thread">
         {% for message in conversation.messages.all %}
           <article class="message {{ message.role }}">
+            <small>Message #{{ message.id }}{% if message.kind == 'correction' %} · User correction{% elif message.kind == 'user_fact' %} · User-supplied statement{% endif %}</small>
             {% if message.role != "assistant" %}
               <strong>{{ message.get_role_display }}</strong>
             {% endif %}
@@ -71,16 +91,79 @@
             </div>
             {% if message.model_name %}
               <small class="message-meta">
-                {{ message.model_name }} · input {{ message.prompt_tokens }} · output {{ message.completion_tokens }}
+                {{ message.model_name }} &middot; input {{ message.prompt_tokens }} &middot; output {{ message.completion_tokens }}
               </small>
+            {% endif %}
+            {% if message.role == 'assistant' %}
+              <details><summary>Response status and evidence</summary>
+                {% if message.provenance.evidence %}
+                  <p>Status: {{ message.provenance.evidence.status }}. Pipeline: {{ message.provenance.evidence.pipeline }}. Validation: {{ message.provenance.evidence.validation_kind }}.</p>
+                  {% if message.provenance.evidence.status == 'partial' %}<p>This answer is preliminary. Missing evidence or an investigation limit prevents a complete conclusion.</p>{% endif %}
+                  <p>Exact replay is not guaranteed when charts, methods or sources change.</p>
+                  {% if message.provenance.evidence.provider_models %}<p>Requested provider models: {{ message.provenance.evidence.provider_models|join:", " }}.</p>{% endif %}
+                  <ul>{% for tool in message.provenance.evidence.tools %}<li>{{ tool.tool }}: {{ tool.status }}. {{ tool.method.precision }} {{ tool.method.interval_convention }}</li>{% endfor %}</ul>
+                  {% for source in message.provenance.evidence.sources %}<p>{{ source.evidence_id }}: {{ source.citation.book|default:source.citation.filename|default:"Citation unavailable" }}{% if source.citation.page %}, page {{ source.citation.page }}{% endif %}</p>{% empty %}<p>No retained source citations for this answer; none are inferred.</p>{% endfor %}
+                {% else %}<p>Historical reading: detailed tool/source provenance was not retained.</p>{% endif %}
+                <a href="{% url 'answer_provenance' message.id %}">View saved calculation/source metadata</a>
+              </details>
+              <form method="post" action="{% url 'answer_feedback' message.id %}">{% csrf_token %}<span>Was this useful?</span> <button name="vote" value="helpful">Helpful</button> <button name="vote" value="unhelpful">Not helpful</button> <button name="vote" value="unsure">Unsure</button></form>
             {% endif %}
           </article>
         {% endfor %}
       </div>
+      {% if conversation.chart %}
+      <section class="followup-panel">
+        <h3>Continue this conversation</h3>
+        <p>Chart: {{ conversation.chart.name }}. To ask about another person, start a new conversation.</p>
+        {% if conversation.active_request %}<p role="status">A reading is in progress. Reload when it finishes. Reset memory to cancel an interrupted reading.</p>{% endif %}
+        <p>{% if conversation.memory_enabled and agent_enabled %}Memory is on.{% elif conversation.memory_enabled %}Memory consent is on; contextual processing is inactive.{% else %}Memory is off: earlier messages will not be sent.{% endif %}</p>
+        {% if not agent_enabled %}<p>Contextual answers are currently unavailable; follow-ups are processed individually.</p>{% endif %}
+        <form method="post" action="{% url 'conversation_followup' conversation.id %}" data-ask-form>
+          {% csrf_token %}
+          {{ followup_form.request_id }} {{ followup_form.expected_revision }}
+          {{ followup_form.kind.label_tag }} {{ followup_form.kind }}
+          {{ followup_form.question.label_tag }} {{ followup_form.question }}
+          <details><summary>Reference an earlier message</summary>
+            {{ followup_form.supersedes_message_id.label_tag }} {{ followup_form.supersedes_message_id }}
+            {{ followup_form.reference_message_id.label_tag }} {{ followup_form.reference_message_id }}
+            <p>Only a message from this conversation after memory was enabled or reset can be included.</p>
+          </details>
+          <button class="button" type="submit" {% if conversation.active_request %}disabled{% endif %}>Send follow-up</button>
+        </form>
+      </section>
+      {% endif %}
+      <details class="memory-controls">
+        <summary>Conversation memory and privacy</summary>
+        <p>Memory uses at most three recent turns, a compact summary, and an older message only when you explicitly reference it. User statements, corrections, and preliminary interpretations remain separate.</p>
+        {% if memory_summary %}
+          <h4>Current memory</h4>
+          <p>Topic: {{ memory_summary.topic|default:"Not set" }}. Periods: {{ memory_summary.windows }}.</p>
+          <h4>User statements (unverified)</h4>
+          {% for item in memory_summary.user_assertions %}<p>Message #{{ item.message_id }}: {{ item.text }} — {{ item.status }}</p>{% empty %}<p>None.</p>{% endfor %}
+          <h4>User corrections (unverified)</h4>
+          {% for item in memory_summary.corrections %}<p>Message #{{ item.message_id }}: {{ item.text }}{% if item.supersedes_message_id %} (corrects #{{ item.supersedes_message_id }}){% endif %}</p>{% empty %}<p>None.</p>{% endfor %}
+          <p>Calculation references are retained only as references; chart evidence is fetched again when needed.</p>
+          {% for item in memory_summary.interpretations %}<p>Answer #{{ item.message_id }} remains preliminary, not a verified event.</p>{% endfor %}
+          {% if conversation.chart %}<p><a href="{% url 'conversation_memory' conversation.id %}">Inspect structured memory</a></p>{% endif %}
+        {% else %}<p>No active summary.</p>{% endif %}
+        <form method="post" action="{% url 'conversation_memory_action' conversation.id %}">
+          {% csrf_token %}<input type="hidden" name="expected_revision" value="{{ conversation.revision }}">
+          {% if conversation.memory_enabled %}<button type="submit" name="action" value="disable">Disable and clear memory</button>
+          {% else %}<p>By enabling memory, you agree to send this conversation’s bounded future context to the answer provider.</p><button type="submit" name="action" value="enable">Enable memory from now</button>{% endif %}
+          <button type="submit" name="action" value="reset">Reset memory; keep transcript</button>
+          <button type="submit" name="action" value="clear_history">Clear transcript and summary</button>
+          <button type="submit" name="action" value="delete">Delete conversation</button>
+        </form>
+        <p>Clearing history removes conversation content from the active database. Deleting a conversation also removes its turn records. Credit and billing usage records remain to prevent allowance resets and duplicate spending; they contain no question, answer, birth inputs or consultation summary. Backup/provider retention may differ.</p>
+      </details>
     {% else %}
       <div class="answer-empty">
         <h3>Your Jyotish reading will appear here.</h3>
-        <p>Select a chart, choose the depth and language, then ask your question.</p>
+        {% if charts %}
+          <p>Select a chart and language, then ask your question.</p>
+        {% else %}
+          <p>Create a chart first so the answer can use your birth details.</p>
+        {% endif %}
       </div>
     {% endif %}
   </section>
@@ -92,7 +175,8 @@
   <div class="loading-card" role="status" aria-live="polite">
     <div class="loading-spinner" aria-hidden="true"></div>
     <h2>Preparing Jyotish reading</h2>
-    <p>Drawing charts, calculating dashas, and confirming transits...</p>
+    <p data-progress-label>Submitting your request. Progress reflects server stages, not private reasoning.</p>
+    <p>If the connection drops, check History before retrying. The same request ID will not start a second paid attempt.</p>
   </div>
 </div>
 
@@ -106,10 +190,18 @@
 
     const chartSelect = form.querySelector("#chart-select");
     const chartError = form.querySelector("#chart-select-error");
-    const hasCharts = chartSelect && chartSelect.options.length > 1;
 
-    form.addEventListener("submit", (e) => {
-      // Clear previous error
+    if (chartSelect && chartError) {
+      chartSelect.addEventListener("invalid", () => {
+        chartError.textContent = "Please select a chart before asking a question.";
+        chartError.hidden = false;
+      });
+      chartSelect.addEventListener("change", () => {
+        chartError.hidden = true;
+      });
+    }
+
+    form.addEventListener("submit", async (e) => {
       if (chartError) {
         chartError.hidden = true;
         chartError.textContent = "";
@@ -118,11 +210,7 @@
       if (chartSelect && !chartSelect.value) {
         e.preventDefault();
         if (chartError) {
-          if (hasCharts) {
-            chartError.textContent = "Please select a chart before asking a question.";
-          } else {
-            chartError.innerHTML = 'You don\'t have any charts yet. <a href="{% url "chart_create" %}">Create a chart</a> first, then come back to ask a question.';
-          }
+          chartError.textContent = "Please select a chart before asking a question.";
           chartError.hidden = false;
         }
         chartSelect.focus();
@@ -131,13 +219,40 @@
 
       overlay.hidden = false;
       document.body.classList.add("is-loading");
+      e.preventDefault();
+      const payload = new FormData(form);
+      const identity = payload.get("request_id");
+      const label = overlay.querySelector("[data-progress-label]");
+      let polls = 0;
+      const poll = identity ? window.setInterval(async () => {
+        if (++polls > 90) { window.clearInterval(poll); return; }
+        try {
+          const response = await fetch("/chat/requests/" + encodeURIComponent(identity) + "/status/", {credentials: "same-origin", cache: "no-store"});
+          if (response.ok) { const state = await response.json(); label.textContent = state.label; }
+        } catch (_) { /* Never resubmit a paid request after a polling failure. */ }
+      }, 1500) : null;
 
-      form.querySelectorAll("button, input, textarea").forEach((field) => {
+      form.querySelectorAll("button, input, textarea, select").forEach((field) => {
         field.readOnly = true;
+        // Disabled controls are omitted from POST; keep chart and language enabled.
         if (field.tagName === "BUTTON") {
           field.disabled = true;
         }
       });
+      try {
+        const response = await fetch(form.action, {method: "POST", body: payload, credentials: "same-origin"});
+        if (response.redirected) { window.location.assign(response.url); return; }
+        const body = await response.text();
+        const errors = new DOMParser().parseFromString(body, "text/html").querySelector(".form-error");
+        label.textContent = response.status === 429 ? "Too many requests. Wait a minute before retrying." : errors ? errors.textContent : "The request was not completed. Check History before submitting again.";
+        window.setTimeout(() => { overlay.hidden = true; document.body.classList.remove("is-loading"); }, 4000);
+      } catch (_) {
+        label.textContent = "Connection lost. Check History before retrying.";
+        window.setTimeout(() => { overlay.hidden = true; document.body.classList.remove("is-loading"); }, 4000);
+      } finally {
+        if (poll) window.clearInterval(poll);
+        form.querySelectorAll("button, input, textarea, select").forEach((field) => { field.readOnly = false; if (field.tagName === "BUTTON") field.disabled = false; });
+      }
     });
   })();
 </script>

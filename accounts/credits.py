@@ -1,8 +1,8 @@
 from django.conf import settings
 
-from chat.models import Message
+from chat.models import Message, ErasedAnswerUsage
 
-from .models import Plan, UserProfile
+from .models import Plan, UserProfile, CreditAccount
 
 
 PLAN_CREDIT_SETTINGS = {
@@ -24,16 +24,19 @@ def plan_credit_limit(plan):
 
 
 def successful_answer_count(user):
-    return Message.objects.filter(conversation__user=user, role=Message.ASSISTANT).count()
+    erased = ErasedAnswerUsage.objects.filter(user=user).values_list('count', flat=True).first() or 0
+    return Message.objects.filter(conversation__user=user, role=Message.ASSISTANT).count() + erased
 
 
 def question_credit_status(user):
     profile = get_or_create_profile(user)
     base_limit = plan_credit_limit(profile.current_plan)
     bonus_credits = profile.bonus_question_credits
-    used = successful_answer_count(user)
+    account = CreditAccount.objects.filter(user=user).first()
+    used = account.consumed if account else successful_answer_count(user)
+    reserved = account.reserved if account else 0
     total = base_limit + bonus_credits
-    remaining = max(total - used, 0)
+    remaining = max(total - used - reserved, 0)
     return {
         "enforced": settings.ENFORCE_QUESTION_LIMITS,
         "profile": profile,
@@ -42,6 +45,7 @@ def question_credit_status(user):
         "bonus_credits": bonus_credits,
         "total": total,
         "used": used,
+        "reserved": reserved,
         "remaining": remaining,
         "has_credits": (not settings.ENFORCE_QUESTION_LIMITS) or remaining > 0,
     }

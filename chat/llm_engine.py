@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+import re
 
 from django.conf import settings
 from django.core.cache import cache
@@ -9,13 +10,20 @@ from openai import OpenAI, OpenAIError
 from astrology.services.prediction_service import build_prediction_evidence
 from astrology.synthesis.answer_schema import REQUIRED_SECTIONS
 from astrology.validation.validator import validate_answer
+from accounts.provider_meter import responses_create
+from accounts.provider_transport import IPv4HttpClient
 from charts.remedies import remedies_for_dasha
 from charts.vedic_utils import natal_mutual_aspects as _natal_mutual_aspects
 
 
-ANSWER_CACHE_VERSION = "v31-jaimini-both-signs-topic-match"
+ANSWER_CACHE_VERSION = "v33-period-scoped-dasha-transit-timeline"
 RASHIFAL_CACHE_VERSION = "v1-rashifal-tier1-conjunction"
 logger = logging.getLogger(__name__)
+
+
+def _strip_validation_note(answer_text: str) -> str:
+    """Validation repair instructions are internal; never show them to users."""
+    return re.split(r"\n#{2,3}\s*Validation Note\b", answer_text, maxsplit=1, flags=re.IGNORECASE)[0].rstrip()
 
 _ASTROLOGER_PERSONA = (
     "You are a deeply experienced Vedic astrologer — wise, compassionate, and unhurried. "
@@ -89,24 +97,39 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "e.g. 'Looking at your chart, the question of marriage has a clear answer — and the timing is more "
         "specific than you might expect.' Then 1-2 sentences giving the overall chart readiness verdict.\n"
         "    Best window ([Mahadasha lord]/[Antardasha lord]) — **[date range]**: One sentence on why "
-        "this is the top window (its core strength). Take MD/AD names from windows[0].mahadasha_lord and antardasha_lord.\n"
+        "this is the top window (its core strength). Copy the exact label from evidence_card.best_window.vimshottari_display "
+        "or windows[0].vimshottari_display.\n"
         "    Secondary window ([Mahadasha lord]/[Antardasha lord]) — **[date range]**: One sentence on "
-        "the character of this alternative period. Take MD/AD names from windows[1].\n"
+        "the character of this alternative period. Copy the exact label from windows[1].vimshottari_display.\n"
         "    Bold only the date range, not the label.\n"
         "    If no strong window exists, say so plainly and name the least difficult period anyway.\n"
         "  ### Why We Advise That — REQUIRED: write EXACTLY 5 paragraphs in the order below.\n"
         "  DO NOT combine, skip, or merge any paragraph. All 5 are mandatory.\n"
         "  Each paragraph MUST open with its bolded system label exactly as shown.\n"
+        "  INTERSECTION TIMING RULES:\n"
+        "    When giving a date range, always explain whether it comes from dasha alone, transit alone, "
+        "or an intersection of multiple factors.\n"
+        "    If evidence_payload.evidence_card.intersection_timing is present, use it as the authority.\n"
+        "    Explain timing through this hierarchy: Dasha = permission/background theme; Transit = event trigger; "
+        "Ashtakavarga = strength filter; Divisional chart = confirmation; RAG/classical rule = interpretive support.\n"
+        "    Do not treat one dasha or one transit as sufficient for timing.\n"
+        "    Explain why the selected window starts using only supplied overlap factors. Explain why it ends using "
+        "the supplied ending reason or the calculated end of the support window.\n"
+        "    If only one timing system supports the event, write that this is a single-factor indication and confidence is lower.\n"
+        "    If two or more systems overlap, write that this is an intersection window and confidence is stronger.\n"
+        "    If systems conflict, say the period is mixed because some indicators support the event while others delay or weaken it.\n"
+        "    Never give an exact date unless the supplied data contains that date. Do not say the event is guaranteed.\n"
         "  ⚠ CRITICAL PERIOD MATCH RULE: ALL lords and periods cited MUST come from that window's own\n"
         "    entry in evidence_payload.transits.future_timing.windows[].\n"
-        "    Use the window's: mahadasha_lord, antardasha_lord, jaimini_active_sign,\n"
+        "    Use the window's: vimshottari_display, mahadasha_lord_name, antardasha_lord_name, jaimini_active_sign,\n"
         "    jaimini_active_sub_sign, yogini_name, sub_yogini_name, jaimini_confirmation,\n"
         "    yogini_alignment, and transit_segments.\n"
         "    DO NOT use evidence_payload.parashari_vimshottari.current_mahadasha or\n"
-        "    current_antardasha for future-window explanations — those reflect TODAY's running dasha.\n"
+        "    current_antardasha for future-window explanations — those describe the range-start snapshot.\n"
         "  PARAGRAPH 1 — open with '**Vimshottari/Parashari:**' then write:\n"
-        "    'During the best window ([date range]), the active dasha is [window.mahadasha_lord] Mahadasha "
-        "/ [window.antardasha_lord] Antardasha.' Then 1–2 sentences on why these lords support the topic.\n"
+        "    'During the best window ([date range]), the active dasha is [window.vimshottari_display].' "
+        "Then 1–2 sentences on why these lords support the topic.\n"
+        "    If evidence_card is present, use it as the final contract for Analysis and Why We Advise That.\n"
         "  PARAGRAPH 2 — open with '**Jaimini/Chara:**' then write EXACTLY:\n"
         "    'In the best window, the Chara Mahadasha activates [window.jaimini_active_sign] "
         "(house [window.jaimini_active_sign_house_from_lagna] from Lagna). "
@@ -176,10 +199,18 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
 
         "⚠ ANTI-HALLUCINATION — DASHA LABELS ARE DATA, NOT INFERENCE:\n"
         "The Mahadasha and Antardasha lord names for each timing window are PRE-COMPUTED in the evidence payload.\n"
-        "COPY them exactly from evidence_payload.transits.future_timing.windows[N].mahadasha_lord and .antardasha_lord.\n"
+        "COPY the display phrase exactly from evidence_payload.transits.future_timing.windows[N].vimshottari_display.\n"
+        "If evidence_payload.evidence_card.best_window.vimshottari_display exists, copy that exact phrase first.\n"
         "NEVER substitute a different planet name because it 'fits the topic better' (e.g. do NOT write 'Sun/Rahu' "
         "for a family question when windows[0].antardasha_lord = 'Me'). "
         "If the window says Mercury Antardasha, write Mercury — even for family, health, or spiritual questions.\n"
+        "PERIOD-SCOPED TRANSITS: future_timing.dasha_transit_timeline contains every MD/AD interval. "
+        "Each window's transit_segments contains BOTH active lords and all rashi/house changes with SAV. "
+        "Use only segments whose dates belong to the period being discussed, for fixed and scanned questions alike. "
+        "Discuss both active lords (once for a same-lord pair); name rashi, house, SAV, and applicable dates. "
+        "Do not generalize one segment's SAV to an entire long window or substitute range-start lords. "
+        "Daily positions are sampled at noon UTC, not exact ingress/muhurta times. "
+        "If the timeline status is preliminary, disclose missing evidence and lower confidence.\n"
         "The same computed windows may appear across different question categories — this is correct behaviour. "
         "Your job is to explain HOW the Mercury/Saturn/Rahu antardasha connects to THIS specific topic using the "
         "house analysis and triggered rules, not to change the dasha label to match the topic.\n\n"
@@ -456,13 +487,14 @@ def _compact_transits(transits: dict) -> dict:
         "score": transits.get("score"),
         "horizon": transits.get("horizon"),
         "target_date": transits.get("target_date"),
-        "dasha_lord_transits": transits.get("dasha_lord_transits", [])[:4],
+        "snapshot_scope": transits.get("snapshot_scope"),
         "future_timing": {
             "scan_months": future.get("scan_months"),
             "scan_years": future.get("scan_years"),
             "start": future.get("start"),
             "end": future.get("end"),
             "windows": future.get("windows", []),
+            "dasha_transit_timeline": future.get("dasha_transit_timeline", {}),
         },
     }
 
@@ -473,6 +505,29 @@ def _compact_live_evidence(evidence, answer_language="English", chart_data=None)
     vimshottari = system_evidence.get("parashari_vimshottari", evidence.get("parashari_vimshottari", {}))
     mahadasha_lord = (vimshottari.get("current_mahadasha") or {}).get("lord")
     antardasha_lord = (vimshottari.get("current_antardasha") or {}).get("lord")
+    best = (evidence.get("timing_selection") or {}).get("best_window") or {}
+    best_pair = best.get("vimshottari") or {}
+    if best_pair:
+        mahadasha_lord = best_pair.get("mahadasha_lord")
+        antardasha_lord = best_pair.get("antardasha_lord")
+    remedy_context = remedies_for_dasha(mahadasha_lord, antardasha_lord, answer_language)
+    if best_pair:
+        remedy_context["period_label"] = f"{best.get('start')} to {best.get('end')}"
+    yogini = system_evidence.get("yogini", evidence.get("yogini", {}))
+    scope = (evidence.get("question") or {}).get("time_scope") or {}
+    if scope.get("start") and scope.get("end"):
+        # Transport only: retain every period/subperiod intersecting the question
+        # scope rather than sending the entire birth-to-future Yogini schedule.
+        # Calculated values and the original evidence are never modified.
+        def overlaps(period):
+            start, end = period.get("start"), period.get("end")
+            return not start or not end or (str(start)[:10] <= str(scope["end"])[:10]
+                and str(end)[:10] >= str(scope["start"])[:10])
+        yogini = {**yogini, "periods": [
+            {**period, "subperiods": [sub for sub in period.get("subperiods", []) if overlaps(sub)]}
+            for period in yogini.get("periods", []) if overlaps(period)
+        ], "periods_scope": {"start": scope["start"], "end": scope["end"],
+                              "convention": "inclusive_overlap"}}
     return {
         "question": evidence.get("question", {}),
         "summary_scores": evidence.get("summary_scores", {}),
@@ -486,10 +541,12 @@ def _compact_live_evidence(evidence, answer_language="English", chart_data=None)
             evidence.get("parashari_vimshottari", {}),
         ),
         "jaimini": system_evidence.get("jaimini", evidence.get("jaimini", {})),
-        "yogini": system_evidence.get("yogini", evidence.get("yogini", {})),
+        "yogini": yogini,
         "varga": system_evidence.get("varga", evidence.get("varga", {})),
         "transits": _compact_transits(system_evidence.get("transits", evidence.get("transits", {}))),
-        "remedy_context": remedies_for_dasha(mahadasha_lord, antardasha_lord, answer_language),
+        "timing_selection": evidence.get("timing_selection", {}),
+        "evidence_card": evidence.get("evidence_card", {}),
+        "remedy_context": remedy_context,
         "natal_mutual_aspects": _natal_mutual_aspects(chart_data or {}),
         "confidence_summary": evidence.get("confidence_summary", {}),
         "natural_karakas_assessment": evidence.get("natural_karakas_assessment", {}),
@@ -628,7 +685,7 @@ def _repair_answer(client, model, depth_level, answer_style, answer_language, pa
         "validation_result": validation_result,
         "task": "Repair the answer so it satisfies the validation result using only the provided evidence payload.",
     }
-    response = client.responses.create(
+    response = responses_create(client,
         model=model,
         instructions=_system_instructions(depth_level, answer_style, answer_language),
         input=[
@@ -661,7 +718,9 @@ def _remedy_lines(remedy_context):
     for remedy in remedies:
         role = remedy.get("role", "Dasha lord")
         planet = remedy.get("planet") or remedy.get("lord")
-        lines.append(f"- For the current {role} {planet}, recite the provided mantra with steadiness and devotion.")
+        period = remedy_context.get("period_label")
+        scope = f" for {period}" if period else ""
+        lines.append(f"- For the {role} {planet}{scope}, recite the provided mantra with steadiness and devotion.")
         beej = remedy.get("beej", {})
         deity = remedy.get("deity_specific", {})
         if beej.get("mantra"):
@@ -870,16 +929,17 @@ def _generate_rashifal_answer(question, chart_data, horizon, depth_level, answer
         model,
         settings.OPENAI_VECTOR_STORE_ID,
     )
-    cached = cache.get(cache_key)
+    from .publication import validated_legacy_cache, final_legacy_result, cache_legacy_result
+    cached = validated_legacy_cache(cache_key, payload)
     if cached:
         cached["cache_hit"] = True
         return cached
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = OpenAI(api_key=settings.OPENAI_API_KEY, timeout=20, max_retries=0, http_client=IPv4HttpClient())
     prompt = json.dumps(payload, ensure_ascii=False, default=str)
 
     try:
-        response = client.responses.create(
+        response = responses_create(client,
             model=model,
             instructions=_rashifal_system_instructions(horizon, answer_language),
             input=[
@@ -912,7 +972,8 @@ def _generate_rashifal_answer(question, chart_data, horizon, depth_level, answer
         "is_rashifal": True,
         "horizon": horizon,
     }
-    cache.set(cache_key, result, 60 * 60 * 24 * 7)  # 7-day cache for rashifal
+    result = final_legacy_result(answer_text, payload, result)
+    cache_legacy_result(cache_key, result, 60 * 60 * 24 * 7)
     return result
 
 
@@ -941,16 +1002,17 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
         )
 
     cache_key = _cache_key(payload, model, settings.OPENAI_VECTOR_STORE_ID)
-    cached = cache.get(cache_key)
+    from .publication import validated_legacy_cache, final_legacy_result, cache_legacy_result
+    cached = validated_legacy_cache(cache_key, payload)
     if cached:
         cached["cache_hit"] = True
         return cached
 
-    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    client = OpenAI(api_key=settings.OPENAI_API_KEY, timeout=20, max_retries=0, http_client=IPv4HttpClient())
     prompt = json.dumps(payload, ensure_ascii=False, default=str)
 
     try:
-        response = client.responses.create(
+        response = responses_create(client,
             model=model,
             instructions=_system_instructions(depth_level, answer_style, answer_language),
             input=[
@@ -979,10 +1041,10 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
     answer_text = response.output_text
     validation_result = validate_answer(answer_text, payload.get("evidence_payload", {}))
     logger.info(
-        "Astrology answer validation score=%s passed=%s issues=%s",
+        "Astrology answer validation score=%s passed=%s issue_count=%s",
         validation_result.get("score"),
         validation_result.get("passed"),
-        validation_result.get("issues"),
+        len(validation_result.get("issues", [])),
     )
     if not validation_result["passed"]:
         try:
@@ -1002,17 +1064,15 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
             completion_tokens += repair_completion_tokens
             validation_result = validate_answer(answer_text, payload.get("evidence_payload", {}))
             logger.info(
-                "Astrology repaired answer validation score=%s passed=%s issues=%s",
+                "Astrology repaired answer validation score=%s passed=%s issue_count=%s",
                 validation_result.get("score"),
                 validation_result.get("passed"),
-                validation_result.get("issues"),
+                len(validation_result.get("issues", [])),
             )
-        except OpenAIError:
-            answer_text = (
-                answer_text
-                + "\n\n### Validation Note\n"
-                + validation_result["repair_instruction"]
-            )
+        except OpenAIError as exc:
+            logger.warning("Astrology answer repair failed")
+            validation_result["repair_failed"] = True
+    answer_text = _strip_validation_note(answer_text)
     answer_text = _apply_deterministic_remedy(answer_text, payload)
     result = {
         "model": model,
@@ -1022,7 +1082,8 @@ def generate_answer(question, chart_data, depth_level, answer_style="", answer_l
         "completion_tokens": completion_tokens,
         "validation_result": validation_result,
     }
-    cache.set(cache_key, result, 60 * 60 * 24 * 30)
+    result = final_legacy_result(answer_text, payload, result)
+    cache_legacy_result(cache_key, result, 60 * 60 * 24 * 30)
     return result
 
 

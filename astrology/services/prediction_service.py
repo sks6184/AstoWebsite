@@ -26,6 +26,7 @@ from astrology.rules.scoring import aggregate_scores
 from astrology.synthesis.prompt_builder import build_prompt_payload
 from astrology.structures import PredictionEvidence, QuestionContext, business_score_template, career_score_template
 from astrology.services.timing_window_service import build_timing_window_selection
+from astrology.services.evidence_card_service import build_evidence_card
 
 
 BUSINESS_KEYWORDS = {
@@ -141,6 +142,10 @@ def build_prediction_evidence(
         },
     )
     evidence_json = evidence.to_dict()
+    timeline = transit_facts.get("future_timing", {}).get("dasha_transit_timeline", {})
+    if timeline.get("status") == "preliminary":
+        evidence_json["validation"]["issues"].extend(timeline.get("issues", []))
+        evidence_json["validation"]["preliminary"] = True
     evidence_json["event_confirmation"] = dasha_facts["event_confirmation"]
     evidence_json["reference_frames"] = dasha_facts["reference_frames"]
     evidence_json["natural_karakas_assessment"] = build_natural_karaka_assessment(chart_data, category)
@@ -171,6 +176,7 @@ def build_prediction_evidence(
         practical_months=min(max(effective_months, 12), 60),
         precomputed_windows=transit_facts.get("future_timing", {}).get("windows", []),
     )
+    evidence_json["evidence_card"] = build_evidence_card(evidence_json)
     evidence_json["synthesis"] = {
         "prompt_payload": build_prompt_payload(evidence_json),
         "status": "prompt_built",
@@ -183,6 +189,15 @@ def build_prediction_evidence(
     if rule_result["load_errors"]:
         evidence_json["validation"]["issues"].extend(rule_result["load_errors"])
     evidence_json["confidence_summary"] = build_confidence_summary(evidence_json)
+    if timeline.get("status") == "preliminary":
+        evidence_json["evidence_card"]["confidence"] = "low"
+        evidence_json["evidence_card"]["confidence_reason"] = "Incomplete period-specific dasha/transit/Ashtakavarga evidence."
+        evidence_json["evidence_card"]["cautions"].append("Timing is preliminary; disclose the timeline's missing evidence.")
+        evidence_json["confidence_summary"]["confidence_label"] = "Low"
+        evidence_json["confidence_summary"]["instruction"] = (
+            "Timing is preliminary: the period-specific dasha/transit/SAV timeline has missing evidence. "
+            "Disclose the missing evidence and do not make strong timing claims."
+        )
     if category == "property":
         jaimini_active = evidence_json.get("jaimini", {}).get("active_chara_dasha")
         evidence_json["location_verdict"] = build_location_verdict(

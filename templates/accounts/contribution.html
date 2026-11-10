@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Contribution margin</h1>
+<p>{{ report.basis }} All amounts are USD. Unknown allocations prevent a margin result.</p>
+<p>Unknown-usage provider attempts: {{ report.unknown_usage_calls }}.</p>
+<p>Estimated request cost: mean {{ report.estimated_request_costs.average|default_if_none:"Unknown" }}, P95 {{ report.estimated_request_costs.p95|default_if_none:"Unknown" }} ({{ report.estimated_request_costs.count }} requests). Known invoice cost: mean {{ report.known_invoice_request_costs.average|default_if_none:"Unknown" }}, P95 {{ report.known_invoice_request_costs.p95|default_if_none:"Unknown" }} ({{ report.known_invoice_request_costs.count }} requests). These aggregates are not a controlled pilot measurement.</p>
+<table>
+<thead><tr><th>Plan</th><th>Requests</th><th>Consumed credits</th><th>Allocated revenue</th><th>Provider estimate</th><th>Known invoice cost</th><th>Unknown invoices</th><th>Payment fees</th><th>Infrastructure</th><th>Missing allocations</th><th>Estimated margin</th></tr></thead>
+<tbody>{% for plan, row in report.plans.items %}<tr><td>{{ plan }}</td><td>{{ row.requests }}</td><td>{{ row.consumed_credits }}</td><td>{{ row.revenue }}</td><td>{{ row.provider_estimate }}</td><td>{{ row.invoice_actual }}</td><td>{{ row.unknown_invoices }}</td><td>{{ row.payment_fees }}</td><td>{{ row.infrastructure }}</td><td>{{ row.unknown_allocations }}</td><td>{{ row.contribution_margin_estimate|default_if_none:"Unknown" }}</td></tr>{% endfor %}</tbody>
+</table>
+<p>Customer API usage is metered separately from ChatGPT subscriptions and Codex allowances. Any promotional API credits are separate account funding; they do not make customer requests cost-free.</p>
+{% endblock %}

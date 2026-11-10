@@ -1,0 +1,15 @@
+{
+  "version": "published-standard-example-2026-11-07",
+  "model": "gpt-4o-mini",
+  "currency": "USD",
+  "sources": ["https://openai.com/index/api-prompt-caching/", "https://developers.openai.com/api/docs/pricing"],
+  "note": "Published tariff fixture, not a claim of invoice actuals or permanent current pricing. Configure and review tariffs before live use.",
+  "input_per_million": "0.15",
+  "cached_per_million": "0.075",
+  "output_per_million": "0.60",
+  "file_search_per_call": "0.0025",
+  "cases": [
+    {"input_tokens": 1000, "output_tokens": 200, "cached_tokens": 500, "file_searches": 1, "expected_usd": "0.00273250"},
+    {"input_tokens": 1000000, "output_tokens": 5000, "cached_tokens": 100000, "file_searches": 2, "expected_usd": "0.15050000"}
+  ]
+}

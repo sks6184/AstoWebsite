@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block content %}
+<h1>Pilot operations</h1><p>Anonymous daily counts, not individual tracking. Conversion is an aggregate signup→chart→question proxy; no individual funnel or causal claim is inferred. Feedback is optional and can be biased.</p>
+<table><thead><tr><th>Day</th><th>Event</th><th>Outcome</th><th>Count</th><th>Total ms</th><th>Max ms</th></tr></thead><tbody>{% for item in metrics %}<tr><td>{{ item.day }}</td><td>{{ item.event }}</td><td>{{ item.outcome }}</td><td>{{ item.count }}</td><td>{{ item.elapsed_total_ms }}</td><td>{{ item.elapsed_max_ms }}</td></tr>{% endfor %}</tbody></table>
+<a href="{% url 'contribution_dashboard' %}">Usage, cost and contribution estimates</a>
+{% endblock %}

@@ -403,6 +403,65 @@
   source_chapter: "Property and vehicle karakas"
   source_page: ""
 
+- rule_id: LIFE_VEHICLE_4TH_LORD_STRONG_001
+  system: Parashari
+  category: vehicle
+  condition:
+    path: parashari.lord_factors.4_lord.is_strong
+    operator: equals
+    value: true
+  reason: Fourth lord is strong for vehicle and comforts.
+  interpretation: A strong fourth lord supports vehicle purchase, conveyance, comfort, and happiness from movable assets when D16 confirms.
+  outcomes:
+    vehicle_score: 4
+    comfort_score: 3
+  weight: 8
+  polarity: positive
+  confidence: medium
+  source_book: "Classical Parashari fourth-house principles"
+  source_chapter: "Chaturtha Bhava / vehicles and comforts"
+  source_page: ""
+
+- rule_id: LIFE_VEHICLE_DASHA_ACTIVATES_VEHICLE_HOUSES_001
+  system: Parashari/Vimshottari
+  dasha: Vimshottari
+  category: vehicle
+  condition:
+    path: parashari_vimshottari.dasha_lord_facts.category_house_connections
+    operator: in
+    value: [2, 4, 6, 9, 11, 12]
+  reason: Active dasha lord connects to vehicle purchase houses.
+  interpretation: Dasha activation of assets, vehicle/comfort, loan, fortune, gains, or expense houses can time a vehicle purchase when D16 and transits agree.
+  outcomes:
+    vehicle_score: 3
+    comfort_score: 1
+    financial_risk_score: 1
+  weight: 7
+  polarity: positive
+  confidence: medium
+  source_book: "Hindu Predictive Astrology - B. V. Raman"
+  source_chapter: "Chapter XXIV"
+  source_page: "pp. 140-143"
+
+- rule_id: LIFE_VEHICLE_NATURAL_KARAKA_SUPPORT_001
+  system: Natural Karaka
+  category: vehicle
+  condition:
+    path: natural_karakas_assessment.natural_karakas.in_category_house
+    operator: equals
+    value: true
+  reason: Venus, Moon, or Mars connects to vehicle houses.
+  interpretation: Venus supports vehicles and luxuries, Moon supports comfort and enjoyment, and Mars supports machinery; their connection to vehicle houses strengthens the purchase indication.
+  outcomes:
+    vehicle_score: 2
+    comfort_score: 2
+  weight: 6
+  polarity: positive
+  confidence: medium
+  source_book: "Natural significator principles"
+  source_chapter: "Vehicle karakas"
+  source_page: ""
+
 - rule_id: LIFE_FAMILY_4TH_9TH_SUPPORT_001
   system: Parashari
   category: family

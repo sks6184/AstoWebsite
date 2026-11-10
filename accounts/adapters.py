@@ -1,9 +1,14 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
+from django.conf import settings
 
 
 class AutoUsernameSocialAccountAdapter(DefaultSocialAccountAdapter):
+    def is_open_for_signup(self, request, sociallogin):
+        if not getattr(settings, 'ASTROGPT_PILOT_SIGNUPS_RESTRICTED', False): return super().is_open_for_signup(request, sociallogin)
+        return any(e.verified and e.email.casefold() in settings.ASTROGPT_PILOT_EMAILS for e in sociallogin.email_addresses)
+
     def populate_user(self, request, sociallogin, data):
         user = super().populate_user(request, sociallogin, data)
         if not user.username:
