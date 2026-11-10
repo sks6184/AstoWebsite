@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "created_on": "2026-11-10",
+  "purpose": "M1 independent reference fixtures. Charts are synthetic (invented persons). Jagannatha Hora values are prepared by the owner; until they are filled in, comparisons against JH are reported as PENDING and the calculations remain UNVERIFIED against JH.",
+  "settings_document": "docs/claude_migration/M1_SCOPE.md#3-jagannatha-hora-reference-settings-for-owner-prepared-values",
+  "tolerances": {
+    "planet_longitude_arcmin": 1.0,
+    "ascendant_longitude_arcmin": 1.0,
+    "dasha_start_days": 1.0,
+    "varga_boundary_guard_arcmin": 1.0
+  },
+  "charts": [
+    {
+      "id": "R1",
+      "synthetic": true,
+      "birth_date": "1985-07-14",
+      "birth_time": "06:30:00",
+      "timezone": "Asia/Kolkata",
+      "utc_offset": "+05:30",
+      "latitude": 28.6139,
+      "longitude": 77.2090,
+      "place_label": "New Delhi (synthetic)",
+      "jagannatha_hora": {"status": "pending_owner", "jh_version": null, "settings_deviations": [], "expected": {}}
+    },
+    {
+      "id": "R2",
+      "synthetic": true,
+      "birth_date": "1992-11-03",
+      "birth_time": "23:45:00",
+      "timezone": "America/New_York",
+      "utc_offset": "-05:00",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "place_label": "New York (synthetic)",
+      "jagannatha_hora": {"status": "pending_owner", "jh_version": null, "settings_deviations": [], "expected": {}}
+    },
+    {
+      "id": "R3",
+      "synthetic": true,
+      "birth_date": "1978-03-26",
+      "birth_time": "00:20:00",
+      "timezone": "Europe/London",
+      "utc_offset": "+01:00",
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "place_label": "London (synthetic)",
+      "jagannatha_hora": {"status": "pending_owner", "jh_version": null, "settings_deviations": [], "expected": {}}
+    },
+    {
+      "id": "R4",
+      "synthetic": true,
+      "birth_date": "2001-01-20",
+      "birth_time": "14:10:00",
+      "timezone": "Australia/Sydney",
+      "utc_offset": "+11:00",
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "place_label": "Sydney (synthetic)",
+      "jagannatha_hora": {"status": "pending_owner", "jh_version": null, "settings_deviations": [], "expected": {}}
+    },
+    {
+      "id": "R5",
+      "synthetic": true,
+      "birth_date": "1969-09-02",
+      "birth_time": "12:00:00",
+      "timezone": "Asia/Kolkata",
+      "utc_offset": "+05:30",
+      "latitude": 13.0827,
+      "longitude": 80.2707,
+      "place_label": "Chennai (synthetic)",
+      "jagannatha_hora": {"status": "pending_owner", "jh_version": null, "settings_deviations": [], "expected": {}}
+    }
+  ],
+  "expected_schema_example": {
+    "d1_longitudes_dms": {"Asc": "DDD:MM:SS", "Su": "DDD:MM:SS", "Mo": "DDD:MM:SS", "Ma": "", "Me": "", "Ju": "", "Ve": "", "Sa": "", "Ra": ""},
+    "d9_signs": {"Asc": 1, "Su": 1},
+    "d10_signs": {"Asc": 1, "Su": 1},
+    "vimshottari_md_starts": [{"lord": "Ve", "start": "YYYY-MM-DD"}],
+    "vimshottari_ad_starts_first_two_md": [{"md": "Ve", "ad": "Ve", "start": "YYYY-MM-DD"}],
+    "yogini_md_starts": [{"yogini": "Mangala", "start": "YYYY-MM-DD"}],
+    "chara_dasha": {"jh_variant_label": "", "periods": [{"sign_number": 1, "start": "YYYY-MM-DD", "years": 0}]}
+  }
+}
