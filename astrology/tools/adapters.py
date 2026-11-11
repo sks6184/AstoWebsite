@@ -6,11 +6,14 @@ from astrology.calculations.varga import SUPPORTED_VARGAS, build_varga_facts
 from charts.vedic_utils import PLANET_NAMES, SIGN_NAMES, house_from_sign, transit_context_for_lord
 from chat.prediction_context import CATEGORY_RULES
 from chat.timing_windows import _transit_segments_for_lord
+from astrology.calculations import jaimini as jaimini_calc
+from astrology.calculations.counted_signs import REFERENCES, CountedSignError, counted_sign, house_from_moon
 
 from .contracts import (
     AshtakavargaData, ChartFactsData, DashaData, MAX_SAMPLES, RuleData,
     TimingData, ToolFailure, TransitData, date_range, parse_date, supported,
     AshtakavargaRequest, ChartFactsRequest, DashaRequest, RuleRequest, TimingRequest, TransitRequest,
+    AspectsData, AspectsRequest, CountedSignData, CountedSignRequest, JaiminiData, JaiminiRequest,
 )
 
 CLASSICAL = ("Su", "Mo", "Ma", "Me", "Ju", "Ve", "Sa")
@@ -33,11 +36,21 @@ def get_chart_facts(request: ChartFactsRequest, chart):
                any(p.get("longitude") is None for p in chart.chart_data.get(key, {}).get("planets", []))]
     longitudes = {key: {p["code"]: p.get("longitude") for p in chart.chart_data.get(key, {}).get("planets", []) if p.get("code")}
                   for key in keys if chart.chart_data.get(key)}
+    yogas = None
+    warnings = [f"Missing or incomplete stored chart: {key}." for key in missing]
+    if request.include_yogas:
+        stored = chart.chart_data.get("yogas")
+        if type(stored) is list:
+            # Stored detections from charts/yogas.py; "meaning" is stored reference text, not a prediction.
+            yogas = [{k: deepcopy(y.get(k)) for k in ("name", "category", "strength", "evidence", "meaning")}
+                     for y in stored if type(y) is dict and type(y.get("name")) is str]
+        else:
+            yogas = []
+            warnings.append("No stored yoga detections exist for this chart; none were calculated or inferred.")
     return ChartFactsData(chart.chart_data.get("system"), chart.chart_data.get("ayanamsa"),
                           facts["charts"], longitudes, missing,
-                          {"longitude": "degrees", "degree": "DD-MM-SS formatted", "sign": "1..12", "house": "1..12"}), [
-        f"Missing or incomplete stored chart: {key}." for key in missing
-    ], "stored natal placements; whole-sign houses", "not applicable"
+                          {"longitude": "degrees", "degree": "DD-MM-SS formatted", "sign": "1..12", "house": "1..12"},
+                          yogas), warnings, "stored natal placements; whole-sign houses", "not applicable"
 
 
 def _coverage(intervals, start, end):
@@ -113,6 +126,8 @@ def get_transits(request: TransitRequest, chart):
                 day += timedelta(days=1)
         for row in samples:
             _sanitize_sav(row, chart.chart_data)
+            # OD-33: the same transit sign counted from the natal Moon, alongside the Lagna count.
+            row["transit_house_from_moon"] = house_from_moon(chart.chart_data, row.get("transit_sign_number"))
         rows.extend(samples)
     missing = any(row.get("sarvashtakavarga_points") is None for row in rows)
     warnings = ["SAV is unavailable for some sampled houses; missing values are not zero."] if missing else []
@@ -243,3 +258,77 @@ def get_timing_candidates(request: TimingRequest, chart):
     return TimingData(request.topic, candidates[:request.max_candidates],
                       {"start": start.isoformat(), "end": end.isoformat(), "candidate_count": len(candidates), "complete": complete},
                       result["selection_rule"], omitted, "heuristic support scores, not probabilities"), warnings, "legacy deterministic intersection ranking and daily-noon transit evidence", "inclusive requested dates; transit source MD/AD periods [start,end)"
+
+
+JAIMINI_PARTS = ("karakas", "karakamsha", "padas", "jaimini_yogas", "ak_amk")
+JAIMINI_CONVENTIONS = {
+    "karakas": "7 Chara karakas (Sun to Saturn; Rahu and Ketu excluded), ranked by degrees within sign",
+    "padas": "All 12 house padas by direct counting (house to lord, same distance again); classical exceptions not applied; AL = A1, A7 = Darapada, UL = A12",
+    "karakamsha": "Navamsha (D9) sign of the Atmakaraka; derived signs read in D1",
+    "rasi_drishti": "Movable aspect fixed except adjacent; fixed aspect movable except adjacent; dual aspect other duals",
+    "source": "astrology/calculations/jaimini.py and charts/astro_engine.py (existing; unchanged)",
+}
+
+
+def get_jaimini_facts(request: JaiminiRequest, chart):
+    parts = list(dict.fromkeys(request.include))
+    supported(all(p in JAIMINI_PARTS for p in parts), "Supported parts: " + ", ".join(JAIMINI_PARTS) + ".")
+    data = chart.chart_data
+    supported(any(p.get("jaimini_karaka") for p in data.get("d1", {}).get("planets", [])),
+              "Stored chart has no Chara karaka assignment; nothing is calculated or inferred.")
+
+    def pick(name, build):
+        return deepcopy(build(data)) if name in parts else None
+
+    padas = pick("padas", jaimini_calc.build_padas)
+    unavailable = ["planetary_padas: deferred in code (no sufficiently explicit formula in the reviewed source)"]
+    warnings = []
+    if padas is not None and any(v.get("pada_sign_number") is None for v in padas.get("all_padas", {}).values()):
+        warnings.append("Some house padas could not be determined from stored data; none were inferred.")
+    return (JaiminiData(pick("karakas", jaimini_calc.build_karakas), pick("karakamsha", jaimini_calc.build_karakamsha),
+                        padas, pick("jaimini_yogas", jaimini_calc.build_jaimini_yogas),
+                        pick("ak_amk", jaimini_calc.build_ak_amk_relation), dict(JAIMINI_CONVENTIONS), unavailable),
+            warnings, "stored D1/D9 placements; sign-based Jaimini counting", "not applicable")
+
+
+def get_counted_sign(request: CountedSignRequest, chart):
+    supported(request.reference in REFERENCES, "Reference must be one of: " + ", ".join(REFERENCES) + ".")
+    supported(1 <= request.count <= 12, "Count must be 1 to 12 (inclusive counting).")
+    try:
+        result = counted_sign(chart.chart_data, request.reference, request.count)
+    except CountedSignError as exc:
+        raise ToolFailure("unsupported", "The reference point cannot be determined from stored data; nothing was inferred.", "unsupported") from exc
+    conventions = {k: JAIMINI_CONVENTIONS[k] for k in ("padas", "karakamsha", "rasi_drishti")}
+    return (CountedSignData(result, conventions), [], "sign counting from stored D1/D9 placements",
+            "inclusive count; the reference sign is the 1st")
+
+
+def get_natal_aspects(request: AspectsRequest, chart):
+    from charts.vedic_utils import PLANET_ASPECTS, aspected_houses, get_planets, natal_mutual_aspects
+    supported(request.house is None or 1 <= request.house <= 12, "House must be 1 to 12.")
+    supported(request.planet is None or request.planet in PLANET_NAMES, "Use planet codes Su/Mo/Ma/Me/Ju/Ve/Sa/Ra/Ke.")
+    planets = []
+    for p in get_planets(chart.chart_data, "d1"):
+        code = p.get("code")
+        if code not in PLANET_NAMES or not p.get("house") or (request.planet and code != request.planet):
+            continue
+        houses = aspected_houses(code, p["house"])
+        if request.house and request.house not in houses:
+            continue
+        planets.append({"code": code, "name": PLANET_NAMES[code], "natal_house": p["house"],
+                        "aspect_offsets": list(PLANET_ASPECTS.get(code, [7])), "aspected_houses": houses})
+    on_houses = {}
+    for row in planets:
+        for house in row["aspected_houses"]:
+            if request.house is None or house == request.house:
+                on_houses.setdefault(str(house), []).append(row["code"])
+    mutual = [deepcopy(m) for m in natal_mutual_aspects(chart.chart_data)
+              if not request.planet or request.planet in (m.get("planet_a"), m.get("planet_b"))]
+    convention = {
+        "rule": "All planets 7th; Mars 4th and 8th; Jupiter 5th and 9th; Saturn 3rd and 10th; Rahu and Ketu 7th only",
+        "houses": "whole-sign houses from the natal Lagna; aspects are cast on houses (signs)",
+        "not": "Jaimini rasi drishti (use get_jaimini_facts)",
+        "source": "charts/vedic_utils.py (existing; unchanged)",
+    }
+    return (AspectsData("parashari_graha_drishti", planets, on_houses, mutual, convention), [],
+            "natal D1 whole-sign aspects", "not applicable")

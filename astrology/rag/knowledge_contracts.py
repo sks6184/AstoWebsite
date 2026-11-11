@@ -21,6 +21,8 @@ class SearchRequest:
     tradition: str | None = None
     source: str | None = None
     result_count: int = 3
+    # M3: search text written by the model in the books' own vocabulary (max 200 bytes).
+    query: str | None = None
 
 
 @dataclass(frozen=True)
@@ -50,4 +52,5 @@ def tool_definition():
             'tradition': {'type': ['string', 'null'], 'maxLength': 80},
             'source': {'type': ['string', 'null'], 'maxLength': 120},
             'result_count': {'type': 'integer', 'minimum': 1, 'maximum': MAX_RESULTS},
+            'query': {'type': ['string', 'null'], 'maxLength': 200},
         }, 'required': ['chart_id', 'topic', 'concepts']}}

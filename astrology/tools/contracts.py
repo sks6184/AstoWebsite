@@ -25,6 +25,30 @@ class ToolFailure(Exception):
 class ChartFactsRequest:
     chart_id: int
     charts: tuple[str, ...] = ("d1",)
+    include_yogas: bool = False  # M3: expose the stored chart_data['yogas'] (charts/yogas.py)
+
+
+@dataclass(frozen=True)
+class JaiminiRequest:
+    """M3 read-only wrapper over astrology/calculations/jaimini.py (7 karakas, house padas)."""
+    chart_id: int
+    include: tuple[str, ...] = ("karakas", "karakamsha", "padas", "jaimini_yogas", "ak_amk")
+
+
+@dataclass(frozen=True)
+class CountedSignRequest:
+    """M3 OD-31: n-th sign (1-12, inclusive) from AL, UL or Karakamsha."""
+    chart_id: int
+    reference: str
+    count: int
+
+
+@dataclass(frozen=True)
+class AspectsRequest:
+    """M3 OD-32: Parashari natal aspects (charts/vedic_utils.py); not Jaimini rasi drishti."""
+    chart_id: int
+    house: int | None = None
+    planet: str | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +105,7 @@ class ChartFactsData:
     longitudes: dict[str, JSONValue]
     missing_charts: list[str]
     units: dict[str, JSONValue]
+    yogas: list[dict[str, JSONValue]] | None = None
 
 
 @dataclass(frozen=True)
@@ -132,6 +157,32 @@ class TimingData:
 
 
 @dataclass(frozen=True)
+class JaiminiData:
+    karakas: dict[str, JSONValue] | None
+    karakamsha: dict[str, JSONValue] | None
+    padas: dict[str, JSONValue] | None
+    jaimini_yogas: list[dict[str, JSONValue]] | None
+    ak_amk: dict[str, JSONValue] | None
+    conventions: dict[str, JSONValue]
+    unavailable: list[str]
+
+
+@dataclass(frozen=True)
+class CountedSignData:
+    result: dict[str, JSONValue]
+    conventions: dict[str, JSONValue]
+
+
+@dataclass(frozen=True)
+class AspectsData:
+    system: str
+    planets: list[dict[str, JSONValue]]
+    houses: dict[str, JSONValue]
+    mutual_aspects: list[dict[str, JSONValue]]
+    convention: dict[str, JSONValue]
+
+
+@dataclass(frozen=True)
 class ToolError:
     code: str
     message: str
@@ -141,7 +192,7 @@ class ToolError:
 class ToolResponse:
     schema_version: str
     status: Literal["ok", "partial", "unsupported", "error"]
-    data: ChartFactsData | DashaData | TransitData | AshtakavargaData | RuleData | TimingData | None
+    data: ChartFactsData | DashaData | TransitData | AshtakavargaData | RuleData | TimingData | JaiminiData | CountedSignData | AspectsData | None
     warnings: list[str]
     method: dict[str, JSONValue]
     provenance: dict[str, JSONValue]
@@ -155,6 +206,9 @@ DATA_TYPES = {
     "get_ashtakavarga": AshtakavargaData,
     "evaluate_astrology_rules": RuleData,
     "get_timing_candidates": TimingData,
+    "get_jaimini_facts": JaiminiData,
+    "get_counted_sign": CountedSignData,
+    "get_natal_aspects": AspectsData,
 }
 
 

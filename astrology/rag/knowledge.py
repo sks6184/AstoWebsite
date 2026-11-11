@@ -23,14 +23,18 @@ def prepare(arguments):
     if not 1 <= request.result_count <= MAX_RESULTS or not 1 <= len(request.concepts) <= 6:
         raise ToolFailure('invalid_arguments', 'Request 1–5 results and 1–6 specific concepts.')
     for value, limit in [(request.topic, 80), *((c, 80) for c in request.concepts),
-                         (request.tradition, 80), (request.source, 120)]:
+                         (request.tradition, 80), (request.source, 120), (request.query, 200)]:
         if value is not None and (not value.strip() or len(value.encode('utf-8')) > limit or any(ord(c) < 32 for c in value)):
             raise ToolFailure('invalid_arguments', 'Knowledge terms must be short, nonempty text without control characters.')
     # Stable canonicalization makes equivalent repeated requests reusable within this session.
     request = SearchRequest(request.chart_id, request.topic.strip().casefold(),
         tuple(sorted(set(c.strip().casefold() for c in request.concepts))),
         request.tradition.strip().casefold() if request.tradition else None,
-        request.source.strip().casefold() if request.source else None, max(MIN_RESULTS, request.result_count))
+        request.source.strip().casefold() if request.source else None, max(MIN_RESULTS, request.result_count),
+        ' '.join(request.query.split()) if request.query else None)
+    if request.query:
+        # M3: the model's own search wording; untrusted text, only ever sent to the search endpoint.
+        return request, request.query
     query = json.dumps({'topic': request.topic, 'concepts': request.concepts,
                         'tradition': request.tradition, 'source': request.source}, ensure_ascii=False)
     return request, query

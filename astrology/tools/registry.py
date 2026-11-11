@@ -11,6 +11,7 @@ from charts.models import SavedChart
 from . import adapters
 from .contracts import (
     AshtakavargaRequest, ChartFactsRequest, DashaRequest, RuleRequest, TimingRequest,
+    AspectsRequest, CountedSignRequest, JaiminiRequest,
     DATA_TYPES, SCHEMA_VERSION, ToolError, ToolFailure, TransitRequest, json_bytes, parse_request, response, validate_payload,
 )
 from .fingerprints import chart_fingerprint, digest, engine_fingerprint
@@ -30,6 +31,10 @@ TOOL_REGISTRY = MappingProxyType({
     "get_ashtakavarga": ToolSpec(AshtakavargaRequest, adapters.get_ashtakavarga, True),
     "evaluate_astrology_rules": ToolSpec(RuleRequest, adapters.evaluate_astrology_rules, True),
     "get_timing_candidates": ToolSpec(TimingRequest, adapters.get_timing_candidates, True),
+    # M3 read-only wrappers over existing calculations (OD-25, OD-31, OD-32).
+    "get_jaimini_facts": ToolSpec(JaiminiRequest, adapters.get_jaimini_facts, True),
+    "get_counted_sign": ToolSpec(CountedSignRequest, adapters.get_counted_sign, True),
+    "get_natal_aspects": ToolSpec(AspectsRequest, adapters.get_natal_aspects, True),
 })
 CACHE_TTL = 300
 
@@ -130,7 +135,7 @@ def _schema(annotation):
         return result
     if origin is dict:
         return {"type": "object"}
-    return {"type": {str: "string", int: "integer", dict: "object", type(None): "null"}[annotation]}
+    return {"type": {str: "string", int: "integer", bool: "boolean", dict: "object", type(None): "null"}[annotation]}
 
 
 def _object_schema(cls):

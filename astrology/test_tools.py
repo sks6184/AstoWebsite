@@ -53,6 +53,10 @@ class DeterministicToolTests(TestCase):
             "get_ashtakavarga": {"chart_id": chart},
             "evaluate_astrology_rules": {"chart_id": chart, "category": "job", "as_of": "2027-05-01"},
             "get_timing_candidates": {"chart_id": chart, "topic": "job", "start_date": "2027-05-01", "end_date": "2027-05-31"},
+            # M3 read-only wrappers over existing calculations (OD-25, OD-31, OD-32).
+            "get_jaimini_facts": {"chart_id": chart},
+            "get_counted_sign": {"chart_id": chart, "reference": "karakamsha", "count": 12},
+            "get_natal_aspects": {"chart_id": chart, "house": 10},
         }
 
     def invoke(self, tool, **changes):
@@ -77,7 +81,7 @@ class DeterministicToolTests(TestCase):
     def test_p2_01_discovery_is_fixed_read_only_and_typed(self):
         specs = describe_tools()
         self.assertEqual({s["name"] for s in specs}, set(self.arguments()))
-        self.assertEqual(len(specs), 6)
+        self.assertEqual(len(specs), 9)  # 6 P2 tools + 3 M3 read-only wrappers
         self.assertTrue(all(not s["input_schema"]["additionalProperties"] for s in specs))
         self.assertTrue(all("chart_id" in s["input_schema"]["required"] for s in specs))
         json_bytes(specs)
@@ -370,7 +374,12 @@ class DeterministicToolTests(TestCase):
         result = self.invoke("get_transits", planets=planets, start_date="2027-05-01", end_date="2027-05-07")
         self.assertEqual(result["status"], "ok")
         expected = [segment for planet in planets for segment in _transit_segments_for_lord(self.calculated, planet, date(2027, 5, 1), date(2027, 5, 7), [])]
-        self.assertTrue(result["data"]["samples"] == expected, "Selected-planet segments changed from legacy helper")
+        # M3 OD-33 adds only the Moon-based house; every legacy field is unchanged.
+        from astrology.calculations.counted_signs import house_from_moon
+        legacy = [{k: v for k, v in s.items() if k != "transit_house_from_moon"} for s in result["data"]["samples"]]
+        self.assertTrue(legacy == expected, "Selected-planet segments changed from legacy helper")
+        self.assertTrue(all(s["transit_house_from_moon"] == house_from_moon(self.calculated, s["transit_sign_number"])
+                            for s in result["data"]["samples"]))
 
     def test_p2_01_schema_contains_output_and_rejects_invalid_integer_scores(self):
         self.assertTrue(all("output_schema" in item for item in describe_tools()))

@@ -33,12 +33,17 @@ the server will produce a verified concise fallback. Retrieved quotations remain
 INSTRUCTIONS += ' ' + SOURCE_TEXT_POLICY
 
 
+# The P3 slice advertises only its original tools; M3 wrappers belong to the general agent.
+P3_TOOLS = frozenset(('get_chart_facts', 'get_dasha_periods', 'get_transits', 'get_ashtakavarga',
+                      'evaluate_astrology_rules', 'get_timing_candidates'))
+
+
 class OpenAIProvider:
     name = 'openai-responses'
 
     def definitions(self):
         tools = []
-        for spec in [*describe_tools(), tool_definition()]:
+        for spec in [*(s for s in describe_tools() if s['name'] in P3_TOOLS), tool_definition()]:
             schema = json.loads(json.dumps(spec['input_schema']))
             schema['properties']['reason'] = {'type': 'string', 'maxLength': 400}
             schema.setdefault('required', []).append('reason')

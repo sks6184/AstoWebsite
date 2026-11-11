@@ -1,7 +1,10 @@
-# AstroGPT domain investigation guidance, v0 (revision 2). DRAFT FOR OWNER FINAL REVIEW (OD-24).
+# AstroGPT domain investigation guidance, v0 (revision 3). Owner-approved for offline M3 implementation (2026-11-11).
 #
-# Status: not loaded by any code. M3 implementation has not started.
-# Revision 2 applies the owner's 12 methodology corrections (C1-C12, 2026-11-11).
+# Status: loaded by astrology/methodology/profile.py for the M3 general agent (offline; no live use yet).
+# Revision 2 applied the owner's methodology corrections C1-C12. Revision 3 applies the owner-approved
+# event-matrix refinements M3-1 and M3-4 to M3-8, and the tools OD-31, OD-32 and OD-33
+# (see docs/claude_migration/M3_EVENT_MATRIX_COMPARISON.md).
+# [matrix] = from the preliminary research matrix (docs/research/); provisional, references UNVERIFIED.
 # Every substantive change is listed in docs/claude_migration/M3_DOMAIN_PROFILE_CHANGES.md.
 #
 # What this file is:
@@ -23,8 +26,8 @@
 #   investigation only and prescribe no conclusion (C5).
 
 schema_version: 0
-revision: 2
-status: draft_pending_owner_final_review
+revision: 3
+status: owner_approved_for_offline_m3
 date: '2026-11-11'
 
 principles:
@@ -34,6 +37,10 @@ principles:
   - Mixed questions combine the guidance of every labelled domain and event.
   - Agreement between systems is agreement of indicators, not proof. State conflicting indications.
   - Investigate the actual question asked. Identify the event subtype before choosing evidence (C9).
+  - Derived-house reasoning (bhavat bhavam, for example "the 12th from the 10th") is permitted when it is labelled as derived and is never the sole basis of a conclusion. Schools disagree on some derivations; say so. [matrix, owner-approved M3-6]
+  - KP (Krishnamurti Paddhati) is not computed: the app has no KP cusps or sub-lords. Never apply KP house groupings to the app's whole-sign houses. [owner M3-6]
+  - Parashari planetary aspects (get_natal_aspects) and Jaimini rasi drishti (get_jaimini_facts) are different systems. Never mix or substitute them. [owner]
+  - Attestation notes (basis_note) describe provisional textual attribution only, not predictive reliability. The absence of a classical rule in the current research does not show that none exists. [owner M3-5]
 
 # ── C4: question-type-aware investigation ────────────────────────────────────
 question_types:
@@ -65,12 +72,15 @@ timing_principles:
   - Request transits for the same window (get_transits over the requested dates). Transit rows are daily noon-UTC samples, not exact ingress times.
   - If the user gives no window, use a stated default (proposed: today to 12 months ahead) and tell the user the window that was used. [draft]
   - Use "the current period" only when the question is about now.
+  - Activation (M3-1): within the window, examine the dasha periods of the lords of the relevant houses, the planets occupying them, the planets aspecting them (Parashari aspects via get_natal_aspects) and the relevant karakas. This is an investigation principle, not a rule that decides an outcome. [matrix, cited to BPHS Ch.47-48 and PD Ch.20 (UNVERIFIED), owner-approved]
   - Where a window spans several sub-periods, examine each relevant sub-period rather than averaging them.
   - Exact event-date or muhurta selection is calculation_unavailable. Timing is given as windows with the AGENTS.md preliminary-timing disclosure.
 
 # ── C3: transits and SAV ─────────────────────────────────────────────────────
 transit_sav_principle:
   - A relevant transit planet is evaluated against the natal SAV points of the sign it transits. The transit tool returns these as sarvashtakavarga_points for each sampled sign. [code]
+  - Transit houses are reported from both the natal Lagna (transit_house_from_lagna) and the natal Moon (transit_house_from_moon, OD-33). Name which reference is used. [owner OD-33]
+  - The legacy transit field can_deliver_owned_or_placed_house_results (SAV above 28) is a heuristic flag, not an outcome, and is not published as one. [code + owner C3]
   - High SAV can strengthen the manifestation of the planet's existing significations in that context. It does not by itself establish a favourable outcome. [owner]
   - Low SAV can weaken or strain the planet's significations. It does not by itself establish an unfavourable outcome. [draft, mirroring the owner's principle]
   - SAV qualifies a transit. It never replaces the natal promise or the dasha. A transit is timing confirmation, not the sole basis of a prediction (AGENTS.md).
@@ -99,11 +109,11 @@ jaimini_conventions:   # [code] unless marked
   karakamsha:
     definition: The Navamsha (D9) sign occupied by the Atmakaraka
     derived_points_available: 5th, 9th and 10th from Karakamsha. Their occupants and the planets influencing them are read in the D1 (Rasi) chart.
-    derived_points_unavailable: 12th from Karakamsha and other counts are not computed (adding them is proposed decision OD-31)
+    derived_points_counted: Any n-th sign (1-12) from Karakamsha via get_counted_sign (OD-31), with the same D1 reading of occupants and rasi-drishti influences
     source: astrology/calculations/jaimini.py::build_karakamsha
   arudha_derived_points:
     available: 2nd, 10th and 11th from AL (occupants and influencing planets); UL and Darapada as relationship references
-    unavailable: 2nd from UL and other counts from UL (proposed OD-31)
+    counted: Any n-th sign (1-12) from AL or UL via get_counted_sign (OD-31)
   chara_dasha:
     school: K.N. Rao, as declared from "Predicting Through Jaimini's Chara Dasha"; not independently verified (UNVERIFIED)
     year: 365.2425 days (owner kept the existing Chara convention in M1b)
@@ -112,7 +122,7 @@ jaimini_conventions:   # [code] unless marked
 parashari_aspect_convention:   # [code], not yet exposed to the agent
   rule: Every planet has the full 7th aspect; Mars also 4th and 8th; Jupiter 5th and 9th; Saturn 3rd and 10th; Rahu and Ketu 7th only
   source: charts/vedic_utils.py::PLANET_ASPECTS, natal_planet_aspects_on_house
-  status: Not exposed as a tool. A read-only wrapper is proposed (OD-32). It is needed for aspect-based factors such as the 8th lord's aspect on the 10th. Until approved, aspect factors are disclosed as calculation_unavailable; placement and conjunction remain available.
+  status: Exposed read-only via get_natal_aspects (OD-32, owner-approved). Kept separate from Jaimini rasi drishti.
 
 common_vocabulary:   # [m2]
   - {term: sub-period, mentions: 129, note: preferred over antardasha (8)}
@@ -142,7 +152,7 @@ domains:
     core_factors:
       - 10th house, its lord and occupants in D1, and the 10th lord in D10
       - houses 1, 5, 6, 8 and 11 and their lords as they relate to the 10th; the 12th only when the conditional case applies
-      - "8th-lord influence on the 10th house or 10th lord (placement or conjunction; aspect once OD-32 is approved): an investigation factor only, never an automatic job-loss verdict [owner]"
+      - "8th-lord influence on the 10th house or 10th lord (placement, conjunction or Parashari aspect): an investigation factor only, never an automatic job-loss verdict [owner]"
       - Mahadasha and sub-period lords over the requested window and their links to the career houses
       - Amatyakaraka and the 10th from AL
       - deterministic career rules evaluated for the window
@@ -152,6 +162,8 @@ domains:
       lateral_change: {focus: "6th and 10th; a change of role or employer at a similar level; Mercury and Saturn", note: A move without clear rise or fall; avoid framing it as promotion or setback.}
       involuntary_disruptive_change: {focus: "8th-lord and 8th-house influence on the 10th, the 6th, Saturn and Rahu in the window, and protective or mitigating factors", note: "Report disruption indicators as possibilities to compare; state mitigating evidence; no verdict of job loss."}
       foreign_relocation: {focus: "12th, 9th and 4th alongside the 10th; Rahu; combines with the foreign_settlement guidance", note: A mixed career and foreign question.}
+      unemployment_and_reemployment: {focus: "the 6th and 10th and their lords for the gap; the 2nd and 11th lords for the return of income; periods across the window", note: "Present a gap and a return as indicators to compare; no verdict on how long unemployment lasts.", basis_note: "[matrix] Graded B for a KP-style grouping, otherwise C; provisional."}   # [matrix, M3-8]
+      leadership_and_senior_management: {focus: "the 10th and Lagna and their lords; kendra-trikona lord connections (raja yoga) where detected; the Sun; D10 and D9", note: "Raja yoga indicates status in the classical texts; mapping it to corporate rank is interpretation.", basis_note: "[matrix] A for the raja-yoga promise; C for the corporate mapping; provisional."}   # [matrix, M3-8]
     optional_factors: [Chara Dasha signs in relation to the AmK and AL, Yogini periods, Saturn and Jupiter transits over the 10th or its lord with SAV, the D10 rules]
     vocabulary:                                                      # [m2]
       - {term: 10th lord, mentions: 111}
@@ -161,7 +173,7 @@ domains:
       - {term: Raja yoga, mentions: 53}
       - {term: karma, mentions: 45}
     sensitivity: Present disruption indicators carefully. No guarantee of job outcomes.
-    known_gaps: [M2 weak retrieval for Chara Dasha career timing and for Saturn's influence on the 10th, Parashari aspects need OD-32]
+    known_gaps: [M2 weak retrieval for Chara Dasha career timing and for Saturn's influence on the 10th]
     note: Detailed career methodology and its policies are the M4 benchmark.
 
   business:
@@ -185,7 +197,7 @@ domains:
       partnership: {focus: "7th house and lord, the D9 7th, Mercury", note: "Business partnership, not marriage."}
       business_versus_employment: {focus: "the 7th and 10th against the 6th (service); combines with career", note: Comparative question; compare both sides.}
       online_technology_or_foreign_markets: {focus: "Rahu, Mercury, the 12th for foreign markets"}
-      losses_or_closure: {focus: "the 12th, the 8th, the 6th (debt), periods of the lords involved", note: "State risks as indicators, with mitigating factors."}
+      losses_or_closure: {focus: "the 12th, the 8th, the 6th (debt), periods of the lords involved", note: "State risks as indicators, with mitigating factors.", basis_note: "[matrix] Business closure has no established classical house (D, provisional); a closure can also be a profitable sale."}
     optional_factors: [D10 business indications, the yogas present]
     vocabulary:
       - {term: business, mentions: 379}
@@ -202,8 +214,9 @@ domains:
     rule_categories: [marriage]                                      # [app]
     houses: {primary: [7], supporting: [2, 8, 11]}                   # [app]
     natural_karakas: [Ve, Ju]                                        # [app]
+    karaka_note: Examine both Venus and Jupiter for every chart, regardless of gender. Traditional gender-specific conventions may be mentioned as conventions only. [owner M3-7]
     vargas: [d1, d9]                                                 # [app]
-    jaimini_points: [darakaraka, upapada_lagna, darapada_a7]         # [code: all computed; 2nd from UL unavailable, OD-31]
+    jaimini_points: [darakaraka, upapada_lagna, darapada_a7, 2nd_from_upapada_via_get_counted_sign]   # [code + OD-31]
     dasha_systems: [vimshottari, chara, yogini]
     core_factors:
       - 7th house, its lord and occupants in D1, and the 7th in D9 (Navamsha)
@@ -217,7 +230,7 @@ domains:
       quality_of_married_life: {focus: "the 7th, 2nd and 8th, Venus, D9; UL and its influencing planets"}
       delay_or_obstacles: {focus: "Saturn, Rahu and 6/8/12 links to the 7th or Venus; mitigating factors", note: Report delay indicators as possibilities; no verdict of no marriage.}
       separation_or_divorce_concerns: {focus: "the 7th and 8th, the UL, malefic influence; mitigating factors", note: Sensitive; no certainty claims; recommend support where appropriate.}
-      remarriage: {focus: "the 7th, 2nd and 9th (draft), D9; the questioner's circumstances", note: "[draft] needs owner review"}
+      remarriage: {focus: "present the competing views: the 2nd (8th from the 7th), the 9th (3rd from the 7th), or the 8th from UL (Rath school; via get_counted_sign); D9", note: "Disputed; no single house is authoritative. State which view is used.", basis_note: "[matrix] Plural spouses are attested (B); which house shows a second spouse is disputed (D); provisional."}   # [owner M3-7]
     optional_factors: [Chara Dasha of signs connected to the UL, the yogas present]
     vocabulary:
       - {term: 7th lord, mentions: 75}
@@ -226,7 +239,7 @@ domains:
       - {term: Upapada, mentions: 12, note: thin; one book}
       - {term: Navamsha, mentions: 547}
     sensitivity: Respectful about delay or separation; no certainty claims about divorce.
-    known_gaps: [Kundli matching between two charts is calculation_unavailable, 2nd from UL not computed (OD-31)]
+    known_gaps: [Kundli matching between two charts is calculation_unavailable]
 
   relationships:
     label: Romantic relationships, love and non-marital partnership
@@ -244,7 +257,7 @@ domains:
     event_guides:
       meeting_someone: {focus: "5th and 7th activation by periods and transits in the window"}
       prospects_of_a_current_relationship: {focus: "5th, 7th, Venus and Moon; the user's chart only", note: The partner's chart is not used.}
-      conflict_or_reconciliation: {focus: "Mars, Saturn and Rahu on the 5th or 7th; supporting factors"}
+      conflict_or_reconciliation: {focus: "Mars, Saturn and Rahu on the 5th or 7th; supporting factors", basis_note: "[matrix] Breakups and reconciliation are not classically established (D, provisional)."}
       transition_to_marriage: {focus: "combines with the marriage guidance"}
     vocabulary:
       - {term: love, mentions: 346}
@@ -254,6 +267,7 @@ domains:
       - {term: Darapada, mentions: 10, note: thin}
     sensitivity: Do not judge a named third person from the user's chart alone; say that only one chart is available.
     known_gaps: [No relationship-specific rules (expected Partial), Two-chart analysis unavailable]
+    basis_note: "[matrix] Reading the 5th as romance is largely modern; most relationship events have no established classical house (C-D, provisional)."
 
   children:
     label: Existing children, as reflected in the parent's own chart
@@ -325,7 +339,7 @@ domains:
       - D24 Lagna and lords
       - periods over the requested window
     event_guides:                                                    # [owner] C9
-      examination_or_admission_result: {focus: "4th, 5th and 11th (success), periods and transits in the window"}
+      examination_or_admission_result: {focus: "4th, 5th and 11th (success), periods and transits in the window; for competitive examinations, optionally the 6th (contest, an upachaya house)"}   # [owner M3-7]
       higher_education: {focus: "9th and its lord, Jupiter, D24"}
       field_of_study: {focus: "5th, 9th, Mercury, D24; links to the 10th when chosen for career"}
       study_abroad: {focus: "combines with foreign_settlement (relocation or extended residence)"}
@@ -358,7 +372,8 @@ domains:
       savings_and_accumulation: {focus: "2nd and its lord, Jupiter, D2"}
       investment_or_speculation: {focus: "5th (speculation), 11th, 8th", note: No investment advice; indications only.}
       debt_or_loans: {focus: "6th and its lord; the 12th for expenditure"}
-      sudden_gains_losses_or_inheritance: {focus: "8th and its lord; the 11th"}
+      sudden_gains_losses_or_inheritance: {focus: "8th and its lord; the 11th", basis_note: "[matrix] Inheritance via the 8th is thinly attested (C, provisional); the same factors are read for sudden loss."}
+      financial_stability: {focus: "the 2nd, 11th and Lagna lords; the 12th and 8th influence on the 2nd; SAV of the 2nd and 11th compared with the 12th", note: "Indications of steadiness, not a financial forecast.", basis_note: "[matrix] B-C, provisional."}   # [matrix, M3-8]
     vocabulary:
       - {term: wealth, mentions: 971}
       - {term: Dhana yoga, mentions: 69}
@@ -393,7 +408,8 @@ domains:
     sensitivity: >-
       Medical (OD-23): no diagnosis, no naming of a specific illness as predicted, no treatment advice, and astrological
       indications are never presented as medically reliable. Always recommend a qualified medical professional.
-      Longevity and time of death are declined.
+      Longevity and time of death are declined. Maraka indications (the 2nd and 7th houses and their lords, maraka dashas) must
+      never be used to predict death, illness severity or a time of death. [owner M3-4]
     known_gaps: [D6 not computed, No strength metrics (shadbala unavailable), Expected Partial]
 
   foreign_settlement:
@@ -410,9 +426,10 @@ domains:
       - periods over the requested window
     event_guides:                                                    # [owner] C7: four distinct events
       short_travel: {focus: "3rd and 9th; periods and transits in the window", note: "A trip, not a change of residence; do not infer settlement."}
+      long_distance_journeys: {focus: "the 9th, 7th and 12th and their lords; movable signs", note: "Long journeys, not residence; classical 9th-house journeys are chiefly pilgrimage.", basis_note: "[matrix] B-C, provisional."}   # [matrix, M3-8]
       relocation: {focus: "12th and 4th, 9th; the 10th if for work, the 4th/5th/9th if for study", note: "A move for a purpose, of unspecified duration."}
       extended_residence: {focus: "12th strength and the 4th sustained across the periods of the window; D4", note: A multi-year stay that is not necessarily permanent.}
-      permanent_settlement: {focus: "the 12th clearly dominant over the 4th, Rahu and Saturn, D4 and D9; periods over the longer horizon", note: The strongest claim; needs the most evidence; state conflicts.}
+      permanent_settlement: {focus: "the 12th clearly dominant over the 4th, Rahu and Saturn, D4 and D9; periods over the longer horizon", note: The strongest claim; needs the most evidence; state conflicts., basis_note: "[matrix] No classical text found that distinguishes residence from settlement (D, provisional); the distinction rests on modern practice."}
     optional_factors: [D4 for residence, transits with SAV]
     vocabulary:
       - {term: foreign, mentions: 274}
@@ -455,7 +472,7 @@ domains:
     houses: {primary: [9, 12], supporting: [5, 8, 4]}                # [app; the 5th (mantra) is draft]
     natural_karakas: [Ju, Ke]                                        # [app]
     vargas: [d1, d9, d20]                                            # [app]
-    jaimini_points: [atmakaraka, karakamsha, 5th_and_9th_from_karakamsha]   # [code: computed; 12th from Karakamsha unavailable, OD-31]
+    jaimini_points: [atmakaraka, karakamsha, 5th_9th_and_12th_from_karakamsha]   # [code + OD-31 for the 12th]
     dasha_systems: [vimshottari, chara, yogini]
     core_factors:
       - 9th and 12th houses and lords
@@ -471,7 +488,7 @@ domains:
       - {term: Vimshamsha, mentions: 37}
       - {term: Atmakaraka, mentions: 72}
     sensitivity: Respect the user's own tradition.
-    known_gaps: [Very thin rule set (3 rules; expected Partial), 12th from Karakamsha not computed (OD-31)]
+    known_gaps: [Very thin rule set (3 rules; expected Partial)]
 
 secondary_domains:   # [owner] C12: retained
   family: {rule_categories: [family], houses: [1, 3, 4, 9, 12], vargas: [d1, d3, d12], natural_karakas: [Mo, Su], scope_limit: Relatives' own outcomes need their own charts.}
@@ -484,7 +501,14 @@ declared_unavailable:   # OD-29: answered with calculation_unavailable, never co
   - kundli matching and any two-chart analysis (including a child's or partner's own chart)
   - shadbala and other planetary strength metrics
   - prashna (horary)
-  - longevity and time of death (declined by policy)
+  - longevity, time of death and any maraka-based death prediction (declined by policy; M3-4)
   - planetary padas (deferred in code)
-  - 12th from Karakamsha and 2nd from UL (until OD-31 is approved)
-  - Parashari aspects as agent facts (until the OD-32 wrapper is approved)
+  - KP cusps, sub-lords and KP house groupings (not computed; M3-6)
+  - combustion, neechabhanga, mooltrikona, planetary war, Vimshopaka strength, Hora and Ghatika Lagna (not computed or deferred in code)
+
+# Excluded from the model's guidance by profile.py. Kept for M4 comparison only (owner instruction).
+research_annex:
+  career_alternatives_for_m4:
+    voluntary_employer_change: "[matrix] 9, 5, 3 (the 12th from the 10th and from the 6th; KP 1-5-9); B for the KP grouping, else C. Compare with the owner's C1 guide in M4."
+    lateral_change: "[matrix] Read as a transfer with a change of place: 3, 12, 4 (KP 3-10-12). The owner's guide reads lateral as the same level. Define the subtype in M4."
+    involuntary_change: "[matrix] Adds the 12th alongside the 8th. Optional comparison in M4."
