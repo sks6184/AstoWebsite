@@ -95,8 +95,8 @@ class KnowledgeSession:
     """One consultation only. Construct with trusted server principal/chart context."""
     def __init__(self, user, chart_id, adapter=None):
         if adapter is None:
-            from .hosted import HostedFileSearch
-            adapter = HostedFileSearch()
+            from .direct import configured_adapter
+            adapter = configured_adapter()
         self.user, self.chart_id, self.adapter = user, chart_id, adapter
         self.cache = {}
         self.last_usage = {'input_tokens': 0, 'output_tokens': 0, 'provider_rounds': 0}

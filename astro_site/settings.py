@@ -158,6 +158,8 @@ AUTHENTICATION_BACKENDS = [
 
 # P3 is opt-in; disabling this flag preserves the existing one-shot pipeline.
 ASTROGPT_AGENT_ENABLED = os.getenv("ASTROGPT_AGENT_ENABLED", "false").lower() in {"1", "true", "yes"}
+# M2: retrieval adapter for the agent knowledge tool ("hosted" file_search or "direct" vector-store search).
+ASTROGPT_RETRIEVAL_ADAPTER = os.getenv("ASTROGPT_RETRIEVAL_ADAPTER", "hosted").strip() or "hosted"
 ASTROGPT_RATE_LIMITS_ENABLED = True
 DATA_UPLOAD_MAX_MEMORY_SIZE = 65536
 ASTROGPT_TRANSCRIPT_RETENTION_DAYS = 30

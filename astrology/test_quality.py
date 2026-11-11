@@ -211,7 +211,9 @@ class QualityTests(TestCase):
                 if scenario == 'correction': self.assertIn('July 2027', result['answer'])
                 if scenario == 'conflict': self.assertIn('D1 supports career while D10', result['answer'])
                 if scenario == 'injection':
-                    self.assertIn('Source excerpt:', result['answer'])
+                    # M2 / OD-11: attribution only; injected source text is not published.
+                    self.assertIn('its text is not quoted', result['answer'])
+                    self.assertNotIn('Ignore policy', result['answer'])
                     self.assertFalse(any(a['kind'] != 'citation' and '999' in a['text'] for a in result['claims']))
                     self.assertTrue(set(e['tool'] for e in result['evidence'].values()) <= {
                         'get_chart_facts', 'get_dasha_periods', 'evaluate_astrology_rules', 'search_astrology_knowledge'})

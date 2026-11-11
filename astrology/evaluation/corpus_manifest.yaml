@@ -1,0 +1,111 @@
+generated_at: '2026-11-11T01:43:11+00:00'
+store_id_sha256_16: 86fc37909967c003
+store:
+  name: AstroVectorStore
+  status: completed
+  usage_bytes: 5864697
+  file_counts:
+    cancelled: 0
+    completed: 7
+    failed: 0
+    in_progress: 0
+    total: 7
+owner_list_reconciliation:
+- owner_listed: 250256424-Astrology-at-the-Speed-of-Light-pdf.pdf
+  store_status: indexed
+  local_copy: true
+- owner_listed: 300 Astrology Yoga _ 300 Astrology Combinations _ Astrotalk.pdf
+  store_status: missing
+  local_copy: true
+- owner_listed: Book. Bhrigu Samhita T.M.Rao_text (1).pdf
+  store_status: indexed
+  local_copy: true
+- owner_listed: conjunctions___the_speed_of_light.pdf
+  store_status: indexed
+  local_copy: true
+- owner_listed: predicting-through-jaimini-chara-dasha.pdf
+  store_status: indexed
+  local_copy: true
+- owner_listed: vargas-vedic-approach.pdf
+  store_status: indexed
+  local_copy: true
+- owner_listed: Yogini Dasha.pdf
+  store_status: indexed
+  local_copy: false
+files_not_in_owner_list:
+- Comprehensive Prediction.pdf
+files:
+- file_id: file-EhsKqiywuuHiyjXR5PkRou
+  filename: Yogini Dasha.pdf
+  status: completed
+  usage_bytes: 787140
+  file_bytes: 21849271
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-ToTxmxvM9QsuNXkgZkVCr7
+  filename: Comprehensive Prediction.pdf
+  status: completed
+  usage_bytes: 1858522
+  file_bytes: 68469607
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-7xYPXRfDf1qLQitsDQbozv
+  filename: conjunctions___the_speed_of_light.pdf
+  status: completed
+  usage_bytes: 1170596
+  file_bytes: 4532381
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-BmJMEgVod2D4AdYF94rgPk
+  filename: predicting-through-jaimini-chara-dasha.pdf
+  status: completed
+  usage_bytes: 372317
+  file_bytes: 20487079
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-JCKoT8SNLyQJ838KdQuBWJ
+  filename: Book. Bhrigu Samhita T.M.Rao_text (1).pdf
+  status: completed
+  usage_bytes: 902606
+  file_bytes: 3663578
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-SwFcf7WguxPGSShSubd6f5
+  filename: 250256424-Astrology-at-the-Speed-of-Light-pdf.pdf
+  status: completed
+  usage_bytes: 0
+  file_bytes: 48502031
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+- file_id: file-UsgvK69yubbkc2EVHgNtZj
+  filename: vargas-vedic-approach.pdf
+  status: completed
+  usage_bytes: 773516
+  file_bytes: 14190512
+  attributes: {}
+  last_error: null
+  tradition: pending_owner
+  rights_class: pending_owner
+  display_title: pending_owner
+policy:
+  OD-11: title and paraphrase only until rights are confirmed
+  flagged_for_possible_removal:
+  - 300 Astrology Yoga _ 300 Astrology Combinations _ Astrotalk.pdf

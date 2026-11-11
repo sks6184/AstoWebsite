@@ -132,8 +132,10 @@ def build_catalog(evidence):
                 cite = p['citation']
                 attribution = '; '.join(f'{k}: {v}' for k, v in cite.items() if v is not None)
                 missing = ', '.join(k for k, v in cite.items() if v is None)
-                text = '\n'.join('Source excerpt: ' + line for line in p['snippet'].splitlines())
-                text += f" [{p['evidence_id']}] Attribution: {attribution if p['citation_available'] else 'Citation unavailable.'}"
+                # OD-11 (owner, 2026-11-11): cite by title and paraphrase only. The excerpt
+                # stays bound for verification but is never published verbatim.
+                text = (f"A retrieved traditional source was consulted [{p['evidence_id']}]; its text is not quoted. "
+                        f"Attribution: {attribution if p['citation_available'] else 'Citation unavailable.'}")
                 if missing:
                     text += f' Unavailable citation metadata: {missing}.'
                 add('citation', eid, {'passage_id': f'/data/passages/{i}/evidence_id',

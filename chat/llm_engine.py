@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from openai import OpenAI, OpenAIError
 
+from astrology.rag.policy import SOURCE_TEXT_POLICY
 from astrology.services.prediction_service import build_prediction_evidence
 from astrology.synthesis.answer_schema import REQUIRED_SECTIONS
 from astrology.validation.validator import validate_answer
@@ -70,7 +71,8 @@ def _system_instructions(depth_level, answer_style="", answer_language="English"
         "Never calculate or invent planetary positions, divisional chart placements, dashas, "
         "transits, Sarvashtakavarga points, houses, signs, nakshatras, yogas, or timing windows.\n"
         "Use only: evidence_payload, evidence_ledger, summary_scores, triggered_rules, "
-        "contradictions, and retrieved RAG/file-search context.\n\n"
+        "contradictions, and retrieved RAG/file-search context.\n"
+        + SOURCE_TEXT_POLICY + "\n\n"
 
         "═══ FOUR REQUIRED SECTIONS — in this exact order ═══\n"
         "### Jyotish Analysis\n"
@@ -781,6 +783,7 @@ def _rashifal_system_instructions(horizon, answer_language="English"):
         f"Answer language: {answer_language}. "
         "Keep Mahadasha, Antardasha, Lagna, Nakshatra, Ashtakavarga transliterated.\n"
         "Astrology is interpretive guidance, not professional, medical, legal, or financial advice.\n"
+        + SOURCE_TEXT_POLICY + "\n"
     )
 
     remedy_and_guidance = (
