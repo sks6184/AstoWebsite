@@ -42,6 +42,10 @@ files:
   file_bytes: 21849271
   attributes: {}
   last_error: null
+  local_copy_verified: >-
+    2026-11-11: local copy added, same byte size as the store file. Acrobat Searchable Image,
+    217 pages, ~48.7k words, all 8 Yogini names present. M2 hits 11 of 13 at >=0.6; the 2 at
+    0.41 are table-heavy chunks (38% letters).
   tradition: pending_owner
   rights_class: pending_owner
   display_title: pending_owner
@@ -52,6 +56,10 @@ files:
   file_bytes: 68469607
   attributes: {}
   last_error: null
+  owner_decision: retain (2026-11-11). Divisional-chart reference associated with V. P. Goel.
+  local_copy_verified: >-
+    2026-11-11: local copy added, same byte size as the store file. Acrobat Searchable Image,
+    394 pages, ~88.5k words; D9/D10/divisional terms present. M2 hits 23 of 23 at >=0.88.
   tradition: pending_owner
   rights_class: pending_owner
   display_title: pending_owner
@@ -75,23 +83,38 @@ files:
   tradition: pending_owner
   rights_class: pending_owner
   display_title: pending_owner
-- file_id: file-JCKoT8SNLyQJ838KdQuBWJ
+- file_id: file-HR68gd6Uz7rAVfjqTs2HED
+  replaces: file-JCKoT8SNLyQJ838KdQuBWJ (local text layer did not match indexed text)
   filename: Book. Bhrigu Samhita T.M.Rao_text (1).pdf
   status: completed
-  usage_bytes: 902606
-  file_bytes: 3663578
+  usage_bytes: 872790
+  file_bytes: 68869605
   attributes: {}
   last_error: null
+  diagnosis: >-
+    Owner re-OCR'd with Acrobat 25 "Searchable Image" and replaced it in the store on 2026-11-11.
+    Verified offline: 304 pages, invisible text layer (3 Tr) over the page images, ~66.5k words,
+    2 near-empty pages, 0.5% junk lines. The 8 old-store M2 hits match the new local text at
+    0.77-0.96 (previously 0.00-0.01).
   tradition: pending_owner
   rights_class: pending_owner
   display_title: pending_owner
-- file_id: file-SwFcf7WguxPGSShSubd6f5
+- file_id: file-TSawiimAWugZ1piVARaPBK
+  replaces: file-SwFcf7WguxPGSShSubd6f5 (image-only, usage_bytes 0; removed from store by owner 2026-11-11)
   filename: 250256424-Astrology-at-the-Speed-of-Light-pdf.pdf
   status: completed
-  usage_bytes: 0
-  file_bytes: 48502031
+  usage_bytes: 473263
+  file_bytes: 68502461
   attributes: {}
   last_error: null
+  diagnosis: >-
+    Image-only PDF (168 pages, no fonts or text operators; each page is four 2160x720 image
+    strips at 288 dpi, printed via PScript5/Ghostscript 8.15). Not an encoding or OpenAI
+    indexing fault. Owner OCR'd it locally with Acrobat 25 "Searchable Image" on 2026-11-11
+    (invisible text layer, render mode 3; 168 pages, same page size; ~48.6k words). Verified
+    offline: terminology and ordinals read correctly, 97-100% word agreement with an independent
+    Tesseract sample. Owner replaced it in the store 2026-11-11; listing confirms status
+    completed with 473,263 indexed bytes (previously 0).
   tradition: pending_owner
   rights_class: pending_owner
   display_title: pending_owner

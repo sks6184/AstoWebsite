@@ -124,10 +124,13 @@ class Command(BaseCommand):
         parser.add_argument('--leakcheck', action='store_true')
         parser.add_argument('--confirm-paid', action='store_true')
         parser.add_argument('--books-dir', default=str(BASE.parent))
+        parser.add_argument('--review', default='review_for_owner.csv',
+                            help='Rated sheet inside the private M2 folder (offline; used by --summary).')
 
     def handle(self, *args, **options):
         self.ledger = Ledger(PRIVATE / 'ledger.jsonl')
         self.books_dir = Path(options['books_dir'])
+        self.review = options['review']
         if (options['manifest'] or options['run']) and not options['confirm_paid']:
             raise CommandError('Provider calls require --confirm-paid (owner-approved M2 cap).')
         if options['manifest']:
@@ -312,7 +315,7 @@ class Command(BaseCommand):
     def summary(self):
         rows = [r for r in self.ledger.rows() if r['kind'] == 'search']
         ratings = {}
-        review = PRIVATE / 'review_for_owner.csv'
+        review = PRIVATE / Path(self.review).name  # always inside the private folder
         if review.exists():
             with review.open(encoding='utf-8-sig', newline='') as handle:
                 for r in csv.DictReader(handle):
@@ -336,11 +339,15 @@ class Command(BaseCommand):
                 'hits_labelled': f'{len(labelled)}/{len(rated)}',
                 'mean_relevance_at_5': round(sum(labelled) / len(labelled), 3) if labelled else None,
                 'share_queries_with_a_2': round(sum(any(v == 2 for v in q) for q in per_query) / len(per_query), 3) if per_query and labelled else None,
+                'share_hits_relevant_ge_1': round(sum(v >= 1 for v in labelled) / len(labelled), 3) if labelled else None,
+                'top1_mean': round(sum(q[0] for q in per_query if q[0] is not None) / len(per_query), 3) if labelled else None,
+                'per_query_ratings': {q: per_query[i] for i, q in enumerate(queries)},
                 'accuracy_hits_with_local_book': len(acc),
                 'accuracy_share_at_or_above_0_6': round(sum(a['match_attributed'] >= 0.6 for a in acc) / len(acc), 3) if acc else None,
                 'hits_without_local_book': sum(1 for a in accuracy if a['adapter'] == name and not a['local_copy']),
                 'misattributed_candidates': sum(1 for a in acc if a['match_attributed'] < 0.6 and a['best_local_book'] != a['filename'] and (a['match_best'] or 0) >= 0.6),
             }
+        out['review_file'] = review.name
         (PRIVATE / 'summary.json').write_text(json.dumps(out, indent=1), encoding='utf-8')
         self.stdout.write(json.dumps(out, indent=1))
 
