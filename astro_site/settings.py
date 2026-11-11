@@ -158,6 +158,11 @@ AUTHENTICATION_BACKENDS = [
 
 # P3 is opt-in; disabling this flag preserves the existing one-shot pipeline.
 ASTROGPT_AGENT_ENABLED = os.getenv("ASTROGPT_AGENT_ENABLED", "false").lower() in {"1", "true", "yes"}
+# M3 (A7): only these usernames or e-mail addresses reach the general agent; empty by default, so every
+# existing and new user stays on legacy until explicitly added. Rollback: remove the account.
+ASTROGPT_AGENT_USERS = tuple(u.strip().casefold() for u in os.getenv("ASTROGPT_AGENT_USERS", "").split(",") if u.strip())
+# M3: the earlier P3 career slice is reachable only through this explicit compatibility setting (off by default).
+ASTROGPT_AGENT_P3_COMPAT = os.getenv("ASTROGPT_AGENT_P3_COMPAT", "false").lower() in {"1", "true", "yes"}
 # M2: retrieval adapter for the agent knowledge tool ("hosted" file_search or "direct" vector-store search).
 # M2-AC5 (owner, provisional, 2026-11-11): direct vector-store search. Rollback: set ASTROGPT_RETRIEVAL_ADAPTER=hosted.
 ASTROGPT_RETRIEVAL_ADAPTER = os.getenv("ASTROGPT_RETRIEVAL_ADAPTER", "direct").strip() or "direct"

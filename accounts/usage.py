@@ -29,7 +29,9 @@ def reserve(user, chart, conversation, request_id, question):
             return previous, False
         profile = get_or_create_profile(user)
         slug = profile.current_plan.slug if profile.current_plan else 'free'
-        policy = policy_for(slug)
+        from chat.agent_service import agent_route
+        # M3: allow-listed general-agent consultations use the pilot envelope; the plan slug is unchanged.
+        policy = policy_for('agent_pilot' if agent_route(user) == 'general' else slug)
         account, _ = CreditAccount.objects.get_or_create(user=user, defaults={'consumed': successful_answer_count(user)})
         available = plan_credit_limit(profile.current_plan) + profile.bonus_question_credits
         selected = CreditAccount.objects.filter(pk=account.pk, reserved__lt=2)

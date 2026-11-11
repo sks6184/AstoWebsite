@@ -369,7 +369,7 @@ class UsageTests(TestCase):
             self.assertEqual(self.provider.responses.create.call_count, before)
         self.assertEqual(row.provider_calls.get().status, 'overrun')
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_factual_agent_request_is_ledgered_without_provider_spend(self):
         from chat.agent_service import generate_question_answer
         with patch('openai.OpenAI', side_effect=AssertionError('Factual lookup must not call LLM')):

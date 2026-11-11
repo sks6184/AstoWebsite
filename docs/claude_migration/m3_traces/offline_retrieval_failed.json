@@ -1,0 +1,172 @@
+{
+  "name": "offline_retrieval_failed",
+  "synthetic": true,
+  "provider": "scripted offline (no model call)",
+  "status": "partial",
+  "stop_reason": "complete",
+  "label": {
+    "question_type": "natal_assessment",
+    "domains": [
+      "education"
+    ],
+    "events": [
+      "education:field_of_study"
+    ]
+  },
+  "non_answer_states": [
+    "retrieval_failed"
+  ],
+  "published_by": "model",
+  "answer": "Here is what the calculated evidence shows for your question, read as indicators rather than a verdict.\n\nYour D1 house 1 ruler is Moon, placed in Capricorn, house 7 [1]. Your D1 house 2 ruler is Sun, placed in Taurus, house 11 [2].\n\nConflicting indications: The deterministic conflict assessment contains differing signals [3]. Some triggered rules are mixed or negative [3]. Conflicting evidence limits the conclusion rather than cancelling the contrary signal [3].\n\nEvidence strength: moderate. Several calculated factors were examined and compared for this question.\n\nThe classical library could not be searched for this question. Where several systems point the same way, that is agreement of indicators, not statistical confirmation.\n\nCalculated facts referenced: [1] Your D1 house 1 ruler is Moon, placed in Capricorn, house 7. [2] Your D1 house 2 ruler is Sun, placed in Taurus, house 11. [3] The deterministic conflict assessment contains differing signals. Some triggered rules are mixed or negative. Conflicting evidence limits the conclusion rather than cancelling the contrary signal.",
+  "usage": {
+    "rounds": 2,
+    "input_tokens": 2400,
+    "output_tokens": 600,
+    "searches": 1,
+    "tool_calls": 4,
+    "tool_bytes": 65795,
+    "round_input_tokens": [
+      4723,
+      9226
+    ],
+    "round_latency_ms": [
+      0,
+      0
+    ]
+  },
+  "evidence": {
+    "E1": {
+      "tool": "get_chart_facts",
+      "arguments": {
+        "charts": [
+          "d1",
+          "d24"
+        ],
+        "include_yogas": true
+      },
+      "status": "ok"
+    },
+    "E2": {
+      "tool": "get_jaimini_facts",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E3": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "education",
+        "as_of": "2026-11-07"
+      },
+      "status": "partial"
+    },
+    "E4": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "education",
+        "concepts": [
+          "education 5th lord Chaturvimshamsha"
+        ],
+        "query": "education 5th lord Chaturvimshamsha",
+        "result_count": 3
+      },
+      "status": "error"
+    }
+  },
+  "trace": [
+    {
+      "event": "round",
+      "round": 1,
+      "counted_input_tokens": 4723,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 4,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "label",
+      "question_type": "natal_assessment",
+      "domains": [
+        "education"
+      ],
+      "events": [
+        "education:field_of_study"
+      ],
+      "profile_revision": 3,
+      "profile_fingerprint": "356507e554497a43"
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_chart_facts",
+      "evidence_id": "E1",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_jaimini_facts",
+      "evidence_id": "E2",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E3",
+      "status": "partial",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "search",
+      "evidence_id": "E4",
+      "query": "education 5th lord Chaturvimshamsha",
+      "reason": "Examine this factor for the labelled question.",
+      "status": "error",
+      "error_code": "knowledge_timeout",
+      "scores": [],
+      "best_score": null,
+      "low_score_heuristic": null,
+      "passage_ids": []
+    },
+    {
+      "event": "round",
+      "round": 2,
+      "counted_input_tokens": 9226,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 0,
+      "final": true,
+      "repair": false
+    },
+    {
+      "event": "validation",
+      "passed": true,
+      "issues": [],
+      "missing": [],
+      "repair_round": false
+    },
+    {
+      "event": "stop",
+      "reason": "complete",
+      "status": "partial",
+      "non_answer_states": [
+        "retrieval_failed"
+      ],
+      "elapsed_ms": 1125
+    }
+  ],
+  "draft_validation": {
+    "passed": true,
+    "score": 100,
+    "issues": [],
+    "missing_sections": [],
+    "generic_phrases_detected": [],
+    "unsupported_claims": [],
+    "repair_instruction": ""
+  }
+}

@@ -37,14 +37,20 @@ def _windows(summary, max_days):
         raise ScopeError('Prior calendar context is invalid; specify the requested dates.') from None
 
 
-def plan_with_context(question, today, max_days, context):
-    if context is None:
-        return make_plan(question, today, max_days)
+def reject_chart_change(question):
+    """A follow-up never changes the chart or birth inputs (shared by the P3 slice and the M3 agent)."""
     q = question.casefold()
     if re.search(r'\b(birth|born|latitude|longitude)\b', q) and re.match(r'\s*(actually\b|correction\b|i meant\b|no[, :])', q):
         raise ScopeError('Birth inputs come from the selected saved chart. Edit and recalculate that chart, then start a new conversation; this correction does not change calculated facts.')
     if re.search(r'\b(my wife|my husband|my son|my daughter|another person|different person|another chart|new chart)\b', q):
         raise ScopeError('Start a new conversation and select that person’s chart before continuing.')
+
+
+def plan_with_context(question, today, max_days, context):
+    if context is None:
+        return make_plan(question, today, max_days)
+    q = question.casefold()
+    reject_chart_change(question)
     summary = context['summary']
     topic = summary.get('topic')
     prior = _windows(summary, max_days)

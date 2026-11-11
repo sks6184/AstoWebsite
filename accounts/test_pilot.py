@@ -36,7 +36,7 @@ from astro_site.pilot_middleware import SafeJsonFormatter
 OFFLINE_RESULTS = {}
 
 
-@override_settings(ASTROGPT_AGENT_ENABLED=True, FREE_QUESTION_CREDITS=20,
+@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True, FREE_QUESTION_CREDITS=20,
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'p8-tests'}})
 class PilotTests(TestCase):
     @classmethod

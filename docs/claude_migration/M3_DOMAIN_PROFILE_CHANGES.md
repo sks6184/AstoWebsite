@@ -66,3 +66,22 @@
 - **Initial live testing: at most US$0.15 in total and US$0.05 per consultation**, on synthetic charts only.
 - The remaining proposed M3 budget is **not** authorized without separate approval.
 - These limits are recorded in `CLAUDE_M1_M4_ACCEPTANCE_CRITERIA.md` (§5.6 and OD-27).
+
+## 6. Revision 3: implementation changes (M3 offline build, 2026-11-11)
+
+Revision 3's methodology content (M3-1, M3-4 to M3-8, OD-31 to OD-33) is in commit `f08563f`. The offline build then made the following **structural** changes. No house, karaka, varga, core factor or event guide was changed.
+
+| Change | Why | Needs your review |
+|---|---|---|
+| `declared_unavailable` turned into a mapping with stable IDs (`muhurta`, `kundli_matching`, `shadbala`, `prashna`, `longevity`, `planetary_padas`, `kp`, `strength_conditions`). `longevity` carries `declined_by_policy: true` | The model names a missing calculation by ID, and the server publishes the fixed `calculation_unavailable` wording. The descriptions are unchanged | No |
+| New question type `out_of_scope` [draft] | Lets the agent decline a non-chart question after one round, without investigating | Yes: the wording |
+| New user-facing `disclosure` text [draft] for health, conception_childbirth, children, wealth and business | The server appends these notes to every answer in those domains (A8, OD-23, C6). The existing `sensitivity` notes remain instructions to the model | **Yes: the exact wording of each note** |
+| Removed the stale "not yet exposed" comment on `parashari_aspect_convention` | OD-32 now exposes the aspects | No |
+
+The loader `astrology/methodology/profile.py` validates the file on every load:
+- the schema and the closed label lists;
+- at most 8 vocabulary terms per domain and 100 in total (currently 67);
+- rule categories, vargas, planet codes and dasha systems that the tools actually accept;
+- no tool-sequence markers and no verdict markers in any guidance text.
+
+`research_annex` is never returned to the model.

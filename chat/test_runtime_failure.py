@@ -124,7 +124,7 @@ class RuntimeRequestTests(TestCase):
         self.assertContains(response, 'Memory consent is on; contextual processing is inactive.')
         self.assertNotContains(response, 'Memory is on.')
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_memory_flag_on_displays_active_context(self):
         from django.utils import timezone
         conversation = Conversation.objects.create(user=self.owner, chart=self.chart,

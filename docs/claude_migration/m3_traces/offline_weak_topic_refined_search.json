@@ -1,0 +1,296 @@
+{
+  "name": "offline_weak_topic_refined_search",
+  "synthetic": true,
+  "provider": "scripted offline (no model call)",
+  "status": "ok",
+  "stop_reason": "complete",
+  "label": {
+    "question_type": "predictive_timing",
+    "domains": [
+      "career"
+    ],
+    "events": [
+      "career:promotion"
+    ]
+  },
+  "non_answer_states": [],
+  "published_by": "model",
+  "answer": "Here is what the calculated evidence shows for your question, read as indicators rather than a verdict.\n\nYour D1 house 1 ruler is Moon, placed in Capricorn, house 7 [1]. Your D1 house 2 ruler is Sun, placed in Taurus, house 11 [2]. A retrieved source discusses this theme in its own terms (source: Synthetic Parashari Notes, chapter 1).\n\nConflicting indications: The deterministic conflict assessment contains differing signals [3]. Some triggered rules are mixed or negative [3]. Conflicting evidence limits the conclusion rather than cancelling the contrary signal [3].\n\nEvidence strength: moderate. Several calculated factors were examined and compared for this question.\n\nExact muhurta selection requires tithi, nakshatra, yoga, karana, weekday, lagna, Moon strength, and planetary hour calculation. Based on current available evidence, this is only a preliminary timing recommendation. Where several systems point the same way, that is agreement of indicators, not statistical confirmation.\n\nCalculated facts referenced: [1] Your D1 house 1 ruler is Moon, placed in Capricorn, house 7. [2] Your D1 house 2 ruler is Sun, placed in Taurus, house 11. [3] The deterministic conflict assessment contains differing signals. Some triggered rules are mixed or negative. Conflicting evidence limits the conclusion rather than cancelling the contrary signal.",
+  "usage": {
+    "rounds": 4,
+    "input_tokens": 4800,
+    "output_tokens": 1200,
+    "searches": 2,
+    "tool_calls": 8,
+    "tool_bytes": 80028,
+    "round_input_tokens": [
+      4727,
+      11944,
+      12295,
+      12673
+    ],
+    "round_latency_ms": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "evidence": {
+    "E1": {
+      "tool": "get_chart_facts",
+      "arguments": {
+        "charts": [
+          "d1",
+          "d10"
+        ],
+        "include_yogas": true
+      },
+      "status": "ok"
+    },
+    "E2": {
+      "tool": "get_jaimini_facts",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E3": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "career",
+        "as_of": "2026-11-07"
+      },
+      "status": "partial"
+    },
+    "E4": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "vimshottari",
+        "start_date": "2026-11-07",
+        "end_date": "2027-11-07"
+      },
+      "status": "ok"
+    },
+    "E5": {
+      "tool": "get_transits",
+      "arguments": {
+        "planets": [
+          "Ju",
+          "Sa"
+        ],
+        "start_date": "2026-11-07",
+        "end_date": "2027-11-07"
+      },
+      "status": "ok"
+    },
+    "E6": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "chara",
+        "start_date": "2026-11-07",
+        "end_date": "2027-11-07"
+      },
+      "status": "ok"
+    },
+    "E7": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "chara dasha career promotion timing"
+        ],
+        "query": "chara dasha career promotion timing",
+        "result_count": 3
+      },
+      "status": "partial"
+    },
+    "E8": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "Chara Dasha sign of the AmK from the Pada and the 10th sign"
+        ],
+        "query": "Chara Dasha sign of the AmK from the Pada and the 10th sign",
+        "result_count": 3
+      },
+      "status": "partial"
+    }
+  },
+  "trace": [
+    {
+      "event": "round",
+      "round": 1,
+      "counted_input_tokens": 4727,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 6,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "label",
+      "question_type": "predictive_timing",
+      "domains": [
+        "career"
+      ],
+      "events": [
+        "career:promotion"
+      ],
+      "profile_revision": 3,
+      "profile_fingerprint": "356507e554497a43"
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_chart_facts",
+      "evidence_id": "E1",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_jaimini_facts",
+      "evidence_id": "E2",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E3",
+      "status": "partial",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E4",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_transits",
+      "evidence_id": "E5",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E6",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "round",
+      "round": 2,
+      "counted_input_tokens": 11944,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 1,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "search",
+      "evidence_id": "E7",
+      "query": "chara dasha career promotion timing",
+      "reason": "Examine this factor for the labelled question.",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.52
+      ],
+      "best_score": 0.52,
+      "low_score_heuristic": true,
+      "passage_ids": [
+        "K2b0221898398d4afc7f6"
+      ]
+    },
+    {
+      "event": "round",
+      "round": 3,
+      "counted_input_tokens": 12295,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 1,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "search_judgement",
+      "evidence_id": "E7",
+      "judgement": "not_relevant",
+      "passage_ids": [],
+      "note": "General text; nothing on the AmK or the Pada."
+    },
+    {
+      "event": "search",
+      "evidence_id": "E8",
+      "query": "Chara Dasha sign of the AmK from the Pada and the 10th sign",
+      "reason": "Refine with the book terms Pada and AmK.",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "Kf2a845a334213ee42989"
+      ]
+    },
+    {
+      "event": "round",
+      "round": 4,
+      "counted_input_tokens": 12673,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 0,
+      "final": true,
+      "repair": false
+    },
+    {
+      "event": "search_judgement",
+      "evidence_id": "E8",
+      "judgement": "relevant",
+      "passage_ids": [
+        "Kf2a845a334213ee42989"
+      ],
+      "note": "Discusses the AmK sign in Chara Dasha."
+    },
+    {
+      "event": "validation",
+      "passed": true,
+      "issues": [],
+      "missing": [],
+      "repair_round": false
+    },
+    {
+      "event": "stop",
+      "reason": "complete",
+      "status": "ok",
+      "non_answer_states": [],
+      "elapsed_ms": 1594
+    }
+  ],
+  "draft_validation": {
+    "passed": true,
+    "score": 100,
+    "issues": [],
+    "missing_sections": [],
+    "generic_phrases_detected": [],
+    "unsupported_claims": [],
+    "repair_instruction": ""
+  }
+}

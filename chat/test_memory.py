@@ -23,7 +23,7 @@ from .memory import build_context, empty_summary, size, SUMMARY_BYTES, CONTEXT_B
 from .models import Conversation, ConsultationTurn, ErasedAnswerUsage, Message
 
 
-@override_settings(ASTROGPT_AGENT_ENABLED=True, CACHES={'default': {
+@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True, CACHES={'default': {
     'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'p5-tests'}})
 class ConversationMemoryTests(TestCase):
     @classmethod

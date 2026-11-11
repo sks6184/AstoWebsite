@@ -314,7 +314,7 @@ class AgentTests(TestCase):
         rules = next(e for e in result['evidence'].values() if e['tool'] == 'evaluate_astrology_rules')
         self.assertEqual(rules['arguments']['category'], 'business')
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_enabled_view_renders_reading_with_existing_formatter(self):
         self.client.force_login(self.owner)
         result = self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': 'Who rules my 10th house?', 'answer_language': 'English'}, follow=True)
@@ -322,7 +322,7 @@ class AgentTests(TestCase):
         self.assertContains(result, 'Your D1 tenth-house ruler is')
         self.assertNotContains(result, '&lt;p&gt;')
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_unsupported_language_is_explicit_and_does_not_call_provider(self):
         with patch('chat.agent_service.run_consultation') as agent:
             result = generate_question_answer(self.owner, self.chart, 'question', Conversation.FULL, 'Hindi')
@@ -338,14 +338,14 @@ class AgentTests(TestCase):
         legacy.assert_called_once_with('question', self.chart.chart_data, Conversation.FULL, answer_language='English')
         agent.assert_not_called()
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_feature_flag_on_routes_without_legacy_retry(self):
         with patch('chat.agent_service.run_consultation', return_value={'status': 'partial'}) as agent, patch('chat.agent_service.generate_placeholder_answer') as legacy:
             self.assertEqual(generate_question_answer(self.owner, self.chart, 'question', Conversation.FULL), {'status': 'partial'})
         agent.assert_called_once_with(self.owner, self.chart.pk, 'question')
         legacy.assert_not_called()
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_unavailable_chart_is_rejected_before_conversation_creation(self):
         self.client.force_login(self.other)
         with patch('chat.views.generate_question_answer') as generate:
@@ -354,7 +354,7 @@ class AgentTests(TestCase):
         self.assertFalse(Conversation.objects.filter(user=self.other).exists())
         generate.assert_not_called()
 
-    @override_settings(ASTROGPT_AGENT_ENABLED=True)
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_P3_COMPAT=True)
     def test_failed_agent_run_creates_no_assistant_credit_message(self):
         self.client.force_login(self.owner)
         with patch('chat.views.generate_question_answer', return_value={'status': 'error', 'answer': 'unavailable', 'model': 'deterministic'}):

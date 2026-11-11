@@ -1,6 +1,6 @@
 # AstroGPT domain investigation guidance, v0 (revision 3). Owner-approved for offline M3 implementation (2026-11-11).
 #
-# Status: loaded by astrology/methodology/profile.py for the M3 general agent (offline; no live use yet).
+# Status: loaded and validated by astrology/methodology/profile.py for the M3 general agent (offline; no live use yet).
 # Revision 2 applied the owner's methodology corrections C1-C12. Revision 3 applies the owner-approved
 # event-matrix refinements M3-1 and M3-4 to M3-8, and the tools OD-31, OD-32 and OD-33
 # (see docs/claude_migration/M3_EVENT_MATRIX_COMPARISON.md).
@@ -61,6 +61,10 @@ question_types:
     description: Whether, or when, something happens within a period.
     investigation: The core natal factors, plus dashas and transits for the requested window (see timing_principles). Include rules evaluated for the window.
     examples: ["Will I change jobs next year?", "When will I marry?"]
+  out_of_scope:   # [draft] M3 implementation: lets the agent decline without investigating
+    description: Not an astrology question about the selected chart (for example weather, news or another person's chart).
+    investigation: None. Decline briefly and say what the app can answer.
+    examples: ["What will the weather be tomorrow?"]
   comparative_decision:
     description: Choosing between options, places or periods.
     investigation: The same evidence gathered for each option or period and compared side by side, with conflicts stated. No option is preferred without evidence.
@@ -119,7 +123,7 @@ jaimini_conventions:   # [code] unless marked
     year: 365.2425 days (owner kept the existing Chara convention in M1b)
     source: charts/jaimini.py::build_chara_dasha
 
-parashari_aspect_convention:   # [code], not yet exposed to the agent
+parashari_aspect_convention:   # [code]
   rule: Every planet has the full 7th aspect; Mars also 4th and 8th; Jupiter 5th and 9th; Saturn 3rd and 10th; Rahu and Ketu 7th only
   source: charts/vedic_utils.py::PLANET_ASPECTS, natal_planet_aspects_on_house
   status: Exposed read-only via get_natal_aspects (OD-32, owner-approved). Kept separate from Jaimini rasi drishti.
@@ -206,6 +210,7 @@ domains:
       - {term: gains, mentions: 524}
       - {term: 7th house, mentions: 129}
     sensitivity: No investment or financial advice.
+    disclosure: "Astrology is not business or financial advice; test decisions against real market evidence."   # [draft]
     known_gaps: [Launch dates need muhurta (calculation_unavailable)]
 
   marriage:
@@ -298,6 +303,7 @@ domains:
       - {term: Putrakaraka, mentions: 18}
       - {term: 5th lord, mentions: 75}
     sensitivity: No predictions about a child's health; disclose the need for the child's chart.
+    disclosure: "This reading uses your chart only. Your child's own outcomes need the child's own birth chart, which this app does not analyse alongside yours."   # [draft] user-facing note (C6)
     known_gaps: [The child's own chart is not used, Two-chart analysis unavailable]
 
   conception_childbirth:
@@ -324,6 +330,7 @@ domains:
     sensitivity: >-
       Fertility (OD-23): no certainty claims, no statements about infertility, no medical claims, and no presenting of
       astrology as medically reliable. Present timing only as astrological indications and encourage medical guidance.
+    disclosure: "These are astrological indications only, not medical or fertility advice, and they are not medically reliable. Please seek guidance from a qualified medical professional."   # [draft] user-facing note (OD-23)
     known_gaps: [Thin corpus on childbirth timing (about 40 mentions, essentially one book), Rule set not timing-specific (expected Partial)]
 
   education:
@@ -381,6 +388,7 @@ domains:
       - {term: gains, mentions: 524}
       - {term: 2nd house, mentions: 120}
     sensitivity: Astrology is not financial guidance; no specific investment advice.
+    disclosure: "Astrology is not financial advice; this is not a recommendation to buy, sell or invest."   # [draft]
     known_gaps: [Thin rule set (7 rules; expected Partial)]
 
   health:
@@ -410,6 +418,7 @@ domains:
       indications are never presented as medically reliable. Always recommend a qualified medical professional.
       Longevity and time of death are declined. Maraka indications (the 2nd and 7th houses and their lords, maraka dashas) must
       never be used to predict death, illness severity or a time of death. [owner M3-4]
+    disclosure: "These are astrological indications only. They are not a diagnosis and are not medically reliable; please consult a qualified medical professional about any health concern."   # [draft] user-facing note (OD-23)
     known_gaps: [D6 not computed, No strength metrics (shadbala unavailable), Expected Partial]
 
   foreign_settlement:
@@ -497,14 +506,15 @@ secondary_domains:   # [owner] C12: retained
   general: {rule_categories: [general], houses: [1], vargas: [d1, d9], note: Broad D1 and dasha overview when no domain is clear; question_types still apply.}
 
 declared_unavailable:   # OD-29: answered with calculation_unavailable, never computed by the model
-  - muhurta and panchanga (tithi, the day's nakshatra, yoga, karana, hora); exact event dates
-  - kundli matching and any two-chart analysis (including a child's or partner's own chart)
-  - shadbala and other planetary strength metrics
-  - prashna (horary)
-  - longevity, time of death and any maraka-based death prediction (declined by policy; M3-4)
-  - planetary padas (deferred in code)
-  - KP cusps, sub-lords and KP house groupings (not computed; M3-6)
-  - combustion, neechabhanga, mooltrikona, planetary war, Vimshopaka strength, Hora and Ghatika Lagna (not computed or deferred in code)
+  # Stable IDs (M3 implementation) so the agent can name a missing calculation; the content is unchanged.
+  muhurta: {name: "muhurta and panchanga (tithi, the day's nakshatra, yoga, karana, hora) and exact event dates"}
+  kundli_matching: {name: "kundli matching and any two-chart analysis (including a child's or partner's own chart)"}
+  shadbala: {name: shadbala and other planetary strength metrics}
+  prashna: {name: prashna (horary astrology)}
+  longevity: {name: "longevity, time of death and any maraka-based death prediction", declined_by_policy: true}   # M3-4
+  planetary_padas: {name: planetary padas (deferred in code)}
+  kp: {name: "KP cusps, sub-lords and KP house groupings"}   # M3-6
+  strength_conditions: {name: "combustion, neechabhanga, mooltrikona, planetary war, Vimshopaka strength, Hora and Ghatika Lagna"}
 
 # Excluded from the model's guidance by profile.py. Kept for M4 comparison only (owner instruction).
 research_annex:

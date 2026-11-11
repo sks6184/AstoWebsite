@@ -9,6 +9,10 @@ POLICIES = {
     'free': {'rounds': 2, 'tokens': 160000, 'output': 1200, 'file_searches': 1, 'cost': '0.05'},
     'basic': {'rounds': 3, 'tokens': 320000, 'output': 1800, 'file_searches': 2, 'cost': '0.10'},
     'premium': {'rounds': 4, 'tokens': 500000, 'output': 2400, 'file_searches': 3, 'cost': '0.20'},
+    # M3 pilot envelope (OD-27, A9), used only for ASTROGPT_AGENT_USERS on the general agent: 6 model
+    # rounds (including one repair), 4 direct searches and US$0.05 per consultation. The token bound is
+    # the meter's own reservation (counted input + 4096 framing + output) for six <=25k-token rounds.
+    'agent_pilot': {'rounds': 6, 'tokens': 200000, 'output': 1800, 'file_searches': 4, 'cost': '0.05'},
 }
 
 

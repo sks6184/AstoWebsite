@@ -1,0 +1,232 @@
+{
+  "name": "offline_property",
+  "synthetic": true,
+  "provider": "scripted offline (no model call)",
+  "status": "ok",
+  "stop_reason": "complete",
+  "label": {
+    "question_type": "predictive_timing",
+    "domains": [
+      "property"
+    ],
+    "events": [
+      "property:purchase_timing"
+    ]
+  },
+  "non_answer_states": [],
+  "published_by": "model",
+  "answer": "Here is what the calculated evidence shows for your question, read as indicators rather than a verdict.\n\nYour D1 house 1 ruler is Moon, placed in Capricorn, house 7 [1]. Your D1 house 2 ruler is Sun, placed in Taurus, house 11 [2]. A retrieved source discusses this theme in its own terms (source: Synthetic Parashari Notes, chapter 1).\n\nConflicting indications: The deterministic conflict assessment contains differing signals [3]. Some triggered rules are mixed or negative [3]. Conflicting evidence limits the conclusion rather than cancelling the contrary signal [3].\n\nEvidence strength: moderate. Several calculated factors were examined and compared for this question.\n\nExact muhurta selection requires tithi, nakshatra, yoga, karana, weekday, lagna, Moon strength, and planetary hour calculation. Based on current available evidence, this is only a preliminary timing recommendation. Where several systems point the same way, that is agreement of indicators, not statistical confirmation.\n\nCalculated facts referenced: [1] Your D1 house 1 ruler is Moon, placed in Capricorn, house 7. [2] Your D1 house 2 ruler is Sun, placed in Taurus, house 11. [3] The deterministic conflict assessment contains differing signals. Some triggered rules are mixed or negative. Conflicting evidence limits the conclusion rather than cancelling the contrary signal.",
+  "usage": {
+    "rounds": 3,
+    "input_tokens": 3600,
+    "output_tokens": 900,
+    "searches": 1,
+    "tool_calls": 6,
+    "tool_bytes": 82846,
+    "round_input_tokens": [
+      4728,
+      11499,
+      11849
+    ],
+    "round_latency_ms": [
+      0,
+      0,
+      15
+    ]
+  },
+  "evidence": {
+    "E1": {
+      "tool": "get_chart_facts",
+      "arguments": {
+        "charts": [
+          "d1",
+          "d16",
+          "d4"
+        ],
+        "include_yogas": true
+      },
+      "status": "ok"
+    },
+    "E2": {
+      "tool": "get_jaimini_facts",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E3": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "property",
+        "as_of": "2026-11-07"
+      },
+      "status": "partial"
+    },
+    "E4": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "vimshottari",
+        "start_date": "2026-11-07",
+        "end_date": "2027-11-07"
+      },
+      "status": "ok"
+    },
+    "E5": {
+      "tool": "get_transits",
+      "arguments": {
+        "planets": [
+          "Ju",
+          "Sa"
+        ],
+        "start_date": "2026-11-07",
+        "end_date": "2027-11-07"
+      },
+      "status": "ok"
+    },
+    "E6": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "property",
+        "concepts": [
+          "property land 4th house results in the sub-period"
+        ],
+        "query": "property land 4th house results in the sub-period",
+        "result_count": 3
+      },
+      "status": "partial"
+    }
+  },
+  "trace": [
+    {
+      "event": "round",
+      "round": 1,
+      "counted_input_tokens": 4728,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 5,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "label",
+      "question_type": "predictive_timing",
+      "domains": [
+        "property"
+      ],
+      "events": [
+        "property:purchase_timing"
+      ],
+      "profile_revision": 3,
+      "profile_fingerprint": "356507e554497a43"
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_chart_facts",
+      "evidence_id": "E1",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_jaimini_facts",
+      "evidence_id": "E2",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E3",
+      "status": "partial",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E4",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_transits",
+      "evidence_id": "E5",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "round",
+      "round": 2,
+      "counted_input_tokens": 11499,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 1,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "search",
+      "evidence_id": "E6",
+      "query": "property land 4th house results in the sub-period",
+      "reason": "Find classical explanation in the books' terms.",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "K02602428266f24898532"
+      ]
+    },
+    {
+      "event": "round",
+      "round": 3,
+      "counted_input_tokens": 11849,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 15,
+      "requests": 0,
+      "final": true,
+      "repair": false
+    },
+    {
+      "event": "search_judgement",
+      "evidence_id": "E6",
+      "judgement": "relevant",
+      "passage_ids": [
+        "K02602428266f24898532"
+      ],
+      "note": "Discusses the labelled houses."
+    },
+    {
+      "event": "validation",
+      "passed": true,
+      "issues": [],
+      "missing": [],
+      "repair_round": false
+    },
+    {
+      "event": "stop",
+      "reason": "complete",
+      "status": "ok",
+      "non_answer_states": [],
+      "elapsed_ms": 1358
+    }
+  ],
+  "draft_validation": {
+    "passed": true,
+    "score": 100,
+    "issues": [],
+    "missing_sections": [],
+    "generic_phrases_detected": [],
+    "unsupported_claims": [],
+    "repair_instruction": ""
+  }
+}

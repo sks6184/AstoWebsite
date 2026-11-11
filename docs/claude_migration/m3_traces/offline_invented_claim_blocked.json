@@ -1,0 +1,183 @@
+{
+  "name": "offline_invented_claim_blocked",
+  "synthetic": true,
+  "provider": "scripted offline (no model call)",
+  "status": "partial",
+  "stop_reason": "validation_failed",
+  "label": {
+    "question_type": "natal_assessment",
+    "domains": [
+      "marriage"
+    ],
+    "events": [
+      "marriage:nature_of_spouse"
+    ]
+  },
+  "non_answer_states": [],
+  "published_by": "server",
+  "answer": "I could not complete a verified written interpretation for this question, so here is the calculated evidence that was gathered, without interpretation.\n\nYour D1 house 1 ruler is Moon, placed in Capricorn, house 7. Your D1 house 2 ruler is Sun, placed in Taurus, house 11. Your D1 house 3 ruler is Mercury, placed in Aries, house 10. Your D1 house 4 ruler is Venus, placed in Pisces, house 9. Your D1 house 5 ruler is Mars, placed in Aquarius, house 8. Your D1 house 6 ruler is Jupiter, placed in Gemini, house 12. Your D1 house 7 ruler is Saturn, placed in Capricorn, house 7. Your D1 house 8 ruler is Saturn, placed in Capricorn, house 7. Your D1 house 9 ruler is Jupiter, placed in Gemini, house 12. Your D1 tenth-house ruler is Mars. It is placed in house 8. Your D1 house 11 ruler is Venus, placed in Pisces, house 9. Your D1 house 12 ruler is Mercury, placed in Aries, house 10.\n\nEvidence strength: limited, because no interpretation could be verified.\n\nNo classical source was consulted for this answer. Where several systems point the same way, that is agreement of indicators, not statistical confirmation.",
+  "usage": {
+    "rounds": 3,
+    "input_tokens": 3600,
+    "output_tokens": 900,
+    "searches": 0,
+    "tool_calls": 3,
+    "tool_bytes": 65045,
+    "round_input_tokens": [
+      4725,
+      10121,
+      10624
+    ],
+    "round_latency_ms": [
+      0,
+      0,
+      0
+    ]
+  },
+  "evidence": {
+    "E1": {
+      "tool": "get_chart_facts",
+      "arguments": {
+        "charts": [
+          "d1",
+          "d9"
+        ],
+        "include_yogas": true
+      },
+      "status": "ok"
+    },
+    "E2": {
+      "tool": "get_jaimini_facts",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E3": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "marriage",
+        "as_of": "2026-11-07"
+      },
+      "status": "partial"
+    }
+  },
+  "trace": [
+    {
+      "event": "round",
+      "round": 1,
+      "counted_input_tokens": 4725,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 3,
+      "final": false,
+      "repair": false
+    },
+    {
+      "event": "label",
+      "question_type": "natal_assessment",
+      "domains": [
+        "marriage"
+      ],
+      "events": [
+        "marriage:nature_of_spouse"
+      ],
+      "profile_revision": 3,
+      "profile_fingerprint": "356507e554497a43"
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_chart_facts",
+      "evidence_id": "E1",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_jaimini_facts",
+      "evidence_id": "E2",
+      "status": "ok",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E3",
+      "status": "partial",
+      "reason": "Examine this factor for the labelled question.",
+      "error_code": null
+    },
+    {
+      "event": "round",
+      "round": 2,
+      "counted_input_tokens": 10121,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 0,
+      "final": true,
+      "repair": false
+    },
+    {
+      "event": "validation",
+      "passed": false,
+      "issues": [
+        "body: unverified_value Scorpio, house 12",
+        "body: untagged_chart_claim"
+      ],
+      "missing": [],
+      "repair_round": false
+    },
+    {
+      "event": "repair_requested"
+    },
+    {
+      "event": "round",
+      "round": 3,
+      "counted_input_tokens": 10624,
+      "provider_input_tokens": 1200,
+      "provider_output_tokens": 300,
+      "latency_ms": 0,
+      "requests": 0,
+      "final": true,
+      "repair": true
+    },
+    {
+      "event": "validation",
+      "passed": false,
+      "issues": [
+        "body: unverified_value Scorpio, house 12",
+        "body: untagged_chart_claim"
+      ],
+      "missing": [],
+      "repair_round": true
+    },
+    {
+      "event": "fallback",
+      "reason": "validation_failed"
+    },
+    {
+      "event": "stop",
+      "reason": "validation_failed",
+      "status": "partial",
+      "non_answer_states": [],
+      "elapsed_ms": 1156
+    }
+  ],
+  "draft_validation": {
+    "passed": false,
+    "score": 80,
+    "issues": [
+      "body: unverified_value Scorpio, house 12",
+      "body: untagged_chart_claim"
+    ],
+    "missing_sections": [],
+    "generic_phrases_detected": [],
+    "unsupported_claims": [
+      "Your 7th lord sits in Scorpio in the 12th house .",
+      "Your Moon is in Leo."
+    ],
+    "repair_instruction": "Rewrite the final answer. Tag every sentence that states a chart value with the fact IDs that contain every value it mentions, or remove the value. Cite sources only with retrieved K IDs and paraphrase them. No probabilities, certainty, diagnosis, death, longevity or infertility statements, and no remedies without a retrieved source. Provide a direct answer, conflicting signals where they exist, an evidence-strength label with a reason, and cover every core factor. Issues: body: unverified_value Scorpio, house 12; body: untagged_chart_claim"
+  }
+}

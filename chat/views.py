@@ -15,7 +15,7 @@ from astro_site.localization import remedy_devotion_note
 from charts.models import SavedChart
 
 from .forms import AskQuestionForm, FollowUpForm
-from .agent_service import generate_question_answer
+from .agent_service import agent_route, generate_question_answer
 from .models import Conversation, ConsultationTurn
 from .consultation_service import append_turn, change_memory, owned_conversation
 from .memory import trusted_summary
@@ -159,7 +159,7 @@ def ask_question(request):
             "selected_chart_id": int(selected_chart_id) if selected_chart_id.isdigit() else None,
             "credit_status": credit_status,
             "remedy_note": remedy_devotion_note("English"),
-            "agent_enabled": settings.ASTROGPT_AGENT_ENABLED,
+            "agent_enabled": agent_route(request.user) != "legacy",
         },
     )
 
@@ -187,7 +187,7 @@ def conversation_detail(request, conversation_id):
             "remedy_note": remedy_devotion_note(conversation.answer_language),
             "followup_form": FollowUpForm(initial={"request_id": uuid4(), "expected_revision": conversation.revision, "kind": "question"}),
             "memory_summary": trusted_summary(conversation) if conversation.memory_enabled else None,
-            "agent_enabled": settings.ASTROGPT_AGENT_ENABLED,
+            "agent_enabled": agent_route(request.user) != "legacy",
         },
     )
 
