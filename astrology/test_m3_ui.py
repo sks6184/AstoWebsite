@@ -83,6 +83,24 @@ class M3InterpretiveUiTests(M3Base):
         self.assertIn('search_judgement_ignored', events)
         self.assertTrue(all(t['status'] in ('ok', 'partial') for t in saved['tools']), saved['tools'])
 
+    def test_draft_sent_with_requests_is_set_aside_and_requests_run(self):
+        """Live run of 2026-11-11 (message 464): the model sent requests AND a draft final in the same
+        round, twice. The requests must run and the drafts must not consume the repair."""
+        lab = label('predictive_timing', 'career', events=['career:voluntary_employer_change'])
+        junk = {'direct_answer': 'You will likely get a new job next year.', 'body': 'Jupiter favours it.', 'conflicts': [],
+                'evidence_strength': {'label': 'strong', 'reason': 'x'}, 'coverage': [], 'unavailable_calculations': [],
+                'no_source_support': True}
+        reqs = domain_requests(self.profile, ['career'])
+        provider = Script(reply(lab, reqs[:2], final=junk), reply(requests=reqs[2:], final=junk), lambda p: reply(final=final(p)))
+        response = self.post(provider, 'can I get a new job next year ?')
+        self.assertContains(response, 'Evidence strength')
+        saved = Message.objects.filter(role=Message.ASSISTANT, conversation__user=self.owner).latest('pk').provenance['evidence']
+        events = [e['event'] for e in saved['agent_events']]
+        self.assertEqual(saved['stop_reason'], 'complete', saved)
+        self.assertEqual(events.count('premature_final_set_aside'), 2)
+        self.assertNotIn('repair_requested', events)
+        self.assertTrue(saved['tools'])
+
     def test_false_untagged_sentence_is_never_auto_grounded(self):
         from astrology.validation.prose_validator import ground
         from astrology.synthesis.fact_catalog import build_catalog

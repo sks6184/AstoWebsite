@@ -35,6 +35,9 @@ Each round, reply with one JSON object: label, requests, search_judgements, fina
   vocabulary notes), at most 200 bytes. Judge each result yourself in search_judgements. low_score_heuristic
   is advisory only: use a relevant low-score passage, and refine or decompose the query when the passages are
   weak. searches_remaining is a ceiling, not a target; one good search is enough.
+- A round either requests evidence OR answers, never both: while you send requests, set final to null
+  (a final sent together with requests is discarded unanswered, because it cannot cite results you have
+  not seen yet). Write final only after the evidence items you need are in the payload.
 - Final answer (set requests to []): natural conversational prose, no headings, no fixed sections.
   direct_answer answers the question first. body explains the calculated factors you used. Every
   sentence that states a chart value (planet, sign, house, nakshatra, varga, lord, karaka, pada, yoga,

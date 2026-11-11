@@ -488,7 +488,12 @@ class GeneralConsultation:
                 if self.label['question_type'] == 'out_of_scope':
                     return 'out_of_scope'
             self.apply_judgements(reply['search_judgements'])
-            if reply['final'] is not None:
+            pending = type(reply['requests']) is list and len(reply['requests']) > 0
+            if reply['final'] is not None and pending and self.usage['rounds'] < self.limits.rounds:
+                # A draft written before its own requests ran cannot cite their results: run the
+                # requests and set the draft aside (it is neither validated nor counted as a repair).
+                self.trace.append({'event': 'premature_final_set_aside', 'requests': len(reply['requests'])})
+            elif reply['final'] is not None:
                 self.final, grounded = ground_final(reply['final'], self.catalog(), self.evidence)
                 if grounded:
                     self.trace.append({'event': 'auto_grounded', 'sentences': grounded})
