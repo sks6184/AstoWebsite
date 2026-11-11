@@ -140,6 +140,33 @@ NAK = 360 / 27
 YEAR_DAYS = 365.2425
 
 
+EPOCH = datetime(1970, 1, 1, tzinfo=UTC)  # Windows rejects negative timestamps; use arithmetic.
+
+
+def _jd(moment):
+    return 2440587.5 + (moment - EPOCH).total_seconds() / 86400
+
+
+def independent_sidereal_sun(jd):
+    # Aberration and nutation are nearly constant over a few days and cancel
+    # in the year-to-year differences that the dasha clock uses.
+    return (meeus_sun_apparent(jd) - true_lahiri(jd)) % 360
+
+
+def independent_solar_year_instant(birth, years):
+    """Instant when the sidereal Sun has advanced 360*years degrees from birth (Meeus Sun)."""
+    jd0 = _jd(birth)
+    target = independent_sidereal_sun(jd0) + 360 * years
+    jd = jd0 + years * 365.256363
+    for _ in range(30):
+        jd += ((target - independent_sidereal_sun(jd) + 180) % 360 - 180) / 0.9856
+    return EPOCH + timedelta(days=jd - 2440587.5)
+
+
+# Meeus low-precision Sun: 0.01 degree is about 15 minutes of solar motion.
+SOLAR_CLOCK_TOLERANCE_S = 3600
+
+
 class IndependentFormulaReferenceTests(SimpleTestCase):
     """Formula-level independent checks (lower precision than JH; labelled as such in M1_REPORT)."""
 
@@ -172,30 +199,64 @@ class IndependentFormulaReferenceTests(SimpleTestCase):
             self.assertEqual(chart["birth_instant_utc"], expected[cid], cid)
 
     def test_vimshottari_from_first_principles(self):
+        # M1b: the birth Mahadasha is a full period that began before birth, and
+        # dasha years are true sidereal solar years, recomputed here from the
+        # independent Meeus solar longitude.
         for cid, (_, chart) in fixture_charts().items():
             with self.subTest(chart=cid):
                 moon = planet(chart, "Mo")["longitude"]
                 index = int(moon // NAK)
                 lord = VIM_LORDS[index % 9]
-                remaining = VIM_YEARS[lord] * (1 - (moon - index * NAK) / NAK)
+                cursor = -VIM_YEARS[lord] * (moon - index * NAK) / NAK
                 birth = instant(chart["birth_instant_utc"])
                 periods = chart["dashas"]["vimshottari"]["periods"]
-                start, sequence = birth, VIM_LORDS[VIM_LORDS.index(lord):] + VIM_LORDS[:VIM_LORDS.index(lord)]
+                sequence = VIM_LORDS[VIM_LORDS.index(lord):] + VIM_LORDS[:VIM_LORDS.index(lord)]
+                self.assertLess(instant(periods[0]["start_utc"]), birth)
+                self.assertLessEqual(birth, instant(periods[0]["end_utc"]))
                 for number, period in enumerate(periods[:9]):
                     self.assertEqual(period["lord"], sequence[number])
-                    self.assertLess(abs((instant(period["start_utc"]) - start).total_seconds()), 120)
-                    start = start + timedelta(days=(remaining if number == 0 else VIM_YEARS[sequence[number]]) * YEAR_DAYS)
+                    expected = independent_solar_year_instant(birth, cursor)
+                    self.assertLess(abs((instant(period["start_utc"]) - expected).total_seconds()), SOLAR_CLOCK_TOLERANCE_S)
+                    cursor += VIM_YEARS[sequence[number]]
 
-    def test_antardashas_after_birth_mahadasha_from_first_principles(self):
+    def test_antardashas_divide_full_mahadashas_from_first_principles(self):
+        # Checks the birth Mahadasha (M1-F1) and the one after it.
         for cid, (_, chart) in fixture_charts().items():
-            md = chart["dashas"]["vimshottari"]["periods"][1]
-            start, end = instant(md["start_utc"]), instant(md["end_utc"])
-            order = VIM_LORDS[VIM_LORDS.index(md["lord"]):] + VIM_LORDS[:VIM_LORDS.index(md["lord"])]
-            cursor = start
-            for ad, lord in zip(md["antardashas"], order):
-                self.assertEqual(ad["lord"], lord)
-                self.assertLess(abs((instant(ad["start_utc"]) - cursor).total_seconds()), 1, cid)
-                cursor += (end - start) * (VIM_YEARS[md["lord"]] * VIM_YEARS[lord] / 120) / VIM_YEARS[md["lord"]]
+            moon = planet(chart, "Mo")["longitude"]
+            index = int(moon // NAK)
+            birth = instant(chart["birth_instant_utc"])
+            md_start = -VIM_YEARS[VIM_LORDS[index % 9]] * (moon - index * NAK) / NAK
+            for md in chart["dashas"]["vimshottari"]["periods"][:2]:
+                order = VIM_LORDS[VIM_LORDS.index(md["lord"]):] + VIM_LORDS[:VIM_LORDS.index(md["lord"])]
+                cursor = md_start
+                self.assertEqual(len(md["antardashas"]), 9)
+                for ad, lord in zip(md["antardashas"], order):
+                    self.assertEqual(ad["lord"], lord)
+                    expected = independent_solar_year_instant(birth, cursor)
+                    self.assertLess(abs((instant(ad["start_utc"]) - expected).total_seconds()), SOLAR_CLOCK_TOLERANCE_S, (cid, md["lord"], lord))
+                    cursor += VIM_YEARS[md["lord"]] * VIM_YEARS[lord] / 120
+                self.assertEqual(md["antardashas"][-1]["end_utc"], md["end_utc"])
+                md_start += VIM_YEARS[md["lord"]]
+
+    def test_birth_falls_in_the_antardasha_given_by_the_full_period_method(self):
+        # M1-F1: the antardasha running at birth is found by dividing the full
+        # birth Mahadasha, not by restarting with the Mahadasha lord at birth.
+        for cid, (_, chart) in fixture_charts().items():
+            moon = planet(chart, "Mo")["longitude"]
+            index = int(moon // NAK)
+            lord = VIM_LORDS[index % 9]
+            elapsed = VIM_YEARS[lord] * (moon - index * NAK) / NAK
+            order = VIM_LORDS[VIM_LORDS.index(lord):] + VIM_LORDS[:VIM_LORDS.index(lord)]
+            cursor, expected = 0.0, None
+            for sub in order:
+                cursor += VIM_YEARS[lord] * VIM_YEARS[sub] / 120
+                if elapsed < cursor:
+                    expected = sub
+                    break
+            birth_md = chart["dashas"]["vimshottari"]["periods"][0]
+            self.assertTrue(birth_md["starts_before_birth"], cid)
+            found = select_period(birth_md["antardashas"], instant(chart["birth_instant_utc"]))
+            self.assertEqual(found["lord"], expected, cid)
 
     def test_yogini_from_first_principles(self):
         names = [name for name, _ in YOGINIS]
@@ -352,12 +413,17 @@ class ChartDashaBoundaryTests(SimpleTestCase):
 
     def test_first_period_starts_at_birth_instant_and_local_birth_date(self):
         _, chart = self.charts["R2"]  # 23:45 local on 3 Nov; 04:45 UTC on 4 Nov
-        for periods in (chart["dashas"]["vimshottari"]["periods"], chart["dashas"]["yogini"]["periods"],
-                        chart["jaimini"]["chara_dasha"]["periods"]):
+        # Yogini and Chara are unchanged by M1b: they start at the birth instant.
+        for periods in (chart["dashas"]["yogini"]["periods"], chart["jaimini"]["chara_dasha"]["periods"]):
             self.assertEqual(periods[0]["start_utc"], "1992-11-04T04:45:00Z")
             self.assertEqual(periods[0]["start"], "1992-11-03")
-        self.assertEqual(select_period(chart["dashas"]["vimshottari"]["periods"], date(1992, 11, 2)), {})
-        self.assertTrue(select_period(chart["dashas"]["vimshottari"]["periods"], date(1992, 11, 3)))
+        # Vimshottari (M1b): the birth Mahadasha began before birth and is the
+        # period selected at the birth instant and on the local birth date.
+        vimshottari = chart["dashas"]["vimshottari"]["periods"]
+        birth = datetime(1992, 11, 4, 4, 45, tzinfo=UTC)
+        self.assertLess(instant(vimshottari[0]["start_utc"]), birth)
+        self.assertEqual(select_period(vimshottari, birth)["lord"], vimshottari[0]["lord"])
+        self.assertEqual(select_period(vimshottari, date(1992, 11, 3))["lord"], vimshottari[0]["lord"])
 
     def test_all_vimshottari_surfaces_agree_around_an_antardasha_transition(self):
         from astrology.calculations.dasha_facts import _current_period as facts_select

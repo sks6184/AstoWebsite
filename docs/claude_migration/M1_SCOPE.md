@@ -31,13 +31,15 @@ Jagannatha Hora is not installed on this machine (CONFIRMED by search). The owne
 | Setting | Required value | Why |
 |---|---|---|
 | JH version | Record the exact version | Provenance |
-| Ayanamsa | **Lahiri (Chitrapaksha)**, true (with nutation) | Matches `swe.SIDM_LAHIRI` |
+| Ayanamsa | **Traditional Lahiri** (updated by M1b, 2026-11-11; previously "Lahiri (Chitrapaksha)") | Matches `swe.SIDM_LAHIRI` |
+| Planet positions | JH default. The app uses geometric positions (`FLG_TRUEPOS`), which match JH Traditional Lahiri to within 0.4″ (M1b) | Owner decision M1b |
+| Jaimini karakas | **7 karakas** (Rahu excluded) | Owner convention |
 | Rahu/Ketu | **True node** | Matches `swe.TRUE_NODE` |
 | Time zone | Enter the **explicit UTC offset** of the fixture (including DST), not JH's atlas lookup | Removes atlas/DST ambiguity |
 | Coordinates | Exactly as in the fixture file (decimal degrees) | |
 | Rasi (D1) | Sign positions; record planet and ascendant longitudes to arc-seconds | |
 | Navamsa (D9), Dasamsa (D10) | Standard Parashara D9 and D10 | Matches `charts/astro_engine.py` definitions |
-| Vimshottari | Moon-based, standard 120-year scheme. **Dasa year = 365.2425 days** if offered; otherwise record JH's year definition | App setting `SOLAR_YEAR_DAYS = 365.2425` |
+| Vimshottari | Moon-based, standard 120-year scheme. **True sidereal solar years** (updated by M1b; JH "Using true sidereal solar years") | App: `astrology/calculations/solar_years.py` |
 | Vimshottari values | Each MD start date/time, plus AD start dates for the MD running at birth and the next MD | Checks balance and antardasha logic |
 | Yogini | Standard Yogini dasha (Moon nakshatra based, 36-year cycle); MD start dates for 2 cycles | |
 | Chara dasha | **The variant following K.N. Rao, "Predicting Through Jaimini's Chara Dasha"** (the app's declared source, `charts/jaimini.py:172`). Record JH's exact menu label. If JH has no matching variant, the app's Chara dasha stays **UNVERIFIED**. | OD-15: school recorded explicitly |

@@ -4,7 +4,8 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .periods import add_years, birth_instant, interval_metadata, resolve_timezone, split_interval, timing_fields
+from .periods import birth_instant, interval_metadata, resolve_timezone, timing_fields
+from .solar_years import SiderealSolarYearClock
 
 from astrology.constants import (
     NAKSHATRAS,
@@ -16,6 +17,7 @@ from astrology.constants import (
 
 NAKSHATRA_SPAN = 360 / 27
 VIMSHOTTARI_CYCLE_YEARS = 120
+# Used only to express a balance as approximate years/months/days for display.
 SOLAR_YEAR_DAYS = 365.2425
 
 
@@ -77,35 +79,41 @@ def birth_mahadasha(moon_longitude: float) -> dict[str, Any]:
     }
 
 
-def _aware(value: datetime, display_zone: ZoneInfo) -> datetime:
-    return value if value.tzinfo is not None else value.replace(tzinfo=display_zone)
+def _elapsed_years_at_birth(moon_longitude: float, lord: str) -> float:
+    """Unrounded years of the birth Mahadasha already elapsed at birth."""
+    elapsed_degrees = (moon_longitude % 360) % NAKSHATRA_SPAN
+    return VIMSHOTTARI_YEARS[lord] * elapsed_degrees / NAKSHATRA_SPAN
 
 
 def generate_antardashas(
     mahadasha_lord: str,
-    start: datetime,
-    end: datetime,
+    start_years: float,
+    clock: SiderealSolarYearClock,
     display_zone: ZoneInfo | None = None,
 ) -> list[dict[str, Any]]:
-    """Divide ``[start, end)`` in Vimshottari order, in exact proportion to planetary years."""
+    """Divide a full Mahadasha in Vimshottari order.
+
+    ``start_years`` is the Mahadasha's start in dasha years from birth
+    (negative for the birth Mahadasha). Antardasha lengths are proportional to
+    planetary years and are measured in true sidereal solar years, so each
+    boundary is an exact instant from ``clock``.
+    """
     display_zone = display_zone or resolve_timezone(None)
-    start, end = _aware(start, display_zone), _aware(end, display_zone)
-    sequence = vimshottari_sequence_from(mahadasha_lord)
+    md_years = VIMSHOTTARI_YEARS[mahadasha_lord]
     periods = []
-    for lord, (current, sub_end) in zip(sequence, split_interval(start, end, [VIMSHOTTARI_YEARS[lord] for lord in sequence])):
-        years = (sub_end - current).total_seconds() / 86400 / SOLAR_YEAR_DAYS
+    cursor = start_years
+    for lord in vimshottari_sequence_from(mahadasha_lord):
+        length = md_years * VIMSHOTTARI_YEARS[lord] / VIMSHOTTARI_CYCLE_YEARS
         periods.append(
             {
                 "lord": lord,
                 "lord_name": PLANET_NAMES.get(lord, lord),
-                **timing_fields(current, sub_end, display_zone),
-                "years": round(years, 4),
-                "nominal_fraction_years": round(
-                    VIMSHOTTARI_YEARS[mahadasha_lord] * VIMSHOTTARI_YEARS[lord] / VIMSHOTTARI_CYCLE_YEARS,
-                    4,
-                ),
+                **timing_fields(clock.instant(cursor), clock.instant(cursor + length), display_zone),
+                "years": round(length, 4),
+                "nominal_fraction_years": round(length, 4),
             }
         )
+        cursor += length
     return periods
 
 
@@ -116,50 +124,41 @@ def generate_mahadasha_timeline(
     include_antardashas: bool = True,
     timezone_name: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Mahadasha timeline from the birth instant.
+    """Mahadasha timeline (owner decisions M1b).
+
+    * The Mahadasha running at birth is a full period that began before
+      birth; the elapsed part comes from the Moon's position in its
+      nakshatra (fixes finding M1-F1).
+    * Years are true sidereal solar years (see ``solar_years``).
 
     ``birth`` may be an aware datetime (exact birth moment) or a date, which
-    means local midnight in ``timezone_name`` (the pre-M1 behaviour).
+    means local midnight in ``timezone_name``.
     """
     display_zone = resolve_timezone(timezone_name)
-    birth_dasha = birth_mahadasha(moon_longitude)
-    birth_lord = birth_dasha["lord"]
-    current = birth_instant(birth, timezone_name)
+    birth_lord = birth_mahadasha(moon_longitude)["lord"]
+    clock = SiderealSolarYearClock(birth_instant(birth, timezone_name))
+    cursor = -_elapsed_years_at_birth(moon_longitude, birth_lord)
+    sequence = vimshottari_sequence_from(birth_lord)
     periods = []
-
-    def append_period(lord: str, start: datetime, end: datetime, balance: bool, cycle: int) -> None:
-        years = (end - start).total_seconds() / 86400 / SOLAR_YEAR_DAYS
+    for index in range(cycles * len(VIMSHOTTARI_SEQUENCE)):
+        lord = sequence[index % len(sequence)]
+        years = VIMSHOTTARI_YEARS[lord]
         period = {
             "lord": lord,
             "lord_name": PLANET_NAMES.get(lord, lord),
-            **timing_fields(start, end, display_zone),
-            "balance": balance,
-            "years": round(years, 2),
-            "nominal_years": VIMSHOTTARI_YEARS[lord],
-            "cycle": cycle,
+            **timing_fields(clock.instant(cursor), clock.instant(cursor + years), display_zone),
+            "balance": index == 0,
+            "years": years,
+            "nominal_years": years,
+            "cycle": index // len(VIMSHOTTARI_SEQUENCE) + 1,
         }
+        if index == 0:
+            period["starts_before_birth"] = cursor < 0
+            period["balance_years_at_birth"] = round(cursor + years, 6)
         if include_antardashas:
-            # Unchanged in M1: the balance Mahadasha's antardashas divide the
-            # remaining balance only (finding M1-F1, awaiting owner decision).
-            period["antardashas"] = generate_antardashas(lord, start, end, display_zone)
+            period["antardashas"] = generate_antardashas(lord, cursor, clock, display_zone)
         periods.append(period)
-
-    first_end = add_years(current, birth_dasha["remaining_years"], SOLAR_YEAR_DAYS)
-    append_period(birth_lord, current, first_end, balance=True, cycle=1)
-    current = first_end
-
-    sequence = vimshottari_sequence_from(birth_lord)
-    remaining_sequence = sequence[1:] + sequence
-    total_periods = cycles * len(VIMSHOTTARI_SEQUENCE)
-    cycle = 1
-    for index in range(total_periods - 1):
-        lord = remaining_sequence[index % len(remaining_sequence)]
-        if lord == birth_lord:
-            cycle += 1
-        end = add_years(current, VIMSHOTTARI_YEARS[lord], SOLAR_YEAR_DAYS)
-        append_period(lord, current, end, balance=False, cycle=cycle)
-        current = end
-
+        cursor += years
     return periods
 
 
@@ -185,11 +184,12 @@ def build_vimshottari_dasha(
         "method": {
             "birth_mahadasha": "Moon's birth nakshatra lord determines the first Mahadasha.",
             "balance": "Remaining Moon nakshatra arc divided by full nakshatra span, multiplied by the lord's Vimshottari years.",
-            "antardashas": "Mahadasha duration is divided in Vimshottari order according to planetary year proportions out of 120.",
+            "birth_mahadasha_period": "Full period that began before birth; the elapsed part comes from the Moon's position in its nakshatra.",
+            "antardashas": "Each full Mahadasha is divided in Vimshottari order according to planetary year proportions out of 120.",
             "cycle_years": VIMSHOTTARI_CYCLE_YEARS,
             "cycles_generated": cycles,
             "pratyantardasha": "Not generated yet.",
-            "dasha_year_days": SOLAR_YEAR_DAYS,
+            "dasha_year": "true sidereal solar year: dasha year Y is reached when the Sun's sidereal longitude has advanced 360*Y degrees from birth",
             "start_reference": "birth instant" if isinstance(birth, datetime) else "local midnight of the birth date",
             **interval_metadata(resolve_timezone(timezone_name)),
         },

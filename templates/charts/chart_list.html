@@ -165,7 +165,7 @@
               <h2>Vimshottari Dasha</h2>
               <p class="chart-note">
                 Moon nakshatra: {{ chart.chart_data.dashas.vimshottari.moon_nakshatra }}.
-                Balance starts with {{ chart.chart_data.dashas.vimshottari.balance_lord }}.
+                Mahadasha running at birth: {{ chart.chart_data.dashas.vimshottari.balance_lord }}.
               </p>
               <div class="dasha-layout">
                 <div class="table-wrap">
@@ -184,7 +184,7 @@
                           tabindex="0"
                           data-target="antardasha-{{ chart.id }}-{{ forloop.counter }}"
                         >
-                          <td>{{ period.lord }}{% if period.balance %} balance{% endif %}</td>
+                          <td>{{ period.lord }}{% if period.starts_before_birth %} (running at birth){% elif period.balance %} balance{% endif %}</td>
                           <td>{{ period.start_display }}</td>
                           <td>{{ period.end_display }}</td>
                         </tr>

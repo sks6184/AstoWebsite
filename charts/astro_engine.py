@@ -11,13 +11,13 @@ from astrology.constants import (
     SIGN_LORDS,
     SIGNS,
 )
-from astrology.calculations.method_profile import build_method_profile, ephemeris_from_flags
+from astrology.calculations.method_profile import POSITION_FLAGS, SIDEREAL_MODE, build_method_profile, ephemeris_from_flags
 from astrology.calculations.vimshottari import build_vimshottari_dasha
 from astrology.calculations.yogini import build_yogini_periods
 
 # Bump whenever the stored chart_data structure or calculation conventions
 # change. Saved charts are recalculated only when their stored value differs.
-CHART_TEMPLATE = "north_indian_clear_sign_positions_v11_exact_dasha_instants"
+CHART_TEMPLATE = "north_indian_clear_sign_positions_v12_jh_settings"
 
 
 JAIMINI_KARAKAS = [
@@ -354,7 +354,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
             "calculation_error": "Latitude and longitude are required for chart calculation.",
         }
 
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    swe.set_sid_mode(SIDEREAL_MODE)
     utc_dt = _local_datetime_to_utc(birth_date, birth_time, timezone)
     jd_ut = swe.julday(
         utc_dt.year,
@@ -362,7 +362,7 @@ def build_vedic_chart(name, birth_date, birth_time, birth_place, latitude, longi
         utc_dt.day,
         utc_dt.hour + utc_dt.minute / 60 + utc_dt.second / 3600,
     )
-    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
+    flags = POSITION_FLAGS
     _, ascmc = swe.houses_ex(jd_ut, float(latitude), float(longitude), b"P", swe.FLG_SIDEREAL)
     asc_longitude = ascmc[0] % 360
     asc_sign_index = _sign_index(asc_longitude)

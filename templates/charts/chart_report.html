@@ -185,7 +185,7 @@
         <tbody>
           {% for period in report.vimshottari.periods %}
             <tr>
-              <td>{{ period.lord }}{% if period.balance %} balance{% endif %}</td>
+              <td>{{ period.lord }}{% if period.starts_before_birth %} (running at birth){% elif period.balance %} balance{% endif %}</td>
               <td>{{ period.start_display }}</td>
               <td>{{ period.end_display }}</td>
               <td>

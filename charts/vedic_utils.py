@@ -2,6 +2,8 @@ from datetime import datetime
 
 import swisseph as swe
 
+from astrology.calculations.method_profile import POSITION_FLAGS, SIDEREAL_MODE
+
 
 PLANET_IDS = {
     "Su": swe.SUN,
@@ -335,14 +337,14 @@ def get_sarvashtakavarga_points(chart_data, house_number):
 
 
 def transit_longitude(planet_code, target_dt):
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    swe.set_sid_mode(SIDEREAL_MODE)
     jd_ut = swe.julday(
         target_dt.year,
         target_dt.month,
         target_dt.day,
         target_dt.hour + target_dt.minute / 60 + target_dt.second / 3600,
     )
-    flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
+    flags = POSITION_FLAGS  # Same convention as natal positions (M1b).
     if planet_code == "Ke":
         rahu_values, _ = swe.calc_ut(jd_ut, swe.TRUE_NODE, flags)
         return (rahu_values[0] + 180) % 360
