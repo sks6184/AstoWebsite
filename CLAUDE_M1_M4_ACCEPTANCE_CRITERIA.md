@@ -152,7 +152,7 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 
 ## 5. M3: General-purpose Vedic astrology reasoning agent in the real Django UI
 
-> **Revision 2 (2026-11-11), awaiting owner approval.** This replaces the career-first M3 of 2026-11-10. It carries the owner's ten M3 requirements (R1–R10, §5.0). Career moves to M4 as the detailed benchmark, not the product boundary. **No M3 implementation has started.**
+> **Revision 3 (2026-11-11), awaiting final owner approval.** Revision 2 replaced the career-first M3 of 2026-11-10 with the owner's requirements R1–R10 (§5.0). Revision 3 applies the owner's ten amendments A1–A10 (§5.0b). The architecture is **approved in principle**. **No M3 implementation has started.** The draft domain profile `astrology/methodology/domains.v0.yaml` is ready for astrological review (OD-24), and the tool contracts are in §5.5 for checking. Paid testing waits for both reviews.
 
 **Goal:**
 
@@ -175,39 +175,59 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 | R9 | Career kept as a detailed M4 benchmark, not the product boundary | §6 |
 | R10 | Natural conversational answers, not fixed 12-section responses | §5.1 item 9; M3-AC14; OD-16 |
 
+
+### 5.0b Owner amendments (2026-11-11) and where each is applied
+
+| # | Amendment | Applied in |
+|---|---|---|
+| A1 | `domains.v0.yaml` gives **investigation guidance**, not tool sequences or predetermined interpretations. The model may request further relevant tools and sources within authorization and budget. | §5.1 item 3; `domains.v0.yaml` principles; M3-AC5, AC7 |
+| A2 | Keep **relationships ≠ marriage** and **existing children ≠ conception/childbirth** as separate domains. Calculation tools and rule categories may be shared. | §5.1 item 2 (12 domains); `domains.v0.yaml`; M3-AC3 |
+| A3 | A score of 0.70 is a **heuristic only**, not proof of relevance. The model judges passages and may reformulate. **Four searches is a maximum, not a minimum.** | §5.1 item 5; M3-AC9; OD-26 |
+| A4 | `gpt-4o-mini` for **initial** M3 testing only. Measure how it interprets multiple systems and handles contradictions. No stronger model without separate approval. | M3-AC23; OD-7 |
+| A5 | Jaimini, classical-yoga and 12-house-lord wrappers approved. They reuse existing calculations, are verified by tests, and invent no unavailable computations. | §5.5; M3-AC6 |
+| A6 | Conversational prose approved. Keep accessible evidence, source attribution, conflicting indications and factual validation. | §5.1 item 9; M3-AC11, AC12, AC14 |
+| A7 | Settings-based allowlist. Existing users stay on legacy until explicitly enabled. | §5.1 item 1; M3-AC1 |
+| A8 | Safeguards for medical, fertility and longevity questions. No diagnosis, and no presenting astrology as medically reliable. | `domains.v0.yaml` sensitivity notes; M3-AC13; OD-23 |
+| A9 | **US$1.00 total M3 budget, US$0.05 per consultation.** Offline tests first, then **three** real consultations (career, marriage, children). Results and spend are reviewed before expanding. | §5.6; M3-AC15, AC17; OD-27 |
+| A10 | Must work across all agreed domains and mixed questions. A domain is never "supported" just because chart data exists: tool accessibility, relevant retrieval and grounded interpretation must be demonstrated. | §5.4; M3-AC15 |
+
 ### 5.1 Scope
 
-1. **Per-user routing (OD-17).** Only allow-listed users reach the agent (`chat/agent_service.py`); everyone else stays on legacy.
+1. **Per-user routing (OD-17, A7).** Only allow-listed users reach the agent (`chat/agent_service.py`). **Every existing and new user stays on legacy until explicitly added.** The allowlist is empty by default.
 
 2. **Domain recognition by the model, not regex.**
-   - In its first round, the agent labels the question with **1–3 domain IDs** from a closed list (OD-22). The list is built from the 13 categories that already exist in `chat/prediction_context.py::CATEGORY_RULES`, plus `general`.
+   - In its first round, the agent labels the question with **1–3 domain IDs** from a closed list of **12 primary domains** (A2, OD-22), plus secondary domains and `general`. The domains are defined in `domains.v0.yaml`. Several share calculation tools and rule categories from `chat/prediction_context.py::CATEGORY_RULES`, but **each has its own guidance and is not treated as equivalent**.
    - Unknown labels are rejected by schema. An unclear question falls back to `general`, a broad D1 and dasha investigation.
    - Labelling is **folded into the first agent round**, so it adds no extra paid call.
    - The career/business-only `ScopeError` (`astrology/agent/policy.py:92-93`) is removed. The deterministic factual shortcut stays, extended to all house lords, placements and current periods, with zero LLM calls.
 
-   | Owner domain | Existing category | Main varga | Notes |
+   | Domain ID | Shared rule category | Main varga | Distinction and notes |
    |---|---|---|---|
-   | Career | `career` / `job` | D10 | M4 benchmark |
-   | Business | `business` | D10 | Houses 2, 7, 10, 11 |
-   | Marriage | `marriage` | D9 | Upapada and Darakaraka need the new Jaimini tool |
-   | Relationships (non-marital) | `marriage` (OD-22) | D9 | No separate rule set; 5th house and Venus via guidance |
-   | Children / childbirth | `children` | D7 | Putrakaraka via the Jaimini tool; childbirth timing uses dasha and transits |
-   | Education | `education` | D24 | |
-   | Wealth | `money` | D2 | |
-   | Health | `health` | D30 | Sensitive-domain policy (OD-23) |
-   | Foreign settlement | `foreign_travel` | D4, D9 | 12th house; Rahu |
-   | Property | `property` (+ `vehicle`) | D4, D16 | |
-   | Spirituality | `spirituality` | D20, D9 | |
-   | Also available | `family`, `legal_and_enemies` | D3/D12, D30 | Kept unless the owner removes them (OD-22) |
+   | `career` | `career`, `job` | D10 | M4 benchmark |
+   | `business` | `business` | D10 | Houses 7, 10, 2, 11; Mercury; Rahu for online, technology or foreign markets |
+   | `marriage` | `marriage` | D9 | Spouse and married life: 7th, Venus/Jupiter, DK, Upapada |
+   | `relationships` | `marriage` (supporting only) | D9 | **Not marriage:** romance and non-marital partnership; 5th and 7th as distinct indications, Venus and Moon, A7. Expected Partial (no dedicated rules) |
+   | `children` | `children` | D7 | **Existing children**, seen from the parent's chart; houses counted from the 5th for a specific child |
+   | `conception_childbirth` | `children` (shared) | D7 | **Not existing children:** conception and childbirth timing; fertility safeguards; thin corpus. Expected Partial |
+   | `education` | `education` | D24 | |
+   | `wealth` | `money` | D2 | |
+   | `health` | `health` | D30 | Medical safeguards (A8) |
+   | `foreign_settlement` | `foreign_travel` | D4, D9 | Settlement, not short travel; 12th against 4th |
+   | `property` | `property` | D4, D16 | |
+   | `spirituality` | `spirituality` | D20, D9 | Atmakaraka and Karakamsha |
+   | secondary: `family`, `vehicle`, `legal_and_enemies`, `general` | same names | D3/D12, D16/D4, D30, D1/D9 | Kept unless the owner removes them (OD-22) |
 
 3. **Domain guidance as data, not code** (R5, G-6).
    - One versioned file, `astrology/methodology/domains.v0.yaml`, has one compact entry per domain:
      - relevant houses, natural karakas and vargas (seeded from `CATEGORY_RULES`);
      - relevant Jaimini points (for example AmK for career, DK and UL for marriage, PK for children);
      - dasha systems to consider;
-     - a **minimum investigation** list, written generically (for example "domain houses and their lords; domain varga; current Vimshottari MD/AD; deterministic rules for the category");
+     - **core factors**: what to examine, for example "7th house and lord; Venus and Jupiter in D1 and D9; Darakaraka and Upapada". Each factor must be examined **or disclosed as unavailable** before publication. **No tool order or tool sequence is prescribed** (A1);
+     - **optional factors**: suggestions only. The model may also request any other authorized tool or source the question needs, within budget;
+     - a **sensitivity note** where relevant (A8);
      - **source hints** and a **short book-vocabulary note**: at most 8 terms per domain and 100 in total (for example "Pada", "AmK", "sub-period"). These are hints the model reads, **not a Python replacement table**.
-   - **One generic routine** applies the minimums to any domain. Python has no per-domain branches and no career-specific tool sequence; `minimal_evidence()` in `astrology/agent/orchestrator.py` is replaced by the data-driven routine.
+   - **One generic check** confirms that the core factors were examined or disclosed. It does not dictate tools, order or interpretation. Python has no per-domain branches and no career-specific tool sequence; the hard-coded `minimal_evidence()` in `astrology/agent/orchestrator.py` is retired.
+   - **No interpretations in the file.** It never states what a placement means or predicts (G-6).
    - The owner reviews the file's astrological content before live traces (OD-24). It is not treated as validated by default.
 
 4. **Tools.** The existing 6 deterministic tools plus knowledge search stay. Three **wrappers over existing calculations** are added. None of them adds a new astrological calculation (OD-25):
@@ -229,8 +249,8 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 5. **Agent-led, iterative retrieval (R2–R4).**
    - The knowledge tool takes a **search text written by the model** (at most 200 bytes), searched through the M2 `direct` adapter. Hosted search remains the manual rollback.
    - The instructions tell the model to use the books' terminology, synonyms and traditional abbreviations, guided by the domain vocabulary notes.
-   - A search is reported as **weak** when its best score is below τ (proposed 0.70, OD-26) or the model judges the passages irrelevant. The M2 calibration supports a threshold of this kind: direct hits below 0.70 averaged 0.4 relevance against about 1.0 above, but on only 50 hits.
-   - After a weak search, the model may **refine** it (different wording) or **decompose** it (narrower single-concept searches, filled with calculated facts), up to the per-consultation search cap.
+   - Each search result carries the provider scores and a **heuristic flag** when the best score is below 0.70 (OD-26). **The flag is advisory only; it is not proof of relevance or irrelevance** (A3). In M2, a hit scoring 0.77 was still rated only partly relevant, and direct hits below 0.70 averaged 0.4 relevance against about 1.0 above (on just 50 hits). **The model judges each passage's relevance itself.**
+   - When the model judges the passages weak, it may **refine** the search (different wording) or **decompose** it (narrower single-concept searches, filled with calculated facts). **Four searches per consultation is a ceiling, not a target:** a question answered well by one search uses one.
    - Duplicate passages are merged. At least 3 passages are kept per search (M2 close-out floor).
 
 6. **Three distinct non-answer states (R6).** Each has its own code, evidence status and disclosure wording, and none produces invented content:
@@ -247,6 +267,7 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
    - Claim scanner (G-1) and citation checker (G-2).
    - One repair round. On failure, the deterministic evidence report is published, marked partial and unbilled.
    - Source attribution follows OD-11: books are cited by title (filename until display titles are set) and paraphrased, never quoted.
+   - **Accessible evidence (A6):** the evidence panel lists the facts, periods, rules and sources used, with conflicting indications shown beside each other.
 
 8. **Strict cost limits (OD-7, OD-27).** A pilot envelope per consultation sets maximum rounds, searches, the largest-round input and a cost cap. The search reservation uses the M2 measured direct-search cost (US$0.0025, still to be reconciled with billing), not a full-context reservation. Paid-plan envelopes are left to M7.
 
@@ -274,26 +295,27 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 |---|---|---|
 | M3-AC1 | **Routing.** For the allow-listed account, the trace shows the agent path and zero calls into `chat/llm_engine.py::generate_answer`. A non-allow-listed account uses legacy. | Trace + test |
 | M3-AC2 | **Factual shortcut, all domains.** For example "Who is my 7th lord?", "Where is Jupiter in D9?" and "What is my current mahadasha?" are answered through the UI with zero LLM calls, and the values match the M1/M1b references. | Trace + test |
-| M3-AC3 | **Domain recognition.** On a locked set of ≥40 synthetic questions (≥3 per owner domain, ≥6 mixed-domain, ≥4 out of scope), labels match the expected domains in ≥90% of single-domain questions. Every mixed question receives ≥2 correct domains. Run once live on the M3 model, cost-capped (OD-27). | Labelled-set report |
+| M3-AC3 | **Domain recognition.** A locked set of ≥44 synthetic questions: ≥3 per primary domain, ≥6 mixed-domain, ≥4 out of scope, and ≥4 **distinction pairs** (relationship vs marriage; existing children vs conception). Offline, the schema rejects unknown labels and a scripted provider exercises every label. Live, labels match in ≥90% of single-domain questions, every mixed question gets ≥2 correct domains, and distinction pairs are labelled apart. **The live run happens only in expansion stage 2, after owner approval (A9).** | Labelled-set report |
 | M3-AC4 | **No career boundary.** No code path rejects a question for not being career or business. Offline tests cover a question in every owner domain reaching investigation. | Grep + tests |
-| M3-AC5 | **Guidance is data.** `domains.v0.yaml` is schema-validated and covers every domain. Vocabulary notes stay within ≤8 per domain and ≤100 in total. The orchestrator and planner contain **no** domain-name branches and no domain-specific tool sequences, and Python has no synonym replacement table. | Schema test + grep test + code-review note |
-| M3-AC6 | **New tool wrappers.** `get_jaimini_facts` returns the 7 karakas and AL/UL identical to the existing calculations (parity tests on R1–R5). Yogas and all 12 lords appear as facts. **No calculation module changes:** `git diff` of `charts/astro_engine.py` and `astrology/calculations/*` is empty. | Tests + diff |
-| M3-AC7 | **Minimum investigation.** In every trace, the guidance minimums for the labelled domains are satisfied before publication. In ≥3 traces the model requests an optional tool beyond the minimums, showing it is not a fixed script. | Policy-coverage report |
+| M3-AC5 | **Guidance is data (A1).** `domains.v0.yaml` is schema-validated, owner-approved (OD-24) and covers every domain. Vocabulary notes stay within ≤8 per domain and ≤100 in total. The file contains no tool sequences and no interpretations. The orchestrator and planner contain **no** domain-name branches and no domain-specific tool sequences, and Python has no synonym replacement table. A test shows the model can call a tool **outside** a domain's suggested factors and have it accepted, subject only to the allowlist and budget. | Schema test + grep test + test + code-review note |
+| M3-AC6 | **New tool wrappers (A5).** Parity tests on R1–R5 show (a) `get_jaimini_facts` output identical to `astrology/calculations/jaimini.py` (7 karakas, Karakamsha, all 12 house padas including AL/UL, Jaimini yogas); (b) the yogas in `get_chart_facts` identical to `chart_data['yogas']`; (c) the 12 house lords identical to the existing lord placements. Requests for anything not computed (for example planetary padas, which are deferred, or shadbala) return `calculation_unavailable`. **No calculation module changes:** `git diff` of `charts/astro_engine.py`, `charts/yogas.py` and `astrology/calculations/*` is empty. | Tests + diff |
+| M3-AC7 | **Core-factor coverage (A1).** In every trace, each core factor of the labelled domains is examined or disclosed as unavailable before publication. Tool choice and order vary with the question. ≥1 of the first three live traces shows the model choosing a tool or source beyond the suggestions. | Coverage report |
 | M3-AC8 | **Targeted search terms.** Search texts are written by the model, not template-joined. In the weak-topic traces (Chara Dasha, Saturn's 10th-house influence, Rahu antardasha), at least one search uses book vocabulary identified in M2 ("Pada", "AmK", "sub-period" or "Xth House"). | Traces |
-| M3-AC9 | **Iterative retrieval.** An offline test seeds a weak first result (all scores below τ) and shows a refined or decomposed second search. Searches stop at the cap. ≥1 live trace shows a refinement. Every search is in the ledger. | Test + trace + ledger |
+| M3-AC9 | **Iterative retrieval (A3).** Offline tests show (a) a model-judged weak result leads to a refined or decomposed search; (b) a low-score result the model judges relevant is **used without forced re-searching** (the 0.70 flag is advisory); (c) one good search ends retrieval (no minimum); (d) searches stop at the 4-search ceiling. Live traces record each search's text, scores, the model's relevance judgement and why it reformulated. Every search is in the ledger. | Tests + traces + ledger |
 | M3-AC10 | **Three non-answer states.** Offline tests produce each of `retrieval_failed`, `no_source_support` and `calculation_unavailable` (the latter for at least muhurta, kundli matching and shadbala). Each publishes its own disclosure wording. None publishes an invented value, citation or calculation. | Tests |
 | M3-AC11 | **Claim scanner (G-1)** reports 0 unverified astrological values in every published answer. Seeded invented placements, including in a non-career domain, are blocked. | Traces + tests |
 | M3-AC12 | **Citations (G-2, OD-11).** 0 citations without a matching hit. No published answer contains a 12-word run copied from a retrieved passage (M2 leak check applied to answers). Books are named, never quoted. | Traces + tests |
 | M3-AC13 | **Guardrails.** G-3 to G-5 pass: no event probabilities; confidence given as evidence strength with a reason. The sensitive-domain policy (OD-23) holds: health answers make no diagnosis and include the agreed note; no death or longevity prediction; fertility and childbirth wording follows the agreed policy. | Validator output + tests |
 | M3-AC14 | **Natural answers.** Published answers carry no mandatory section headings. The validator passes answers that contain the required content elements (§5.1 item 9) and fails answers that lack them. A test shows a heading-free answer passing. | Tests + sample answers |
-| M3-AC15 | **Domain end-to-end matrix (§5.4).** Offline: one scripted end-to-end test per owner domain (11) plus ≥3 mixed-domain tests, all green. Live: one consultation per owner domain plus 2 mixed-domain ones (13 in all) on synthetic charts. The report grades each domain using the §5.4 definitions. | Tests + traces + support report |
+| M3-AC15 | **Domain end-to-end matrix (§5.4, §5.6, A9, A10).** **Offline:** one scripted end-to-end test per primary domain (12), ≥3 mixed-domain tests, and the 2 distinction pairs, all green. **Live stage 1:** 3 consultations (career, marriage, children) on synthetic charts, then a review of the results and spend with the owner. **Live stage 2** (only if approved): the remaining domains and mixed questions. The report grades every domain, using "Not yet demonstrated" where no live consultation has been reviewed. | Tests + traces + support report |
 | M3-AC16 | **Tokens.** Provider-reported tokens are recorded per round. Envelope (proposed, OD-27): the largest round ≤25k input tokens, ≤6 model rounds and ≤4 searches per consultation. | Usage table |
-| M3-AC17 | **Cost.** Each consultation ≤ the per-consultation cap. M3 total paid spend ≤ the M3 cap (OD-27). Every call is in the ledger; no call bypasses the meter. | Ledger extract |
+| M3-AC17 | **Cost (A9).** Each consultation ≤ **US$0.05**; M3 total paid spend ≤ **US$1.00**. Both are enforced by refusal before the call, as in M2. Every call is in the ledger; no call bypasses the meter. Spend after stage 1 is reported before any expansion. | Ledger extract |
 | M3-AC18 | **Failure paths.** Provider timeout, retrieval failure and validator failure each give a partial, unbilled answer with no raw error text. | Tests (+ trace if observed) |
 | M3-AC19 | **Ownership.** A forged chart ID is overridden to the session chart, and a follow-up chart change is rejected. Existing tests pass. | Tests |
 | M3-AC20 | **Latency** is recorded end to end and per round. There is no pass/fail threshold until OD-14. | Traces |
 | M3-AC21 | **Rollback.** Removing the account from the allowlist routes its next question to legacy with no deploy. Setting `ASTROGPT_RETRIEVAL_ADAPTER=hosted` switches retrieval. Both are demonstrated. | Traces |
 | M3-AC22 | Full suite green | Test output |
+| M3-AC23 | **Model capability (A4).** For each live consultation, a short assessment of `gpt-4o-mini`, with examples and no stronger model used: does it combine evidence from multiple systems (Vimshottari, Jaimini/Chara, varga, Yogini, transits); does it state and reason about contradictions; does it stay grounded. The owner makes the final judgement. A stronger model is proposed only as a separate decision. | Capability notes per trace |
 
 ### 5.3 Rollback
 
@@ -306,7 +328,12 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 
 **Definitions** used by the M3 support report:
 
-- **Supported:** the domain's core factors are computed: domain houses and lords, the domain varga, and the current dasha. The deterministic rule category has ≥5 rules. The live trace retrieves ≥1 passage judged relevant, and validation passes without repair.
+- **Supported:** requires a **demonstrated live consultation** (A10). Chart data existing is **not** enough. In the trace:
+  - the core factors were reached through the tools;
+  - ≥1 retrieved passage was judged relevant by the owner's review;
+  - the interpretation is grounded (claim scanner clean, conflicts stated);
+  - validation passed without repair;
+  - the domain's rule category has ≥5 rules.
 - **Partial:** answerable and validated, but with at least one gap:
   - fewer than 5 rules for the category;
   - a varga with no rules;
@@ -314,17 +341,18 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
   - a secondary calculation unavailable (for example compatibility matching).
   The answer must disclose the gap.
 - **Unsupported:** a core calculation is missing. The agent declines that part with `calculation_unavailable`.
+- **Not yet demonstrated:** offline tests pass but no live consultation has been reviewed. **This is the grade for every domain outside the first three live consultations until expansion is approved (A9).**
 
-**Expected starting position (INFERRED from the code inventory; to be confirmed by M3 traces).** Rule counts are rules tagged with the category across the YAML rule files.
+**Expected starting position (INFERRED from the code inventory; to be confirmed by M3 traces; no domain counts as Supported until demonstrated).** Rule counts are rules tagged with the category across the YAML rule files.
 
 | Domain | Rules | Varga rules | Book coverage (local text, offline count) | Expected grade | Main gap |
 |---|---|---|---|---|---|
 | Career | 63 | D10 (Python + YAML) | Strong | Supported | Weak topics from M2 (Chara Dasha, Saturn on the 10th) |
 | Business | 15 | D10 | Good | Supported | |
 | Marriage | 12 | D9 | Strong; UL and DK thin (1 book) | Supported once the Jaimini tool is added | Compatibility matching unavailable |
-| Relationships (non-marital) | via marriage | D9 | Moderate | Partial | No dedicated rules |
+| Relationships (non-marital) | 0 dedicated (marriage rules supporting only) | D9 | Moderate | Partial | No dedicated rules |
 | Children | 12 | D7 | Strong | Supported or Partial | PK needs the Jaimini tool |
-| Childbirth timing | via children | D7 | **Thin** (≈40 mentions, 1 book) | Partial | Timing relies on dasha and transits only |
+| Conception / childbirth | 0 dedicated (children rules shared) | D7 | **Thin** (about 40 mentions, 1 book) | Partial | Timing relies on dasha and transits only; fertility safeguards |
 | Education | 7 | D24 | Good | Partial | Thin rules |
 | Wealth | 7 | D2 | Strong | Partial | Thin rules |
 | Health | 9 | D30 | Good; D30 thin | Partial | Sensitive-domain policy; no strength metrics |
@@ -334,6 +362,29 @@ The adapter is selected by one setting. Rollback means setting it back to the cu
 | Muhurta, matching, prashna, longevity | – | – | – | **Unsupported** | Not calculated, or excluded by policy |
 
 "Partial" is an acceptable M3 outcome when the gap is disclosed. Closing gaps means owner-approved rules (post-M4) and corpus work, not prompt changes.
+
+### 5.5 Tool contracts (draft, for checking before any paid test)
+
+All tools keep the existing envelope (`astrology/tools/contracts.py`): frozen request dataclasses, no extra arguments accepted, an ownership check, size limits, `method` metadata (M1 method profile) and status `ok | partial | error | unsupported`.
+
+| Tool | Request | Returns | Source (unchanged) | Unavailable handling |
+|---|---|---|---|---|
+| `get_jaimini_facts` (new) | `chart_id`; `include`, a subset of `karakas`, `karakamsha`, `padas`, `jaimini_yogas`, `ak_amk` (default: all) | Karakas (7, nodes excluded, as M1b); Karakamsha; `all_padas` 1–12 with AL (1) and UL (12); Jaimini yogas; AK–AmK relation; `method_note` | `astrology/calculations/jaimini.py` | Planetary padas are `calculation_unavailable` (deferred in source) |
+| `get_chart_facts` (extended) | adds `include_yogas: bool = false` | adds `yogas`: name, category, strength, evidence and the stored meaning text, labelled as stored reference text | `chart_data['yogas']` from `charts/yogas.py` (23 yoga types) | Missing data is reported as `partial` |
+| Fact catalog (changed) | – | Publishes all 12 house lords as fact atoms, not only the 2nd, 7th, 10th and 11th | `all_lord_placements` (existing) | – |
+| `search_astrology_knowledge` (changed) | `chart_id`; `query` (model-written, ≤200 bytes); optional `domain` and `purpose` (for the trace); `result_count` 1–5, raised to ≥3 | Passages with provider score, citation, `low_score_heuristic` (advisory); `support_status` | M2 `direct` adapter (hosted as rollback) | `retrieval_failed` (provider error, timeout, budget, not configured) is distinct from an empty or irrelevant result. The model sets `no_source_support` when it judges nothing relevant |
+| Non-answer states (new, all tools) | – | `calculation_unavailable` (unsupported or not implemented), `retrieval_failed`, `no_source_support`, each with a fixed disclosure | – | Never converted into invented values |
+
+Out of scope, all `calculation_unavailable`: muhurta and panchanga, kundli matching, shadbala, prashna, longevity, planetary padas.
+
+### 5.6 Staged test and spending plan (A9)
+
+| Stage | Contents | Paid? | Gate |
+|---|---|---|---|
+| 0 | Owner reviews `domains.v0.yaml` (OD-24) and the §5.5 contracts | No | Owner approval |
+| 1 | Implementation; full offline suite (scripted provider): all 12 domains, mixed questions, distinction pairs, the three non-answer states, safeguards, wrapper parity | No | All green; report |
+| 2 | **Three live consultations:** career, marriage, children, on synthetic charts. Each is capped at US$0.05 and the stage at US$0.15 | Yes | Owner reviews the answers, traces, model-capability notes and actual spend |
+| 3 | Expansion, only if approved: remaining domains, mixed-domain questions, the labelling set (M3-AC3) | Yes | Total M3 spend ≤ US$1.00 |
 
 ---
 
@@ -393,20 +444,20 @@ Pin the career guidance back to the general `domains.v0.yaml` career entry (M3 b
 | **OD-20** (new) | Include the chart-recalculation-on-GET fix (P-3) in M1 | Yes: small, low risk | M1 start |
 | **OD-5a** | Approve one read-only vector-store listing call, plus a paid M2 evaluation cap | Approve, with a cap of US$3 | M2 start |
 | **OD-11** | Source rights: which books may be quoted or cited to paying users, and whether `300 Astrology Yoga _ … _ Astrotalk.pdf` (an apparent website capture) stays in the store | Cite by title and paraphrase only until rights are confirmed. Consider removing the website capture. | M2 end / before M3 user-facing citations |
-| **OD-7** (revised) | Model(s) and prices. Only `gpt-4o-mini` is priced today (`accounts/usage_policy.py:5-7`). | **`gpt-4o-mini` for every M3 round** (agent, labelling, repair). Compare a stronger composer only in M4, with separate approval and prices you supply. | M3 start |
-| **OD-17** | Allowlist mechanism | Setting-based list of user IDs for M3 (no migration). Move to an admin-managed flag in M7. | M3 start |
-| **OD-16** (now required by R10) | Answer format vs AGENTS.md. AGENTS.md requires 12 mandatory sections and names career/business as the MVP scope. | Amend AGENTS.md: answers are conversational prose that must **contain** a direct answer, timing (when asked), the factors used, conflicts and an evidence-strength label. The per-system basis moves to the evidence panel. The MVP clause becomes "general-purpose; career is the M4 benchmark". The "mandatory evidence by question type" lists become the minimum-investigation data in `domains.v0.yaml`. | M3 start |
+| **OD-7** | Model | **Approved (A4):** `gpt-4o-mini` for initial M3 testing only; its capability is measured (M3-AC23). A stronger model needs separate approval. | Done |
+| **OD-17** | Allowlist mechanism | **Approved (A7):** setting-based list, empty by default; existing users stay on legacy until enabled | Done |
+| **OD-16** (approved in principle, A6) | Answer format vs AGENTS.md. AGENTS.md requires 12 mandatory sections and names career/business as the MVP scope. | Amend AGENTS.md: answers are conversational prose that must **contain** a direct answer, timing (when asked), the factors used, conflicts and an evidence-strength label. The per-system basis moves to the evidence panel. The MVP clause becomes "general-purpose; career is the M4 benchmark". The "mandatory evidence by question type" lists become the minimum-investigation data in `domains.v0.yaml`. | M3 start |
 | **OD-14** | Synchronous execution with status polling; background worker only if p95 latency exceeds your threshold | Approve. Set the threshold after M3 latency data is available. | M3 end |
 | **OD-9** | Count agreement by independent roots in the agent; leave legacy scores untouched | Approve | M4 start |
 | **OD-18** (new) | Your review time for the 4 career policies and the 12-answer rubric review, and approval of the rubric itself | Plan about 2 review sessions | M4 |
 | **OD-19** (new) | Remote push: verify whether `github.com/sks6184/AstoWebsite` is private and is the intended destination, before any push | Claude can check visibility read-only via `gh` when you ask; no push without your approval | Any time |
 | OD-21 (new) | Branch/merge policy | Milestone branches from the preservation branch; merge into local `main` only after your sign-off at each milestone | M1 start |
-| **OD-22** (new) | Domain list and mapping (§5.1 item 2). Relationships map to `marriage`, childbirth to `children`, foreign settlement to `foreign_travel`, wealth to `money`. Should `family`, `vehicle` and `legal_and_enemies` stay? | Approve the mapping and keep all 13 categories plus `general`. Re-split relationships from marriage only once dedicated rules exist. | M3 start |
-| **OD-23** (new) | Sensitive-domain policy | **Health:** no diagnosis or treatment advice, plus a short note recommending a qualified professional. **Death and longevity:** decline. **Fertility and childbirth:** no certainty claims; supportive wording; timing only as indications. **Legal:** no legal advice. You approve the exact wording. | M3 start |
+| **OD-22** (amended, A2) | Domain list | 12 primary domains, with relationships ≠ marriage and children ≠ conception/childbirth, sharing tools and rule categories where needed. **Open:** keep the secondary domains `family`, `vehicle` and `legal_and_enemies`? | M3 start |
+| **OD-23** (approved in principle, A8; final wording is in `domains.v0.yaml` for review) | Sensitive-domain policy | **Health:** no diagnosis or treatment advice, plus a short note recommending a qualified professional. **Death and longevity:** decline. **Fertility and childbirth:** no certainty claims; supportive wording; timing only as indications. **Legal:** no legal advice. You approve the exact wording. | M3 start |
 | **OD-24** (new) | Review of the astrological content of `domains.v0.yaml` (houses, karakas, vargas, Jaimini points, minimums, vocabulary) | Claude drafts it from `CATEGORY_RULES`, the rule files and the M2 term counts; you review it before live traces. About one review session. | Before M3 live traces |
-| **OD-25** (new) | New tool wrappers: `get_jaimini_facts`, yogas in chart facts, all 12 house lords in the fact catalog | Approve. They expose existing calculations only; no calculation code changes. | M3 start |
-| **OD-26** (new) | Retrieval limits: weak threshold τ and the search cap | τ = 0.70 (weakly supported by M2) **plus** the model's judgement; at most 4 searches per consultation; at least 3 passages per search | M3 start |
-| **OD-27** (new) | M3 budgets | **Per consultation:** ≤6 rounds, ≤4 searches, largest round ≤25k input tokens, ≤US$0.05. **M3 total paid cap: US$1.00** (about US$2.27 of your API balance is estimated to remain, INFERRED). Covers 13 live end-to-end traces, the 40-question labelling check and repair or retry headroom. | M3 start |
+| **OD-25** | Tool wrappers | **Approved (A5).** Contracts are in §5.5 for checking | Contract check before paid tests |
+| **OD-26** | Retrieval limits | **Approved as amended (A3):** 0.70 is an advisory flag only; the model judges relevance; 4 searches is a ceiling; ≥3 passages per search | Done |
+| **OD-27** (approved, A9: US$1.00 total, US$0.05 per consultation, staged per §5.6) | M3 budgets | **Per consultation:** ≤6 rounds, ≤4 searches, largest round ≤25k input tokens, ≤US$0.05. **M3 total paid cap: US$1.00** (about US$2.27 of your API balance is estimated to remain, INFERRED). Covers 13 live end-to-end traces, the 40-question labelling check and repair or retry headroom. | M3 start |
 | **OD-28** (new) | Charts for live traces | Synthetic reference charts R1–R5 only. Your own chart only with explicit per-run consent; never committed. | M3 start |
 | **OD-29** (new) | Out of scope for M3, declared `calculation_unavailable` | Muhurta and panchanga, kundli matching, shadbala, prashna, longevity | M3 start |
 | **OD-30** (new) | M2 billing reconciliation | Compare the OpenAI dashboard for 2026-11-11 with US$0.0743. It settles the direct-search price used in budgets. | Before the M3 live phase |
@@ -427,4 +478,4 @@ Unchanged in placement: automatic memory (OD-6) stays in **M5**. M3 keeps the ex
 
 ---
 
-**Next step:** you approve or amend revised §5–§6 and decide OD-7, OD-16, OD-17 and OD-22 to OD-30. M3 then starts on `claude/m3-general-agent` with a scope record (`docs/claude_migration/M3_SCOPE.md`). Until then no M3 application code is written.
+**Next step (revision 3):** you review `astrology/methodology/domains.v0.yaml` (OD-24) and the §5.5 tool contracts, decide the remaining parts of OD-22, OD-28, OD-29 and OD-30, and approve revision 3. M3 then starts on `claude/m3-general-agent` with a scope record (`docs/claude_migration/M3_SCOPE.md`). Until then no M3 application code is written.
