@@ -35,6 +35,7 @@ def manifest(result, provider_models=()):
                 item['reason'] = str(event.get('reason', ''))[:160]
             if event.get('event') == 'validation':
                 item['issues'] = [str(i)[:120] for i in event.get('issues', [])[:8]]
+                item['missing'] = [str(m)[:60] for m in event.get('missing', [])[:8]]
             value['agent_events'].append(item)
     while len(json.dumps(value, ensure_ascii=False).encode()) > 16384:
         value['truncated'] = True

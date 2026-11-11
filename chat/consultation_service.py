@@ -105,35 +105,55 @@ def _append_turn(user, conversation_id, question, *, request_id, expected_revisi
         result = {'status': 'error', 'answer': 'The requested conversation context is unavailable or invalid. Please review your references and try again.', 'model': 'deterministic'}
     except Exception:
         result = {'status': 'error', 'answer': 'The reading could not be completed. Please retry with a new submission.', 'model': 'deterministic'}
-    with transaction.atomic():
-        if not UsageRequest.objects.select_for_update().filter(pk=usage.pk, status__in=['reserved', 'running']).first():
-            Conversation.objects.filter(pk=conversation_id, active_request=request_id).update(active_request=None, active_since=None)
-            return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
-        if not SavedChart.objects.select_for_update().filter(pk=conversation.chart_id, user=user).exists():
-            settle(usage.pk, reason='cancelled')
-            return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
-        current = Conversation.objects.filter(pk=conversation_id, user=user, chart_id=conversation.chart_id,
-            memory_epoch=turn.epoch, revision=turn.sequence, active_request=request_id)
-        if not current.update(active_request=None, active_since=None, updated_at=timezone.now()):
-            settle(usage.pk, reason='cancelled')
-            return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
-        conversation.refresh_from_db()
-        assistant = None
-        if result.get('status') != 'error':
-            assistant = Message.objects.create(conversation=conversation, role=Message.ASSISTANT,
-                content=result['answer'], kind='interpretation', model_name=result['model'][:80],
-                prompt_tokens=result.get('prompt_tokens', 0), completion_tokens=result.get('completion_tokens', 0),
-                provenance={'source': 'agent_or_legacy', 'trust': 'preliminary_interpretation_not_fact',
-                            'evidence': manifest(result, usage.provider_calls.values_list('model', flat=True)),
-                            'memory_epoch': turn.epoch, 'status': result.get('status', 'legacy_unvalidated')})
-        if conversation.memory_enabled:
-            Conversation.objects.filter(pk=conversation.pk).update(memory_summary=update_summary(conversation, user_message, assistant, result))
-        ConsultationTurn.objects.filter(pk=turn.pk).update(state='complete' if assistant else 'failed', assistant_message=assistant)
-        checked = result.get('validation', result.get('validation_result', {}))
-        delivered = bool(assistant and result.get('status') == 'ok' and checked.get('passed') is True
-                         and result.get('stop_reason', 'complete') == 'complete')
-        settle(usage.pk, delivered=delivered, reason='partial_free' if assistant else 'failed')
-    return TurnOutcome(200, 'complete' if assistant else 'failed', conversation_id, result)
+    try:
+        with transaction.atomic():
+            if not UsageRequest.objects.select_for_update().filter(pk=usage.pk, status__in=['reserved', 'running']).first():
+                Conversation.objects.filter(pk=conversation_id, active_request=request_id).update(active_request=None, active_since=None)
+                return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
+            if not SavedChart.objects.select_for_update().filter(pk=conversation.chart_id, user=user).exists():
+                settle(usage.pk, reason='cancelled')
+                return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
+            current = Conversation.objects.filter(pk=conversation_id, user=user, chart_id=conversation.chart_id,
+                memory_epoch=turn.epoch, revision=turn.sequence, active_request=request_id)
+            if not current.update(active_request=None, active_since=None, updated_at=timezone.now()):
+                settle(usage.pk, reason='cancelled')
+                return TurnOutcome(409, 'conversation_changed_result_discarded', conversation_id)
+            conversation.refresh_from_db()
+            assistant = None
+            if result.get('status') != 'error':
+                assistant = Message.objects.create(conversation=conversation, role=Message.ASSISTANT,
+                    content=result['answer'], kind='interpretation', model_name=result['model'][:80],
+                    prompt_tokens=result.get('prompt_tokens', 0), completion_tokens=result.get('completion_tokens', 0),
+                    provenance={'source': 'agent_or_legacy', 'trust': 'preliminary_interpretation_not_fact',
+                                'evidence': manifest(result, usage.provider_calls.values_list('model', flat=True)),
+                                'memory_epoch': turn.epoch, 'status': result.get('status', 'legacy_unvalidated')})
+            if conversation.memory_enabled:
+                Conversation.objects.filter(pk=conversation.pk).update(memory_summary=update_summary(conversation, user_message, assistant, result))
+            ConsultationTurn.objects.filter(pk=turn.pk).update(state='complete' if assistant else 'failed', assistant_message=assistant)
+            checked = result.get('validation', result.get('validation_result', {}))
+            delivered = bool(assistant and result.get('status') == 'ok' and checked.get('passed') is True
+                             and result.get('stop_reason', 'complete') == 'complete')
+            settle(usage.pk, delivered=delivered, reason='partial_free' if assistant else 'failed')
+        return TurnOutcome(200, 'complete' if assistant else 'failed', conversation_id, result)
+    except Exception:
+        # A failed save (for example a locked SQLite database) must never leave the request running,
+        # the credit reserved or the conversation locked. Settle unbilled, then re-raise as before.
+        _abandon(usage.pk, conversation_id, request_id, turn.pk)
+        raise
+
+
+def _abandon(usage_id, conversation_id, request_id, turn_id):
+    """Best-effort release after a failed save: unbilled settlement, unlocked conversation, failed turn."""
+    import time
+    for attempt in range(3):
+        try:
+            with transaction.atomic():
+                settle(usage_id, reason='failed')
+                Conversation.objects.filter(pk=conversation_id, active_request=request_id).update(active_request=None, active_since=None)
+                ConsultationTurn.objects.filter(pk=turn_id, state='pending').update(state='failed')
+            return
+        except Exception:
+            time.sleep(0.5 * (attempt + 1))   # e.g. the database is still locked; never mask the original error
 
 
 def append_turn(user, conversation_id, question, **kwargs):

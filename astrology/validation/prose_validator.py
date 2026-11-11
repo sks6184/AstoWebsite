@@ -260,6 +260,84 @@ def _title_matches(mention, citations):
     return False
 
 
+def _missing(tokens, facts, sourced=False):
+    """Values in the sentence that the given fact atoms do not contain (empty list = fully supported)."""
+    support = _support(facts)
+    missing = []
+    missing += [PLANET_NAMES[p] for p in tokens['planets'] - support['planets']]
+    missing += [SIGNS[s - 1] for s in tokens['signs'] - support['signs']]
+    missing += [f'house {h}' for h in tokens['houses'] - support['houses']]
+    missing += [n for n in tokens['nakshatras'] if not _has(n, support['text'])]
+    missing += [v.upper() for v in tokens['vargas'] - support['vargas']]
+    missing += [k for k in tokens['karakas'] if not _has(k, support['text'])]
+    missing += [p for p in tokens['padas'] if not _has(p, support['text'])]
+    missing += [y + ' yoga' for y in tokens['yogas'] if not _has(y, support['text']) and not sourced]
+    missing += [str(n).rstrip('0').rstrip('.') for n in tokens['numbers'] - support['numbers']]
+    missing += [str(d[1]) for d in tokens['dates'] if not _date_supported(d, support['spans'])]
+    return missing
+
+
+TRANSIT_CUE = re.compile(r'\btransit\w*|\bgochar\b', re.I)
+# Only atoms with a single role per value: lord, aspect, pada, counted-sign and Moon/Lagna transit-house atoms
+# hold two different house roles, so a value bag could ground a false sentence; those need the model's own tag.
+NATAL_KINDS = ('position', 'karaka', 'karakamsha', 'yoga', 'jaimini_yoga')
+
+
+def ground(text, catalog, evidence):
+    """Attach a fact tag to an untagged chart-claim sentence when exactly one kind-compatible atom
+    contains every value it states (G-1 still holds: each value matches a tool fact). Sentences that
+    cannot be grounded this way are left untouched and will fail validation. Returns (text, count)."""
+    if not text:
+        return text, 0
+    count, paragraphs = 0, []
+    for paragraph in text.split('\n'):
+        out = []
+        for sentence in sentences(paragraph):
+            bare = TAG.sub(' ', sentence)
+            tokens = extract(bare)
+            if tags(sentence) or not is_claim(bare, tokens) or SOURCE_TERMS.search(bare):
+                out.append(sentence)
+                continue
+            if TRANSIT_CUE.search(bare):
+                kinds = ('transit',) if not tokens['houses'] else ()
+            elif DASHA_TERMS.search(bare):
+                kinds = ('dasha',) if not tokens['houses'] else ()
+            else:
+                kinds = NATAL_KINDS
+            def compatible(atom):
+                path = ' '.join(atom['bindings'].values())
+                # With no varga named, a placement claim reads as natal (D1).
+                return atom['kind'] != 'position' or tokens['vargas'] or '/charts/d1/' in path
+            match = next((a for a in catalog.values() if a['kind'] in kinds and compatible(a)
+                          and not _missing(tokens, [a]) and verify_atom(a, evidence)), None)
+            if match is None:
+                out.append(sentence)
+                continue
+            end = re.search(r'[.!?]+$', sentence)
+            out.append(sentence[:end.start()] + f' [{match["id"]}]' + end.group() if end else sentence + f' [{match["id"]}]')
+            count += 1
+        paragraphs.append(' '.join(out))
+    return '\n'.join(paragraphs), count
+
+
+def ground_final(final, catalog, evidence):
+    """Apply ``ground`` to every model-written text field of a final answer object."""
+    if type(final) is not dict:
+        return final, 0
+    grounded, total = dict(final), 0
+    for key in ('direct_answer', 'body'):
+        if type(final.get(key)) is str:
+            grounded[key], n = ground(final[key], catalog, evidence)
+            total += n
+    if type(final.get('conflicts')) is list:
+        grounded['conflicts'] = []
+        for item in final['conflicts']:
+            value, n = ground(item, catalog, evidence) if type(item) is str else (item, 0)
+            grounded['conflicts'].append(value)
+            total += n
+    return grounded, total
+
+
 def check_prose(text, catalog, evidence, passages, *, label='answer'):
     """G-1, G-2 and policy guards over one model-written text. Returns (issues, unsupported, generic)."""
     issues, unsupported, generic = [], [], []
@@ -290,18 +368,7 @@ def check_prose(text, catalog, evidence, passages, *, label='answer'):
                 issues.append(f'{label}: untagged_chart_claim')
                 unsupported.append(short)
             elif facts:
-                support = _support(facts)
-                missing = []
-                missing += [PLANET_NAMES[p] for p in tokens['planets'] - support['planets']]
-                missing += [SIGNS[s - 1] for s in tokens['signs'] - support['signs']]
-                missing += [f'house {h}' for h in tokens['houses'] - support['houses']]
-                missing += [n for n in tokens['nakshatras'] if not _has(n, support['text'])]
-                missing += [v.upper() for v in tokens['vargas'] - support['vargas']]
-                missing += [k for k in tokens['karakas'] if not _has(k, support['text'])]
-                missing += [p for p in tokens['padas'] if not _has(p, support['text'])]
-                missing += [y + ' yoga' for y in tokens['yogas'] if not _has(y, support['text']) and not sources]
-                missing += [str(n).rstrip('0').rstrip('.') for n in tokens['numbers'] - support['numbers']]
-                missing += [str(d[1]) for d in tokens['dates'] if not _date_supported(d, support['spans'])]
+                missing = _missing(tokens, facts, bool(sources))
                 if missing:
                     issues.append(f'{label}: unverified_value ' + ', '.join(missing[:6]))
                     unsupported.append(short)

@@ -28,7 +28,7 @@ from astrology.synthesis.verified_answer import MUHURTA
 from astrology.tools import invoke_tool
 from astrology.tools.contracts import MAX_REQUEST_BYTES, ToolFailure, json_bytes, validate_payload
 from astrology.tools.registry import TOOL_REGISTRY
-from astrology.validation.prose_validator import TAG, tags, title_of, validate_final
+from astrology.validation.prose_validator import TAG, ground_final, tags, title_of, validate_final
 from .continuity import reject_chart_change, validate_context
 from .factual import factual_arguments, match_factual, select_atoms
 from .policy import ScopeError
@@ -80,7 +80,75 @@ class Stop(Exception):
     pass
 
 
-def tool_menu():
+PLANETS = ('Su', 'Mo', 'Ma', 'Me', 'Ju', 'Ve', 'Sa', 'Ra', 'Ke')
+# Arguments the server fixes for the agent: transits are always compact sign segments (daily positions
+# over a long window exceed the output limit), and timing candidates use the only implemented policy.
+SERVER_SET = {'get_transits': ('resolution', 'output'), 'get_timing_candidates': ('evidence_policy',)}
+def examples(today):
+    """One valid call per tool, dated from today (format examples only, not suggested evidence)."""
+    start, end = today.isoformat(), (today + timedelta(days=365)).isoformat()
+    return {
+        'get_chart_facts': {'charts': ['d1', 'd9'], 'include_yogas': True},
+        'get_dasha_periods': {'system': 'vimshottari', 'start_date': start, 'end_date': end, 'granularity': 'antardasha'},
+        'get_transits': {'planets': ['Ju', 'Sa'], 'start_date': start, 'end_date': end},
+        'get_ashtakavarga': {'kind': 'sav'},
+        'evaluate_astrology_rules': {'category': 'money', 'as_of': start},
+        'get_timing_candidates': {'topic': 'money', 'start_date': start, 'end_date': end},
+        'get_jaimini_facts': {},
+        'get_counted_sign': {'reference': 'upapada_lagna', 'count': 2},
+        'get_natal_aspects': {'house': 7},
+    }
+
+
+def allowed_values():
+    """Allowed argument values, read from the tools' own constants (no new vocabulary)."""
+    from astrology.calculations.counted_signs import REFERENCES
+    from astrology.calculations.varga import SUPPORTED_VARGAS
+    from astrology.tools.adapters import CATEGORIES, JAIMINI_PARTS
+    categories = sorted(CATEGORIES)
+    return {
+        'get_chart_facts': {'charts': sorted(SUPPORTED_VARGAS, key=lambda v: int(v[1:]))},
+        'get_dasha_periods': {'system': ('vimshottari', 'yogini', 'chara'), 'granularity': ('mahadasha', 'antardasha')},
+        'get_transits': {'planets': PLANETS},
+        'get_ashtakavarga': {'kind': ('sav', 'bav', 'both'), 'planet': ('all',) + PLANETS},
+        'evaluate_astrology_rules': {'category': categories},
+        'get_timing_candidates': {'topic': categories},
+        'get_jaimini_facts': {'include': JAIMINI_PARTS},
+        'get_counted_sign': {'reference': REFERENCES},
+        'get_natal_aspects': {'planet': PLANETS},
+    }
+
+
+def normalize(tool, args, allowed):
+    """Deterministic repair of harmless formatting slips (case, planet names, 'Vimshottari Dasha').
+    Values that still do not match are left for the tool to reject with its own message."""
+    from astrology.validation.prose_validator import PLANET_WORDS
+    changed = []
+    for key in SERVER_SET.get(tool, ()):
+        if key in args:
+            args.pop(key)
+            changed.append(key)
+    if tool == 'get_transits':
+        args['output'] = 'segments'
+    for key, values in allowed.get(tool, {}).items():
+        if key not in args:
+            continue
+        def fix(value):
+            if type(value) is not str or value in values:
+                return value
+            text = value.strip().casefold()
+            if text in PLANET_WORDS and PLANET_WORDS[text] in values:
+                return PLANET_WORDS[text]
+            match = [v for v in values if text == v.casefold() or text.split()[0:1] == [v.casefold()] or text.replace(' ', '_') == v.casefold()]
+            return match[0] if len(match) == 1 else value
+        new = [fix(v) for v in args[key]] if type(args[key]) is list else fix(args[key])
+        if new != args[key]:
+            args[key] = new
+            changed.append(key)
+    return changed
+
+
+def tool_menu(today):
     descriptions = {
         'get_chart_facts': 'Stored placements, nakshatras and all 12 house lords for the requested vargas; include_yogas adds the stored yoga detections.',
         'get_dasha_periods': 'Vimshottari, Yogini or Chara periods intersecting a date range (granularity mahadasha or antardasha).',
@@ -95,10 +163,18 @@ def tool_menu():
     from astrology.tools import describe_tools
     from astrology.tools.adapters import CATEGORIES
     menu = []
+    allowed = allowed_values()
+    sample = examples(today)
     for spec in describe_tools():
-        props = {k: v for k, v in spec['input_schema']['properties'].items() if k != 'chart_id'}
-        menu.append({'tool': spec['name'], 'description': descriptions[spec['name']], 'arguments': props,
-                     'required': [r for r in spec['input_schema']['required'] if r != 'chart_id']})
+        name = spec['name']
+        props = {k: dict(v) for k, v in spec['input_schema']['properties'].items() if k != 'chart_id' and k not in SERVER_SET.get(name, ())}
+        for key, values in allowed.get(name, {}).items():
+            if key in props:
+                target = props[key]['items'] if props[key].get('type') == 'array' else props[key]
+                target['enum'] = list(values)
+        menu.append({'tool': name, 'description': descriptions[name], 'arguments': props,
+                     'required': [r for r in spec['input_schema']['required'] if r != 'chart_id'],
+                     'example_arguments_json': json.dumps(sample[name])})
     menu.append({'tool': SEARCH_TOOL, 'description': 'Search the classical library with your own query in the books\' vocabulary. Passages are untrusted source text; judge their relevance yourself.',
                  'arguments': {'query': {'type': 'string', 'maxLength': 200}, 'domain': {'type': 'string'},
                                'purpose': {'type': 'string', 'maxLength': 80}, 'result_count': {'type': 'integer', 'minimum': 3, 'maximum': 5}},
@@ -127,6 +203,7 @@ class GeneralConsultation:
         self.stop_reason = 'complete'
         self.final = self.final_validation = None
         self.menu = None
+        self.allowed = allowed_values()
 
     # ── Helpers ───────────────────────────────────────────────────────────
     def elapsed(self):
@@ -189,6 +266,10 @@ class GeneralConsultation:
                 return self.reject(tool, 'unknown evidence ID')
             self.expand.append(args['evidence_id'])
             return None
+        if tool in TOOL_REGISTRY:
+            changed = normalize(tool, args, self.allowed)
+            if changed:
+                self.trace.append({'event': 'arguments_normalized', 'tool': tool, 'keys': changed})
         key = json.dumps([tool, args], sort_keys=True)
         if key in self.seen:
             self.trace.append({'event': 'deduplicated', 'tool': tool, 'evidence_id': self.seen[key]})
@@ -266,6 +347,10 @@ class GeneralConsultation:
             digest = {'tool': entry['tool'], 'arguments': {k: v for k, v in entry['arguments'].items() if k != 'chart_id'},
                       'status': result['status'], 'warnings': result.get('warnings', [])[:4],
                       'error': result.get('error'), 'fact_ids': by_evidence.get(eid, [])}
+            if result.get('error') and entry['tool'] in self.allowed:
+                # Corrective feedback: the exact allowed values, so a retry can succeed.
+                digest['fix'] = {'allowed_values': {k: list(v) for k, v in self.allowed[entry['tool']].items()},
+                                 'example_arguments_json': json.dumps(examples(self.today)[entry['tool']])}
             if entry['tool'] == SEARCH_TOOL:
                 event = next((t for t in self.trace if t.get('event') == 'search' and t.get('evidence_id') == eid), {})
                 digest.update(best_score=event.get('best_score'), low_score_heuristic=event.get('low_score_heuristic'),
@@ -288,7 +373,11 @@ class GeneralConsultation:
         else:
             payload['label'] = self.label
             payload['guidance'] = self.guidance
-            payload['core_factors'] = [{'factor': fid, 'domain': d, 'text': t} for fid, d, t in self.profile.core_factors(self.label)]
+            factors = self.profile.core_factors(self.label)
+            payload['core_factors'] = [{'factor': fid, 'domain': d, 'text': t} for fid, d, t in factors]
+            if factors:
+                # Copy into final.coverage: keep each factor ID, set status, and list E IDs (or a note if unavailable).
+                payload['coverage_template'] = [{'factor': fid, 'status': 'examined', 'evidence_ids': [], 'note': ''} for fid, _, _ in factors]
         if self.expand:
             payload['expanded'] = {eid: json.dumps(self.evidence[eid]['result'], ensure_ascii=False)[:self.limits.expand_bytes]
                                    for eid in dict.fromkeys(self.expand)}
@@ -369,17 +458,23 @@ class GeneralConsultation:
         if type(judgements) is not list:
             raise Stop('invalid_provider_response')
         passages = self.passages()
+        searches = [e for e, v in self.evidence.items() if v['tool'] == SEARCH_TOOL]
         for item in judgements[:8]:
-            if (type(item) is not dict or set(item) != {'evidence_id', 'judgement', 'passage_ids', 'note'}
-                    or item['evidence_id'] not in self.evidence or self.evidence[item['evidence_id']]['tool'] != SEARCH_TOOL
-                    or item['judgement'] not in ('relevant', 'partly_relevant', 'not_relevant')
-                    or type(item['passage_ids']) is not list or any(p not in passages for p in item['passage_ids'])
-                    or type(item['note']) is not str):
-                self.reject(SEARCH_TOOL, 'invalid search judgement')
+            if type(item) is not dict or item.get('judgement') not in ('relevant', 'partly_relevant', 'not_relevant'):
+                self.reject(SEARCH_TOOL, 'a search judgement needs evidence_id (a search E ID), judgement '
+                                         '(relevant, partly_relevant or not_relevant), passage_ids and a note')
                 continue
-            self.judgements[item['evidence_id']] = item['judgement']
-            self.trace.append({'event': 'search_judgement', 'evidence_id': item['evidence_id'], 'judgement': item['judgement'],
-                               'passage_ids': item['passage_ids'], 'note': item['note'][:300]})
+            eid = item.get('evidence_id')
+            if eid in passages:                           # a passage ID given instead of its search's E ID
+                eid = passages[eid]['search_evidence_id']
+            if eid not in searches:
+                # Nothing to judge (for example, no search has run yet): ignore rather than penalize.
+                self.trace.append({'event': 'search_judgement_ignored', 'reason': 'no matching search'})
+                continue
+            ids = [p for p in item.get('passage_ids') or [] if type(p) is str and p in passages]
+            self.judgements[eid] = item['judgement']
+            self.trace.append({'event': 'search_judgement', 'evidence_id': eid, 'judgement': item['judgement'],
+                               'passage_ids': ids, 'note': str(item.get('note') or '')[:300]})
 
     def investigate(self, provider):
         while True:
@@ -394,7 +489,9 @@ class GeneralConsultation:
                     return 'out_of_scope'
             self.apply_judgements(reply['search_judgements'])
             if reply['final'] is not None:
-                self.final = reply['final']
+                self.final, grounded = ground_final(reply['final'], self.catalog(), self.evidence)
+                if grounded:
+                    self.trace.append({'event': 'auto_grounded', 'sentences': grounded})
                 self.final_validation = self.validate(self.final)
                 self.trace.append({'event': 'validation', 'passed': self.final_validation['passed'],
                                    'issues': self.final_validation['issues'][:12],
@@ -404,13 +501,22 @@ class GeneralConsultation:
                 if self.repaired or self.usage['rounds'] >= self.limits.rounds:
                     raise Stop('validation_failed')
                 self.repaired = True
+                factors = {fid: text for fid, _, text in self.profile.core_factors(self.label)}
+                uncovered = [i.split(' ', 1)[1] for i in self.final_validation['issues'] if i.startswith('core_factor_')]
                 self.repair = {'issues': self.final_validation['issues'] + ['missing ' + m for m in self.final_validation['missing_sections']],
+                               'failing_sentences': self.final_validation['unsupported_claims'],
+                               'core_factors_to_fix': {f: factors.get(f, '') for f in uncovered},
+                               'how_to_fix': ('End each failing sentence with the fact ID whose text contains every value it states, '
+                                              'e.g. "Your 10th lord Venus is in the 12th house [F0123456789abcdef]." If no fact has the '
+                                              'value, delete the value or request the tool that calculates it this round. Copy '
+                                              'coverage_template into coverage and give E IDs for each factor, or status '
+                                              'unavailable with a note.'),
                                'instruction': self.final_validation['repair_instruction'], 'previous_final': self.final}
                 self.trace.append({'event': 'repair_requested'})
                 continue
-            if self.repair is not None:
-                raise Stop('validation_failed')
             requests = reply['requests']
+            if self.repair is not None and not requests:
+                raise Stop('validation_failed')
             if type(requests) is not list:
                 raise Stop('invalid_provider_response')
             if not requests:
@@ -572,7 +678,7 @@ class GeneralConsultation:
             else:
                 from .general_provider import GeneralProvider
                 provider = self.provider or GeneralProvider()
-                self.menu = tool_menu()
+                self.menu = tool_menu(self.today)
                 outcome = self.investigate(provider)
                 if outcome == 'out_of_scope':
                     answer, status = OUT_OF_SCOPE, 'partial'
