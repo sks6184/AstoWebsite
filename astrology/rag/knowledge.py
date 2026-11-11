@@ -10,7 +10,7 @@ from accounts.usage_policy import BudgetExceeded
 from charts.models import SavedChart
 from astrology.tools.contracts import ToolFailure, json_bytes, parse_request
 from .knowledge_contracts import (
-    SearchRequest, RetrievalBatch, MAX_RESULTS, SNIPPET_BYTES, TOTAL_SNIPPET_BYTES,
+    SearchRequest, RetrievalBatch, MAX_RESULTS, MIN_RESULTS, SNIPPET_BYTES, TOTAL_SNIPPET_BYTES,
     MAX_OUTPUT_BYTES, HOSTED_OUTPUT_TOKENS, HOSTED_CONTEXT_RESERVE,
 )
 
@@ -30,7 +30,7 @@ def prepare(arguments):
     request = SearchRequest(request.chart_id, request.topic.strip().casefold(),
         tuple(sorted(set(c.strip().casefold() for c in request.concepts))),
         request.tradition.strip().casefold() if request.tradition else None,
-        request.source.strip().casefold() if request.source else None, request.result_count)
+        request.source.strip().casefold() if request.source else None, max(MIN_RESULTS, request.result_count))
     query = json.dumps({'topic': request.topic, 'concepts': request.concepts,
                         'tradition': request.tradition, 'source': request.source}, ensure_ascii=False)
     return request, query

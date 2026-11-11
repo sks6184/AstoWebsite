@@ -11,6 +11,7 @@ Usage:
     manage.py m2_retrieval_eval --accuracy
     manage.py m2_retrieval_eval --summary
     manage.py m2_retrieval_eval --leakcheck
+    manage.py m2_retrieval_eval --run Q1,S1 --adapters direct --label post_ocr --session-cap 0.03 --confirm-paid
 """
 import csv
 import hashlib
@@ -41,6 +42,7 @@ OWNER_BOOKS = [
     'predicting-through-jaimini-chara-dasha.pdf',
     'vargas-vedic-approach.pdf',
     'Yogini Dasha.pdf',
+    'Comprehensive Prediction.pdf',  # Retained by the owner 2026-11-11 (V. P. Goel, divisional charts).
 ]
 QUERIES = {
     'Q1': ('career-factual', 'Results of the 10th lord placed in the 11th house for career and gains'),
@@ -53,6 +55,9 @@ QUERIES = {
     'Q8': ('yogini', 'Results of Sankata yogini dasha and its ruling planet'),
     'Q9': ('varga', 'Interpreting the 10th lord of the Dasamsa (D10) chart for career'),
     'Q10': ('varga', 'Strength of a planet in the Navamsa (D9) confirming the Rasi promise'),
+    # Post-OCR probes (owner-approved, 2026-11-11) aimed at the repaired Speed of Light book.
+    'S1': ('career-factual', 'Saturn placed in the 10th house and its results for career and profession'),
+    'S2': ('career-predictive', 'Rahu in the 10th or 11th house for business, gains and foreign work'),
 }
 SHINGLE = 5
 LEAK_SHINGLE = 12
@@ -124,6 +129,10 @@ class Command(BaseCommand):
         parser.add_argument('--leakcheck', action='store_true')
         parser.add_argument('--confirm-paid', action='store_true')
         parser.add_argument('--books-dir', default=str(BASE.parent))
+        parser.add_argument('--label', default='',
+                            help='Write hits to hits_<label>.jsonl / review_<label>.csv so the M2 baseline is never overwritten.')
+        parser.add_argument('--session-cap', default=None,
+                            help='Extra cap (US$) for this invocation, on top of the overall M2 cap.')
         parser.add_argument('--review', default='review_for_owner.csv',
                             help='Rated sheet inside the private M2 folder (offline; used by --summary).')
 
@@ -131,6 +140,13 @@ class Command(BaseCommand):
         self.ledger = Ledger(PRIVATE / 'ledger.jsonl')
         self.books_dir = Path(options['books_dir'])
         self.review = options['review']
+        label = re.sub(r'[^a-z0-9_]', '', options['label'].lower())
+        self.hits_name = f'hits_{label}.jsonl' if label else 'hits.jsonl'
+        self.review_name = f'review_{label}.csv' if label else 'review_for_owner.csv'
+        self.label = label or None
+        self.suffix = f'_{label}' if label else ''
+        self.session_cap = Decimal(options['session_cap']) if options['session_cap'] else None
+        self.session_reserved = Decimal(0)
         if (options['manifest'] or options['run']) and not options['confirm_paid']:
             raise CommandError('Provider calls require --confirm-paid (owner-approved M2 cap).')
         if options['manifest']:
@@ -219,12 +235,16 @@ class Command(BaseCommand):
         if unknown:
             raise CommandError(f'Unknown query/adapter: {unknown}')
         built = {'hosted': HostedFileSearch, 'direct': DirectVectorStoreSearch}
-        hits_path = PRIVATE / 'hits.jsonl'
+        hits_path = PRIVATE / self.hits_name
         for qid in query_ids:
             category, text = QUERIES[qid]
             for name in adapters:
                 tariff, reserve = self.reservation(name)
                 self.ledger.check(reserve)  # Stop before any call that might exceed the cap.
+                if self.session_cap is not None and self.session_reserved + reserve > self.session_cap:
+                    raise CommandError(f'Refused: reservation {reserve} would exceed the session cap '
+                                       f'({self.session_reserved} of {self.session_cap} already reserved).')
+                self.session_reserved += reserve
                 adapter = built[name]()
                 request = SearchRequest(0, category, (text[:80],), result_count=5)
                 started = time.perf_counter()
@@ -238,7 +258,7 @@ class Command(BaseCommand):
                     rated = cost_for(tariff, batch.input_tokens, batch.output_tokens, file_searches=1)
                 else:
                     rated = None
-                self.ledger.write({'kind': 'search', 'query': qid, 'adapter': name, 'status': status,
+                self.ledger.write({'kind': 'search', 'label': self.label, 'query': qid, 'adapter': name, 'status': status,
                     'reserved': reserve, 'rated': rated, 'input_tokens': batch.input_tokens if batch else None,
                     'output_tokens': batch.output_tokens if batch else None, 'hits': len(batch.results) if batch else 0,
                     'latency_ms': latency, 'price_basis': 'provider-reported tokens + US$0.0025/search' if name == 'hosted'
@@ -255,7 +275,7 @@ class Command(BaseCommand):
     def write_review(self):
         """Private owner-labelling sheet (never committed): one row per hit, rating column blank."""
         hits = self.hits()
-        path = PRIVATE / 'review_for_owner.csv'
+        path = PRIVATE / self.review_name
         previous = {}
         if path.exists():
             with path.open(encoding='utf-8-sig', newline='') as handle:
@@ -269,7 +289,7 @@ class Command(BaseCommand):
                                  h['score'], h['text'][:1500], previous.get(key, '')])
 
     def hits(self):
-        path = PRIVATE / 'hits.jsonl'
+        path = PRIVATE / self.hits_name
         if not path.exists():
             return []
         rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
@@ -281,12 +301,13 @@ class Command(BaseCommand):
     # ── Offline analysis ────────────────────────────────────────────────────
 
     def book_text(self, filename):
-        cache = PRIVATE / 'text' / (sha(filename) + '.txt')
-        if cache.exists():
-            return cache.read_text(encoding='utf-8')
         source = self.books_dir / filename
         if not source.exists():
             return None
+        stat = source.stat()  # Keyed by size and mtime so a replaced (re-OCR'd) book is re-extracted.
+        cache = PRIVATE / 'text' / (sha(f'{filename}|{stat.st_size}|{stat.st_mtime_ns}') + '.txt')
+        if cache.exists():
+            return cache.read_text(encoding='utf-8')
         from pypdf import PdfReader
         text = '\n'.join((page.extract_text() or '') for page in PdfReader(str(source)).pages)
         cache.parent.mkdir(parents=True, exist_ok=True)
@@ -308,12 +329,12 @@ class Command(BaseCommand):
                             'text_sha256_16': sha(h['text']), 'local_copy': h['filename'] in books,
                             'match_attributed': round(scores.get(h['filename'], 0.0), 3) if h['filename'] in books else None,
                             'best_local_book': best, 'match_best': round(scores[best], 3) if best else None})
-        (PRIVATE / 'accuracy.json').write_text(json.dumps(results, indent=1), encoding='utf-8')
+        (PRIVATE / f'accuracy{self.suffix}.json').write_text(json.dumps(results, indent=1), encoding='utf-8')
         extract = {name: len(s) for name, s in books.items()}
         self.stdout.write(f'Accuracy: {len(results)} hits scored; local books with extractable text (5-gram counts): {extract}')
 
     def summary(self):
-        rows = [r for r in self.ledger.rows() if r['kind'] == 'search']
+        rows = [r for r in self.ledger.rows() if r['kind'] == 'search' and r.get('label') == self.label]
         ratings = {}
         review = PRIVATE / Path(self.review).name  # always inside the private folder
         if review.exists():
@@ -321,7 +342,8 @@ class Command(BaseCommand):
                 for r in csv.DictReader(handle):
                     if r.get('rating', '').strip() in ('0', '1', '2'):
                         ratings[(r['query'], r['adapter'], r['rank'])] = int(r['rating'])
-        accuracy = json.loads((PRIVATE / 'accuracy.json').read_text()) if (PRIVATE / 'accuracy.json').exists() else []
+        acc_path = PRIVATE / f'accuracy{self.suffix}.json'
+        accuracy = json.loads(acc_path.read_text()) if acc_path.exists() else []
         out = {}
         for name in sorted({r['adapter'] for r in rows}):
             mine = [r for r in rows if r['adapter'] == name and r['status'] == 'ok']
@@ -348,7 +370,7 @@ class Command(BaseCommand):
                 'misattributed_candidates': sum(1 for a in acc if a['match_attributed'] < 0.6 and a['best_local_book'] != a['filename'] and (a['match_best'] or 0) >= 0.6),
             }
         out['review_file'] = review.name
-        (PRIVATE / 'summary.json').write_text(json.dumps(out, indent=1), encoding='utf-8')
+        (PRIVATE / f'summary{self.suffix}.json').write_text(json.dumps(out, indent=1), encoding='utf-8')
         self.stdout.write(json.dumps(out, indent=1))
 
     def leakcheck(self):

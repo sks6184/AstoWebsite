@@ -72,9 +72,9 @@ ADAPTERS = {'hosted': 'astrology.rag.hosted.HostedFileSearch', 'direct': 'astrol
 
 
 def configured_adapter():
-    """The adapter named by ASTROGPT_RETRIEVAL_ADAPTER ('hosted' by default; rollback = 'hosted')."""
+    """The adapter named by ASTROGPT_RETRIEVAL_ADAPTER ('direct' by default since M2; rollback = 'hosted')."""
     from django.utils.module_loading import import_string
-    name = getattr(settings, 'ASTROGPT_RETRIEVAL_ADAPTER', 'hosted')
+    name = getattr(settings, 'ASTROGPT_RETRIEVAL_ADAPTER', 'direct')
     if name not in ADAPTERS:
         raise ValueError(f'Unknown ASTROGPT_RETRIEVAL_ADAPTER: {name!r}')
     return import_string(ADAPTERS[name])()

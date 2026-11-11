@@ -12,7 +12,8 @@
 | Store listing (vector-store and file management endpoints) | 9 | US$0 (believed unbilled; **UNVERIFIED**) |
 | Hosted `file_search`, adapter (a) | 10 | **US$0.0343** (provider-reported tokens + US$0.0025 per search) |
 | Direct `vector_stores.search`, adapter (b) | 10 | **US$0.0250** (US$0.0025 per search, an **assumed**, **UNVERIFIED** price) |
-| **Total recorded** | 29 | **US$0.0593 of US$1.50** |
+| Post-OCR verification, direct (§3b, session cap US$0.03) | 6 | US$0.0150 (assumed, **UNVERIFIED**) |
+| **Total recorded** | 35 | **US$0.0743 of US$1.50** |
 
 How the budget was handled:
 
@@ -155,6 +156,99 @@ These are **corpus and query gaps, not adapter faults:** both adapters fail on t
 
 Keep `result_count` ≥ 3, and keep hosted as the one-line rollback. **The default remains `hosted` until you approve.**
 
+## 3b. Close-out: adapter switch and post-OCR verification (owner-approved, 2026-11-11)
+
+**Adapter switch (provisional).**
+
+- `ASTROGPT_RETRIEVAL_ADAPTER` now defaults to **`direct`**: `astro_site/settings.py` and `.env.example`.
+- **Hosted search is kept** as an immediate rollback: set `ASTROGPT_RETRIEVAL_ADAPTER=hosted` and restart. No code change is needed.
+- There is **no automatic fallback** to hosted on a direct-search failure. It was not added, because it would be new infrastructure and could double-bill a failed request. The knowledge tool's existing error path still reports that no classical support was retrieved.
+
+**Minimum 3 passages.**
+
+- `MIN_RESULTS = 3` in `knowledge_contracts.py`.
+- `knowledge.prepare` raises any request for 1-2 passages to 3. Requests outside 1-5 are still rejected.
+- Tests: `M2CloseOutTests`.
+
+**Verification run.**
+
+- 6 direct searches: Q1, Q2, Q5 and Q7 re-run, plus 2 probes aimed at the repaired Speed of Light book:
+  - S1: Saturn in the 10th for career.
+  - S2: Rahu in the 10th or 11th for business, gains and foreign work.
+- Run under a **separate US$0.03 session cap** on top of the overall cap.
+- Results were written to separate private files (`hits_post_ocr.jsonl`, `review_post_ocr.csv`), so the rated M2 baseline is untouched.
+
+| Measure | Result |
+|---|---|
+| Spend | **US$0.0150** (6 x US$0.0025 assumed, UNVERIFIED), within the US$0.03 session cap |
+| M2 total | **US$0.0743 of US$1.50** |
+| Mean latency | 2.5 s |
+| Passage accuracy | **30/30 hits** match their attributed local book at 0.86-1.00; no misattribution |
+| Q1, Q2, Q7 | **Exactly the baseline passages.** The repairs did not affect these queries |
+| Q5 (Rahu antardasha, business/foreign) | **3 new passages:** Speed of Light at ranks 1 and 5 (career by houses; foreign settlement), Bhrigu Samhita at rank 4 (planet-in-house results naming business and foreign work; text match 1.00) |
+| S1, S2 probes | The **Vargas book took 7 of 10 slots** (mostly worked example charts). Comprehensive Prediction took 2 and Conjunctions 1. **Speed of Light did not appear**, although it has planets-in-houses material |
+
+**Relevance of new passages (Claude's preliminary assessment, not owner-rated).** Unchanged passages keep their AI-assisted ratings.
+
+| Query | Baseline (direct) | After repair | Note |
+|---|---|---|---|
+| Q5 Rahu antardasha | 0.4 [1,0,0,1,0] | **about 0.8** [1,1,0,1,1] | All three new passages are partly relevant (1). None addresses Rahu's sub-period directly |
+| S1 Saturn in the 10th | - | about 0.4 [1,0,1,0,0] | Comprehensive Prediction D10 passages are partly relevant; Vargas example charts are not |
+| S2 Rahu in the 10th/11th | - | about 0.6 [1,0,0,1,1] | Partial only: Dasamsa business and service houses; a Saturn-Venus conjunction in the 10th/11th |
+| Q1, Q2, Q7 | 0.8, 0.2, 0.4 | unchanged | |
+
+**Conclusion.**
+
+- The repaired books are **retrievable and correctly attributed**. Speed of Light now contributes, and Bhrigu text matches.
+- The repairs **do not fix the weak topics**. Q1, Q2 and Q7 are unchanged, and the targeted probes are still dominated by the Vargas book's example charts.
+
+## 3c. Weak topics: decomposed query examples (prepared offline, not evaluated)
+
+**Why the weak queries fail.** An offline term count over the local book texts shows that the books use different words from our queries:
+
+- The Chara Dasha book never uses "Arudha Lagna". It uses **"Pada"** (49 times).
+- It prefers **"AmK"** (86) to "Amatyakaraka" (38).
+- Across the books, **"sub-period"** (328) far outnumbers "antardasha" (24), and no book uses "bhukti".
+- Bhrigu Samhita is structured as **"Saturn in the Xth House"** with Roman numerals (921 such headings).
+
+**The proposal: decompose.** Split one compound question into 3-4 single-concept searches. Phrase them in each book's own vocabulary, and fill them from **deterministic chart facts** (the rule engine supplies the signs and houses, never the LLM). Merge and de-duplicate the hits, keeping at least 3 passages. Example placeholders are in braces.
+
+**Chara Dasha career timing (Q7)**
+
+| # | Search | Purpose |
+|---|---|---|
+| 1 | `Chara Dasha of the 10th sign from the Pada, career results` | Book vocabulary: "Pada", not "Arudha Lagna" |
+| 2 | `Chara Dasha of {Capricorn} sign, AmK placed in {Capricorn}` | Ties the running dasha sign to the AmK |
+| 3 | `Chara Dasha sub-period of {Leo} for change of job or promotion` | Timing; "sub-period" is the book's term |
+| 4 | `planets aspecting the Chara Dasha sign by Rasi drishti, profession` | Jaimini sign aspects |
+
+**Saturn's influence on the 10th house (Q2)**
+
+| # | Search | Purpose |
+|---|---|---|
+| 1 | `Saturn in the {IVth} House` (Bhrigu style) **or** `Saturn in the {4th} house results` | The placement that produces the aspect, computed by the engine |
+| 2 | `Saturn's third, seventh and tenth aspects` | The aspect rule, kept separate from the career theme |
+| 3 | `Saturn as karaka of profession, service and hard work` | Significator |
+| 4 | `10th house aspected by a malefic, effect on career` | Generic house rule |
+
+**Rahu antardasha for business and foreign work (Q5)**
+
+| # | Search | Purpose |
+|---|---|---|
+| 1 | `Rahu sub-period in {Jupiter} Mahadasha results` | Dasha pair; "sub-period" vocabulary |
+| 2 | `Rahu in the {7th} house, business and partnerships` | The engine-supplied placement |
+| 3 | `Rahu and foreign travel, 12th house and foreign settlement` | Foreign theme (Speed of Light now covers it) |
+| 4 | `Rahu dasha results for career and gains` | General Rahu dasha |
+
+**Cost and limits.**
+
+- With direct search, each extra search costs US$0.0025 (assumed) and no model tokens. A 4-way decomposition costs about US$0.01 per question, against US$0.0034 for one hosted search.
+- **This is unevaluated.** Measuring whether it helps needs a separate approved run, for example the 3 weak questions x 4 searches = 12 searches, about US$0.03.
+- Implementing it belongs in M3's agent query construction, not new infrastructure.
+- Two other levers would further reduce the Vargas book's crowding but change the live store:
+  - source filtering by file `attributes`;
+  - excluding worked-example-chart chunks.
+
 ## 4. Acceptance criteria
 
 | ID | Status |
@@ -163,12 +257,12 @@ Keep `result_count` ≥ 3, and keep hosted as the one-line rollback. **The defau
 | M2-AC2 per-adapter measures | **Done for 10 of the planned 24 queries.** Latency, usage, cost and relevance (AI-assisted owner ratings, §3a) |
 | M2-AC3 passage accuracy | **Done.** Local copies of Yogini Dasha and Comprehensive Prediction were added later (§2a): 11/13 and 23/23 of their hits match at 0.6 or more. Bhrigu Samhita's re-OCR'd text matches its old hits at 0.77–0.96. |
 | M2-AC4 citation fidelity | **Done.** Test: every locator comes from a returned hit; pages appear only when the provider returned them. |
-| M2-AC5 adoption | **Recommendation made: `direct`** (§3a). It awaits owner approval and the billing check. |
+| M2-AC5 adoption | **`direct` adopted provisionally** by the owner on 2026-11-11 (§3b), with hosted kept as rollback. The billing check is still open. |
 | M2-AC6 swap test | **Done.** The agent runs unchanged against hosted, direct and offline adapters (mocked provider). |
 | M2-AC7 untrusted-text labelling (S-6) | **Done.** One shared policy text sits in both legacy prompts and the agent prompt, with tests. |
 | M2-AC8 no hits → "no classical support was retrieved" | **Done** (tests) |
-| M2-AC9 spend ≤ cap, every call in the ledger | **Done:** US$0.0593. The ledger is the private `ledger.jsonl`, summarised in §1. |
-| M2-AC10 no book passages in committed files | **Done.** Leak check: no 12-word prose run from any local book appears in any tracked file. Planet and sign name lists are excluded as shared vocabulary. |
+| M2-AC9 spend ≤ cap, every call in the ledger | **Done:** US$0.0743 in total (US$0.0593 evaluation + US$0.0150 verification). The ledger is the private `ledger.jsonl`. |
+| M2-AC10 no book passages in committed files | **Done.** Re-run after the repairs against the current book texts (354,470 runs, up from 253,272): no matches. The earlier check had used a stale text cache keyed only by filename; it is now keyed by file size and modification time. |
 
 ## 5. Code changes
 
@@ -178,12 +272,13 @@ Keep `result_count` ≥ 3, and keep hosted as the one-line rollback. **The defau
 | `astrology/rag/policy.py` (new) | `SOURCE_TEXT_POLICY`: untrusted text, title plus paraphrase, never quote, say when no support was retrieved |
 | `accounts/provider_meter.py` | `vector_store_search()` and `Budget.before_search`/`after_search`: direct searches are reserved, ledgered and capped like file searches. Ledger persistence was moved into `Budget._persist`, with unchanged behaviour. |
 | `astrology/rag/knowledge.py` | Default adapter comes from the setting |
-| `astro_site/settings.py` | `ASTROGPT_RETRIEVAL_ADAPTER` |
+| `astro_site/settings.py`, `.env.example` | `ASTROGPT_RETRIEVAL_ADAPTER`; **default `direct` since close-out**, `hosted` as rollback |
+| `astrology/rag/knowledge_contracts.py`, `astrology/rag/knowledge.py` | `MIN_RESULTS = 3`: requests for fewer passages are raised to 3 |
 | `chat/llm_engine.py` | S-6 and OD-11 policy added to the legacy career and rashifal instructions |
 | `astrology/agent/provider.py` | Policy added to the agent instructions |
 | `astrology/synthesis/fact_catalog.py` | **OD-11:** published citation facts give attribution only. The excerpt is still sent to the model as untrusted input and still bound for verification, but it is never published verbatim. Paraphrase is left to the M3 composer. |
-| `charts/management/commands/m2_retrieval_eval.py` (new) | Capped evaluation command: `--manifest`, `--run`, `--accuracy`, `--summary`, `--leakcheck`. Paid actions require `--confirm-paid`. `--review <file>` (offline) picks the rated sheet; it is restricted to the private folder. The summary adds hits rated 1 or more, rank-1 mean and per-query ratings. |
-| `astrology/test_m2.py` (new) | 15 tests |
+| `charts/management/commands/m2_retrieval_eval.py` (new) | Capped evaluation command: `--manifest`, `--run`, `--accuracy`, `--summary`, `--leakcheck`. Paid actions require `--confirm-paid`. `--label` keeps verification runs separate from the baseline; `--session-cap` adds a per-run cap; the text cache is keyed by file version; Comprehensive Prediction is now an owner book. `--review <file>` (offline) picks the rated sheet; it is restricted to the private folder. The summary adds hits rated 1 or more, rank-1 mean and per-query ratings. |
+| `astrology/test_m2.py` (new) | 18 tests |
 | `astrology/test_knowledge.py`, `astrology/test_quality.py` | 3 assertions that required verbatim excerpts in answers now assert the OD-11 policy instead: attribution present, excerpt absent |
 | `astrology/evaluation/corpus_manifest.yaml` (new) | Manifest. It holds file IDs and filenames; the store ID appears only as a hash. |
 
@@ -198,7 +293,7 @@ Keep `result_count` ≥ 3, and keep hosted as the one-line rollback. **The defau
 
 ## 6. Tests
 
-**Full suite: 368 tests, 367 passed, 1 skipped.** That is M1b's 353 tests plus 15 new M2 tests.
+**Full suite: 371 tests, 370 passed, 1 skipped.** That is M1b's 353 tests plus 18 M2 tests (15 at evaluation, 3 at close-out: the default adapter and rollback, the 3-passage floor, and the session cap refusing before any call).
 
 - **The skip:** the JH comparison for R1–R5, PENDING owner values.
 - **All tests are offline.** Network connections and the OpenAI client are blocked or mocked.
@@ -207,39 +302,36 @@ Keep `result_count` ≥ 3, and keep hosted as the one-line rollback. **The defau
 
 ## 7. Known limitations
 
-1. **The ratings are AI-assisted (ChatGPT), not independent expert judgement.** Two internal inconsistencies were found (§3a), and borderline rows are flagged for your review.
-2. **Small sample:** 10 queries × 5 hits per adapter. The 95% CI on the relevance difference spans zero. The finding is "no detectable difference", not "direct is better".
-3. **10 of the planned 24 queries were run.** The other 14 need your approval.
-4. **The direct-search price is unverified** until the billing dashboard is reconciled with US$0.0593.
-5. **The runs predate the corpus repairs (§2a).** Speed of Light is unevaluated, and the Bhrigu relevance figures refer to the old file.
-6. **Topic gaps:** Chara Dasha career timing (0.40), Saturn on the 10th, and the Rahu antardasha for business and foreign work are weak on both adapters. The Vargas book is over-retrieved on general career questions.
-7. **No file metadata.** Answers can cite filenames only, never chapter or page.
-8. **Paraphrase is not done yet.** Under OD-11 the agent publishes attribution only; paraphrasing needs the M3 composer.
-9. **Latency is from one machine at one time.**
+1. **The ratings remain preliminary.** The baseline ratings are AI-assisted (ChatGPT); the section 3b assessments of new passages are Claude's. Neither is independent expert validation. Two internal inconsistencies and the borderline rows are flagged in section 3a.
+2. **Small sample:** 10 queries x 5 hits per adapter, plus a 6-search verification. The relevance difference between adapters is within noise (95% CI -0.12 to +0.28).
+3. **The direct-search price is unverified.** The billing dashboard for 2026-11-11 should show about US$0.074 in total, or about US$0.034 if direct searches are not billed per call.
+4. **Weak topics persist on both adapters:** Chara Dasha career timing, Saturn's influence on the 10th, and career rules (the 10th lord in the 11th). The Rahu antardasha question improved to about 0.8 after the repairs. The decomposed queries in section 3c are untested.
+5. **The Vargas book is over-retrieved.** Its worked example charts are dense in house and planet terms and outrank prose explanations, including Speed of Light's planets-in-houses material.
+6. **No automatic fallback to hosted.** The rollback is a setting change.
+7. **No file metadata.** Answers can cite filenames only, never chapter or page, and retrieval cannot filter by source.
+8. **10 of the planned 24 queries were run.** The other 14 were declined by the owner.
+9. **Original PDFs were overwritten by the Acrobat OCR.** A Speed of Light original survives elsewhere; for Bhrigu only the ABBYY XML survives.
+10. **Paraphrase is not done yet.** Under OD-11 the agent publishes attribution only; paraphrasing needs the M3 composer.
 
 ## 8. Rollback
 
-- Set `ASTROGPT_RETRIEVAL_ADAPTER=hosted`. It is the current default, so the rollback is one setting if `direct` is adopted.
+- Set `ASTROGPT_RETRIEVAL_ADAPTER=hosted` in `.env` and restart. This returns to the pre-M2 retrieval behaviour.
+- The 3-passage floor is independent of the adapter. To undo it, set `MIN_RESULTS = 1`.
 - To undo the code: `git revert` the M2 commits. There are no migrations.
 - The private files can be deleted at any time.
 
 ## 9. Proposed next steps (each needs approval)
 
-1. **Adopt `direct`** (§3a) after the billing check.
-2. **Post-repair re-run (paid, small).** Re-run Q1, Q2, Q5 and Q7 on `direct` only, plus 1–2 Speed of Light probes. Estimated about US$0.015, leaving more than US$1.42 of the cap. This checks whether the repaired books lift the weak topics.
-3. **Address the weak topics before or within M3:**
-   - Chara Dasha: query on Arudha Lagna-relative signs, and let the agent pass the computed Chara Dasha sign and AL explicitly in its search concepts.
-   - Career rules: consider a classical-rules source for 10th-house combinations.
-   - Over-retrieval: consider down-weighting or source-filtering the Vargas book for non-varga questions. This needs `attributes` metadata on the store files.
-4. **Add file attributes** (book title, tradition) to the store files so retrieval can filter and cite by title rather than filename. This is free metadata, but it changes the live store.
-5. **Expert spot-check** of the flagged ratings (§3a), especially Q7.
-6. Optional: run the remaining 14 queries (about US$0.06 on `direct` alone).
+1. **Billing check** (owner): reconcile the dashboard with US$0.0743. This settles the direct-search price.
+2. **Decomposed-query evaluation** (paid, small): 3 weak questions x 4 searches on direct, about US$0.03. Run before or inside M3.
+3. **Store metadata:** add `attributes` (book title, tradition) to the 7 files. This is free metadata but changes the live store. It enables source filtering against Vargas crowding, and citation by title.
+4. **Expert spot-check** of the flagged ratings (section 3a), especially Chara Dasha.
+5. **M3:** build the decomposed, fact-filled query construction into the agent, plus the paraphrasing composer (OD-11).
 
 ## 10. Owner actions
 
-1. **Approve or decline the `direct` recommendation** (M2-AC5).
-2. **Check the billing dashboard** for 2026-11-11 against US$0.0593.
-3. **Review the flagged borderline ratings** (§3a).
-4. **Rights classes and display titles** for each manifest file (OD-11 follow-up).
-5. **Approve or decline** next steps 2–6.
-6. **Approve M2** before M3 starts.
+1. **Check the billing dashboard** against US$0.0743.
+2. **Review the flagged ratings** (section 3a), especially Q7.
+3. **Rights classes and display titles** for each manifest file (OD-11 follow-up).
+4. **Approve or decline** next steps 2-3.
+5. **Approve M2** before M3 starts.

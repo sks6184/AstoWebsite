@@ -226,3 +226,35 @@ class SourcePolicyTests(SimpleTestCase):
 
     def test_agent_prompt_carries_the_policy(self):
         self.assertIn(SOURCE_TEXT_POLICY, INSTRUCTIONS)
+
+
+class M2CloseOutTests(SimpleTestCase):
+    """Owner approval 2026-11-11: direct by default, hosted as rollback, at least 3 passages."""
+
+    def test_default_adapter_is_direct_and_hosted_remains_selectable(self):
+        from django.conf import settings
+        self.assertEqual(settings.ASTROGPT_RETRIEVAL_ADAPTER, 'direct')
+        self.assertIsInstance(configured_adapter(), DirectVectorStoreSearch)
+        with override_settings(ASTROGPT_RETRIEVAL_ADAPTER='hosted'):
+            self.assertIsInstance(configured_adapter(), HostedFileSearch)
+
+    def test_requests_for_fewer_than_three_passages_are_raised_to_three(self):
+        from astrology.rag.knowledge import prepare
+        from astrology.rag.knowledge_contracts import MIN_RESULTS
+        self.assertEqual(MIN_RESULTS, 3)
+        for asked, expected in ((1, 3), (2, 3), (3, 3), (5, 5)):
+            request, _ = prepare({'chart_id': 1, 'topic': 'career', 'concepts': ['d10'], 'result_count': asked})
+            self.assertEqual(request.result_count, expected)
+        request, _ = prepare({'chart_id': 1, 'topic': 'career', 'concepts': ['d10']})
+        self.assertEqual(request.result_count, 3)
+
+    def test_session_cap_refuses_before_the_call(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+        import tempfile
+        from pathlib import Path
+        from charts.management.commands import m2_retrieval_eval as cmd
+        with tempfile.TemporaryDirectory() as tmp, patch.object(cmd, 'PRIVATE', Path(tmp)), \
+                patch('astrology.rag.direct.DirectVectorStoreSearch.retrieve', side_effect=AssertionError('no call')):
+            with self.assertRaisesRegex(CommandError, 'session cap'):
+                call_command('m2_retrieval_eval', run='Q1', adapters='direct', label='t', session_cap='0.001', confirm_paid=True)

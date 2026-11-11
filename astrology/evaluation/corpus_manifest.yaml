@@ -132,3 +132,14 @@ policy:
   OD-11: title and paraphrase only until rights are confirmed
   flagged_for_possible_removal:
   - 300 Astrology Yoga _ 300 Astrology Combinations _ Astrotalk.pdf
+post_ocr_verification:
+  date: '2026-11-11'
+  adapter: direct
+  searches: 6 (Q1, Q2, Q5, Q7 re-run; probes S1, S2)
+  spend: US$0.015 at the assumed US$0.0025/search (UNVERIFIED); session cap US$0.03
+  passage_accuracy: all 30 hits match the attributed local book at 0.86-1.00 (no misattribution)
+  speed_of_light: >-
+    Now retrievable: Q5 (Rahu antardasha, business/foreign) rank 1 and 5. Not returned for
+    the Saturn/Rahu 10th-house probes S1/S2, where the Vargas book took 7 of 10 slots.
+  bhrigu_samhita: Q5 rank 4, text match 1.00 (the old store copy scored 0.00-0.01).
+  unchanged: Q1, Q2 and Q7 returned exactly the baseline passages.

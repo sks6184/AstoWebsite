@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from typing import Protocol
 
 MAX_RESULTS = 5
+# Owner (M2 close-out, 2026-11-11): interpretive searches return at least 3 passages.
+# Requests for fewer are accepted and raised to this floor.
+MIN_RESULTS = 3
 SNIPPET_BYTES = 1200
 TOTAL_SNIPPET_BYTES = 6000
 MAX_OUTPUT_BYTES = 32768
