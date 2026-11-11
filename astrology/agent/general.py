@@ -384,10 +384,12 @@ class GeneralConsultation:
     def investigate(self, provider):
         while True:
             reply = self.model_round(provider)
+            labelled_now = False
             if self.label is None:
                 if reply['label'] is None:
                     raise Stop('missing_label')
                 self.apply_label(reply['label'])
+                labelled_now = True
                 if self.label['question_type'] == 'out_of_scope':
                     return 'out_of_scope'
             self.apply_judgements(reply['search_judgements'])
@@ -409,7 +411,13 @@ class GeneralConsultation:
             if self.repair is not None:
                 raise Stop('validation_failed')
             requests = reply['requests']
-            if type(requests) is not list or not requests:
+            if type(requests) is not list:
+                raise Stop('invalid_provider_response')
+            if not requests:
+                if labelled_now:
+                    # Label-only first round: the model receives its guidance next round.
+                    self.trace.append({'event': 'label_only_round'})
+                    continue
                 raise Stop('empty_round')
             if len(requests) > self.limits.requests_per_round:
                 self.reject('batch', f'only the first {self.limits.requests_per_round} requests in a round are run')

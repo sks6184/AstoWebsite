@@ -22,9 +22,24 @@ def manifest(result, provider_models=()):
             for passage in (response.get('data') or {}).get('passages', [])[:5]:
                 value['sources'].append({'evidence_id': passage['evidence_id'], 'citation': passage['citation']})
     value['claim_ids'] = [c['id'] for c in result.get('claims', [])[:128]]
+    if result.get('pipeline') == 'general_agent':
+        # M3 diagnostics: server-side fields only (no question, answer, query or chart text).
+        keep = ('tool', 'status', 'error_code', 'judgement', 'round', 'counted_input_tokens',
+                'provider_input_tokens', 'provider_output_tokens', 'requests', 'final', 'question_type', 'domains', 'events')
+        value.update(pipeline='general_agent', stop_reason=str(result.get('stop_reason', ''))[:48],
+                     label=result.get('label'), non_answer_states=list(result.get('non_answer_states', []))[:3],
+                     published_by=result.get('published_by'), agent_events=[])
+        for event in result.get('trace', [])[:60]:
+            item = {'event': str(event.get('event'))[:32], **{k: event[k] for k in keep if k in event}}
+            if event.get('event') in ('stop', 'fallback', 'invalid_label', 'rejected_request', 'search_ceiling'):
+                item['reason'] = str(event.get('reason', ''))[:160]
+            if event.get('event') == 'validation':
+                item['issues'] = [str(i)[:120] for i in event.get('issues', [])[:8]]
+            value['agent_events'].append(item)
     while len(json.dumps(value, ensure_ascii=False).encode()) > 16384:
         value['truncated'] = True
-        if value['sources']: value['sources'].pop()
+        if value.get('agent_events'): value['agent_events'].pop()
+        elif value['sources']: value['sources'].pop()
         elif value['tools']: value['tools'].pop()
         elif value['claim_ids']: value['claim_ids'].pop()
         else: break

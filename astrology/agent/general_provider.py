@@ -61,7 +61,9 @@ def reply_schema(profile=None):
     label = {'type': 'object', 'additionalProperties': False, 'required': ['question_type', 'domains', 'events'],
              'properties': {'question_type': {'type': 'string', 'enum': list(QUESTION_TYPES)},
                             'domains': {'type': 'array', 'items': {'type': 'string', 'enum': list(profile.domain_ids)}},
-                            'events': string_list}}
+                            # Closed list, as for domains: the model cannot invent an event ID.
+                            'events': {'type': 'array', 'items': {'type': 'string', 'enum': [
+                                f'{d}:{e}' for d in profile.domain_ids for e in profile.event_ids(d)]}}}}
     judgement = {'type': 'object', 'additionalProperties': False, 'required': ['evidence_id', 'judgement', 'passage_ids', 'note'],
                  'properties': {'evidence_id': {'type': 'string'}, 'passage_ids': string_list, 'note': {'type': 'string'},
                                 'judgement': {'type': 'string', 'enum': ['relevant', 'partly_relevant', 'not_relevant']}}}
