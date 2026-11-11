@@ -4,7 +4,7 @@
 **Date:** 2026-11-10  
 **Purpose:** map existing P1–P8 work onto milestones M1–M9 from `ASTROGPT_CLAUDE_MILESTONE_TRACKER.md`. For each milestone it shows what can be reused, what is missing and what evidence would close it.  
 **Inputs:** `CLAUDE_AS_IS_VERIFICATION.md` (cited as AS-IS §n) and `CLAUDE_TO_BE_ARCHITECTURE_PROPOSAL.md` (cited as TO-BE §n / OD-n).  
-**Status:** M0 deliverable. **M1 has not started.**
+**Status:** M0 deliverable. **M1, M1b and M2 are complete.** The M3 and M4 rows were revised on 2026-11-11 (revision 2: general-purpose agent; career becomes the M4 benchmark) and await owner approval. See §8.
 
 Size key: **S** ≈ 1–2 focused sessions · **M** ≈ 3–5 · **L** ≈ 6+.
 
@@ -67,25 +67,26 @@ Without this, no milestone report can cite a commit hash, and rollback is imposs
 | **Size** | **M** |
 | **Depends on** | OD-5 (listing + small paid test budget), OD-11 |
 
-### M3 — Minimal live agent vertical slice
+### M3 — General-purpose Vedic reasoning agent (revision 2, 2026-11-11)
 
 | | |
 |---|---|
-| **Reuse** | `chat/consultation_service.py::_append_turn` (CAS, reservation, publication, settlement); `chat/agent_service.py` router; `astrology/agent/orchestrator.py` (`execute` guards, dedup, limits); `agent/provider.py` (Responses adapter); `accounts/provider_meter.py`; `chat/evidence_manifest.py`; P8 status polling UI |
-| **Gaps** | (1) Global flag only, so no per-user rollout (TO-BE §10). (2) The agent's pre-dispatch check uses **bytes**, not tokens (AS-IS §1.6). (3) The payload re-sends cumulative raw evidence (AS-IS §7.2). (4) The free-plan policy (2 rounds, 1 search, 160k tokens with a 128k search reservation) cannot accommodate a planner + search + finish loop (AS-IS §1.7). (5) The regex planner rejects most phrasing (AS-IS §1.3–1.4). (6) A new OpenAI client per call. (7) No trace ID / per-round token breakdown. |
-| **Proposed scope** | Per-user allowlist routing. Tokenizer-based agent budget. `EvidenceItem` digests in the agent payload (from M1). An agent budget envelope per question type for the pilot account (OD-7). Extend the deterministic fast path to all house lords. One reused client per request. Trace artefact. **Keep the closed-slot composer for M3**: grounded prose arrives in M4, so M3 proves routing, tools, cost and safety first. |
-| **Exit evidence** | Real authenticated trace for A-01 (zero LLM calls) and A-02 (bounded rounds), produced by the operator account through the actual Django UI; provider-reported tokens per round; total cost ≤ the pre-approved cap; proof that legacy was **not** invoked for the routed account; rollback by allowlist removal demonstrated. |
-| **Risks** | First real full-size agent call: latency vs the 20 s per-call timeout; output-schema compatibility with tools + `text.format` together. |
-| **Size** | **M** |
-| **Depends on** | M1 (digests, security fixes), OD-2, OD-7, OD-12, paid-call approval |
+| **Reuse** | `chat/consultation_service.py::_append_turn` (CAS, reservation, publication, settlement); `chat/agent_service.py` router; `astrology/agent/orchestrator.py` (`execute` guards, dedup, limits); `agent/provider.py`; `accounts/provider_meter.py` (now meters direct search); the M2 `direct` adapter and `SOURCE_TEXT_POLICY`; `chat/prediction_context.py::CATEGORY_RULES` (13 domains: houses, vargas, karakas); the rule engine's existing categories; `astrology/calculations/jaimini.py` (karakas, padas, karakamsha, Jaimini yogas); `chart_data['yogas']`; `synthesis/fact_catalog.py` and `validation/claim_validator.py`; P8 status polling UI |
+| **Gaps** | (1) Career/business-only `ScopeError` (`agent/policy.py:92-93`). (2) Career logic hard-coded in `orchestrator.minimal_evidence()`. (3) No domain guidance data; no book-vocabulary hints. (4) The knowledge tool joins topic and concepts into a query, so the model cannot write or refine search text, and there is no "weak result" signal. (5) Non-answer states are merged: retrieval failure, no source support and unsupported calculation are not distinguished. (6) Jaimini karakas and padas, and stored yogas, are not exposed as tools. (7) The fact catalog publishes only the 2nd, 7th, 10th and 11th lords. (8) The validator expects closed slots or 12 sections, not natural prose. (9) The budget model is not fit for purpose: the free plan allows 2 rounds, 1 search and US$0.05, and pre-dispatch checks count bytes. (10) Global flag only, no per-user rollout. (11) No domain test matrix. |
+| **Proposed scope** | Acceptance criteria §5 (revision 2): per-user allowlist; model-led 1–3 domain labels in the first round; `domains.v0.yaml` guidance (owner-reviewed) applied by one generic routine; three tool wrappers over existing calculations; agent-written, iterative direct retrieval with τ and a search cap; three non-answer states; compact digests with a `tiktoken` budget; natural answers validated by content elements; claim and citation checks; pilot cost envelope; a domain end-to-end matrix with a support report. |
+| **Out of scope** | New calculations (muhurta and panchanga, matching, shadbala, prashna, longevity); vector-store changes; new RAG infrastructure; automatic memory (M5); paid-plan envelopes (M7). |
+| **Exit evidence** | M3-AC1 to AC22: traces for the 11 owner domains plus 2 mixed-domain questions; a labelled 40-question domain set; offline tests for each non-answer state; ledger extract within the M3 cap; rollback demonstrations (allowlist and adapter). |
+| **Risks** | Prompt and evidence growth on mixed-domain questions; the model under-investigating thin-rule domains; claim-scanner false blocks on prose; thin corpus for childbirth, Upapada, D30 and Darakaraka/Putrakaraka. |
+| **Size** | **L** (it was **M** when M3 was career-only) |
+| **Depends on** | M1/M1b, M2 (done); OD-7, OD-16, OD-17, OD-22 to OD-30; owner review of `domains.v0.yaml` before the live traces |
 
-### M4 — Adaptive career consultation
+### M4 — Career benchmark: adaptive career consultation (revision 2)
 
 | | |
 |---|---|
 | **Reuse** | `agent/policy.py` windows logic; `continuity.py` comparisons; `synthesis/fact_catalog.py`; `validation/claim_validator.py`; P6 locked fixtures (`astrology/evaluation/fixtures/p6_cases_v1.json`); `harness.py`; Chara/Yogini/transit/SAV tools |
 | **Gaps** | (1) No methodology policy registry; career logic is hard-coded in `minimal_evidence` (TO-BE §8). (2) The closed-slot composer cannot interpret (AS-IS §1.3). (3) No root/independence tracking, so double counting is possible (AS-IS §9.1). (4) No discrimination between promotion, voluntary change, disruption and the foreign dimension (handover §3 step 3). (5) Rules are evaluated at window start only, not across the window. |
-| **Proposed scope** | `career.predictive.v1` + `career.factual.v1` policies (owner-reviewed). Model scope proposal (D1). Grounded prose with fact tags + claim scanner (D2). `roots`-based agreement counting. Event-pattern heuristics labelled as owner heuristics. Multiple-period comparison. Optional tools triggered by evidence gaps. |
+| **Proposed scope** | Career is the **detailed benchmark** of the general M3 agent, not the product boundary. Four sub-question policies (promotion, voluntary change, involuntary change, foreign relocation) extend the `domains.v0.yaml` career entry (owner-reviewed); the M2 weak-topic decomposition (Chara Dasha via Pada/AmK, Saturn's 10th-house influence, Rahu sub-period) is evaluated here. Earlier draft scope, kept: `career.predictive.v1` + `career.factual.v1` policies (owner-reviewed). Model scope proposal (D1). Grounded prose with fact tags + claim scanner (D2). `roots`-based agreement counting. Event-pattern heuristics labelled as owner heuristics. Multiple-period comparison. Optional tools triggered by evidence gaps. |
 | **Exit evidence** | A-02, A-03, A-05 traces; the claim scanner catches seeded invented values (reuse P6-01/02 cases); policy-coverage report per answer; astrologer review of 10 career answers against a rubric. |
 | **Risks** | Claim-scanner false positives/negatives (mitigation: pattern test corpus). Owner time for policy review. |
 | **Size** | **L** |
@@ -154,8 +155,10 @@ Without this, no milestone report can cite a commit hash, and rollback is imposs
 | A-06 | User A passes User B's chart ID | **Denied** (view + service) | **Denied** at every tool | Already met; re-verify in M1 |
 | A-07 | Provider timeout / RAG empty / unsupported calc | Fallback stored **with raw error text**, uncharged | Partial evidence report, uncharged | M1 (text fix), M6 |
 | A-08 | Long follow-up discussion | Each turn independent | Bounded (≤6 messages, 12 KB) | M5/M7 |
-| A-09 | Marriage/education/children | Legacy answers using broad evidence | `ScopeError` "career/business only" | M4 (explicit unsupported) → post-M8 policies |
-| A-10 | High-cost ambiguous question | Meter caps; may fail with `input_limit` | Limits + meter; partial | M7 |
+| A-09 | Marriage/education/children/health/foreign/property/spirituality and mixed-domain questions | Legacy answers using broad evidence | `ScopeError` "career/business only" | **M3 (revision 2)**: general agent with a graded support report; deeper domain policies after M4 |
+| A-10 | High-cost ambiguous question | Meter caps; may fail with `input_limit` | Limits + meter; partial | M3 (pilot envelope), M7 (plans) |
+| A-11 (new) | A question needing an unimplemented calculation (muhurta, kundli matching, shadbala) | Varies | Unsupported or generic | M3: `calculation_unavailable` with its disclosure |
+| A-12 (new) | Library unreachable vs nothing relevant found | Not distinguished | Not distinguished | M3: `retrieval_failed` vs `no_source_support` |
 
 ---
 
@@ -195,7 +198,12 @@ Without this, no milestone report can cite a commit hash, and rollback is imposs
 | R9 | No independent numerical verification | Confirmed | High (trust) | Reference fixtures | M1 |
 | R10 | Source licensing for commercial use | Unknown | High (legal) | OD-11 before quoting to paying users | M2/M9 |
 | R11 | Synchronous worker saturation under real load | Medium | Medium | ≥2 workers; background worker decision | M7 |
-| R12 | Claim-scanner errors (false blocks / misses) | Medium | Medium | Pattern corpus + P6 seeded cases | M4/M6 |
+| R12 | Claim-scanner errors (false blocks / misses) | Medium | Medium | Pattern corpus + P6 seeded cases | M3/M4/M6 |
+| R13 (new) | Iterative retrieval and mixed-domain questions multiply rounds, searches and tokens | High | Medium | Per-consultation envelope (≤6 rounds, ≤4 searches, ≤25k largest round, ≤US$0.05); per-round payload; search cap | M3 |
+| R14 (new) | The model under-investigates thin-rule domains, or overstates them | Medium | High | Data-driven minimums; Partial grading with disclosure; claim scanner | M3 |
+| R15 (new) | Thin corpus for some domains (childbirth, UL, D30, DK/PK) gives `no_source_support` | High | Medium | Honest disclosure; corpus additions are owner work after M3 | M3+ |
+| R16 (new) | Sensitive-domain harm (health, fertility, longevity) | Medium | High | OD-23 policy plus validator checks | M3 |
+| R17 (new) | Limited API balance (about US$2.27 remaining, INFERRED) | Confirmed | Medium | M3 cap of US$1.00 on `gpt-4o-mini`; no stronger model without approval | M3 |
 
 ---
 
@@ -206,3 +214,42 @@ Without this, no milestone report can cite a commit hash, and rollback is imposs
 The only deviation from the tracker is letting M3 start before M2 is fully closed. M3 can prove routing, cost and safety using the existing P4 adapter (or with retrieval disabled for the slice), and M2's adapter choice then slots in behind the same protocol. This is an owner decision; strictly sequential M2 → M3 also works and costs roughly one milestone of calendar time.
 
 **Stop point:** M0 is complete with these three documents. Awaiting owner approval of OD-0 … OD-14 before any M1 work.
+
+---
+
+## 8. Revision 2 (2026-11-11): general-purpose M3
+
+**Owner direction:** AstroGPT is a general-purpose Vedic astrology reasoning agent. Career is the M4 benchmark, not the product boundary. The details are in `CLAUDE_M1_M4_ACCEPTANCE_CRITERIA.md` §5.0–§5.4.
+
+### 8.1 Missing tools and capabilities
+
+| Item | Status | M3 action |
+|---|---|---|
+| Jaimini facts (7 karakas, karakamsha, AL/UL/A-padas, Jaimini yogas) | Computed in `astrology/calculations/jaimini.py`; **not exposed** as a tool | New wrapper `get_jaimini_facts` (OD-25) |
+| Classical yogas | Stored in `chart_data['yogas']`; **not exposed** | Add to `get_chart_facts` |
+| All 12 house lords as published facts | The fact catalog publishes only the 2nd, 7th, 10th and 11th lords | Generalize the catalog |
+| Model-written search text and a weak-result signal | Missing (query joined from topic and concepts) | Change the knowledge-tool contract; τ = 0.70 plus the model's judgement |
+| Distinct non-answer states | Missing | `retrieval_failed` / `no_source_support` / `calculation_unavailable` |
+| Domain guidance data | Missing | `domains.v0.yaml` (owner-reviewed) |
+| Planetary aspects as a fact list | Used inside rules; not exposed (INFERRED) | Wrapper only if an existing computation is confirmed; otherwise declared unavailable |
+| Muhurta and panchanga | **NOT FOUND** (only the AGENTS.md disclosure text exists, in `synthesis/verified_answer.py:7`) | `calculation_unavailable` (OD-29) |
+| Kundli matching (two charts) | NOT FOUND | `calculation_unavailable` |
+| Shadbala and other strength metrics | NOT FOUND | `calculation_unavailable` |
+| Prashna | NOT FOUND | `calculation_unavailable` |
+| Thin rule sets: foreign (3), spirituality (3), education (7), wealth (7), health (9) | CONFIRMED (counts of rules tagged per category) | Graded Partial with disclosure; new rules only with owner approval after M4 |
+
+### 8.2 Expected cost risks (estimates; prices UNVERIFIED until OD-30)
+
+- **Typical consultation on `gpt-4o-mini`:** about 5 rounds × about 12k input tokens, about 4k output tokens and 3 direct searches. That comes to **about US$0.02**: roughly US$0.009 input, US$0.002 output and US$0.0075 search.
+- **Envelope ceiling:** 6 rounds × 25k tokens and 4 searches, about **US$0.035**, under the proposed US$0.05 cap.
+- **Cost drivers:**
+  - Each refinement search adds US$0.0025 plus up to about 1.5k tokens of passages (the 6 KB snippet budget) in later rounds.
+  - Mixed-domain questions add tool evidence.
+  - A repair round adds about one round.
+  - Rolling back to hosted search adds about 4.7k input tokens per search.
+- **M3 live budget:** 13 domain traces (about US$0.3–0.5), the 40-question labelling check (about US$0.01) and repair or retry headroom fit a **US$1.00 cap**. A stronger composer model could multiply per-consultation cost by an order of magnitude (INFERRED from list prices, UNVERIFIED). It is therefore not used in M3 without approval.
+- **The current plans cannot run the agent:** the free plan allows 2 rounds, 1 search and US$0.05. M3 uses a pilot-only envelope; plan envelopes are set from M3 data in M7.
+
+### 8.3 Decisions needed before M3 starts
+
+OD-7 (revised), OD-16, OD-17 and OD-22 to OD-30. They are listed with recommendations in `CLAUDE_M1_M4_ACCEPTANCE_CRITERIA.md` §7.
