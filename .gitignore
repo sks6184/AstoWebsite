@@ -7,3 +7,6 @@ db.sqlite3
 media/
 staticfiles/
 .claude
+
+# Owner-supplied private reference charts (real birth data; never commit)
+astrology/evaluation/private/
