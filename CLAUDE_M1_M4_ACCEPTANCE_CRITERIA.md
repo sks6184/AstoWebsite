@@ -373,6 +373,7 @@ All tools keep the existing envelope (`astrology/tools/contracts.py`): frozen re
 | `get_chart_facts` (extended) | adds `include_yogas: bool = false` | adds `yogas`: name, category, strength, evidence and the stored meaning text, labelled as stored reference text | `chart_data['yogas']` from `charts/yogas.py` (23 yoga types) | Missing data is reported as `partial` |
 | Fact catalog (changed) | – | Publishes all 12 house lords as fact atoms, not only the 2nd, 7th, 10th and 11th | `all_lord_placements` (existing) | – |
 | `search_astrology_knowledge` (changed) | `chart_id`; `query` (model-written, ≤200 bytes); optional `domain` and `purpose` (for the trace); `result_count` 1–5, raised to ≥3 | Passages with provider score, citation, `low_score_heuristic` (advisory); `support_status` | M2 `direct` adapter (hosted as rollback) | `retrieval_failed` (provider error, timeout, budget, not configured) is distinct from an empty or irrelevant result. The model sets `no_source_support` when it judges nothing relevant |
+| `get_natal_aspects` (**proposed, OD-32**, not yet approved) | `chart_id`; optional `house` or `planet` | Parashari natal aspects on houses and planets, and mutual aspects | `charts/vedic_utils.py` (`PLANET_ASPECTS`, `natal_planet_aspects_on_house`, `natal_mutual_aspects`) | Until approved, aspect-based factors (for example the 8th lord's aspect on the 10th) are `calculation_unavailable` |
 | Non-answer states (new, all tools) | – | `calculation_unavailable` (unsupported or not implemented), `retrieval_failed`, `no_source_support`, each with a fixed disclosure | – | Never converted into invented values |
 
 Out of scope, all `calculation_unavailable`: muhurta and panchanga, kundli matching, shadbala, prashna, longevity, planetary padas.
@@ -384,7 +385,7 @@ Out of scope, all `calculation_unavailable`: muhurta and panchanga, kundli match
 | 0 | Owner reviews `domains.v0.yaml` (OD-24) and the §5.5 contracts | No | Owner approval |
 | 1 | Implementation; full offline suite (scripted provider): all 12 domains, mixed questions, distinction pairs, the three non-answer states, safeguards, wrapper parity | No | All green; report |
 | 2 | **Three live consultations:** career, marriage, children, on synthetic charts. Each is capped at US$0.05 and the stage at US$0.15 | Yes | Owner reviews the answers, traces, model-capability notes and actual spend |
-| 3 | Expansion, only if approved: remaining domains, mixed-domain questions, the labelling set (M3-AC3) | Yes | Total M3 spend ≤ US$1.00 |
+| 3 | Expansion, **only with a separate spending approval** (not yet authorized): remaining domains, mixed-domain questions, the labelling set (M3-AC3) | Yes | Separate approval; proposed total ≤ US$1.00 |
 
 ---
 
@@ -457,9 +458,11 @@ Pin the career guidance back to the general `domains.v0.yaml` career entry (M3 b
 | **OD-24** (new) | Review of the astrological content of `domains.v0.yaml` (houses, karakas, vargas, Jaimini points, minimums, vocabulary) | Claude drafts it from `CATEGORY_RULES`, the rule files and the M2 term counts; you review it before live traces. About one review session. | Before M3 live traces |
 | **OD-25** | Tool wrappers | **Approved (A5).** Contracts are in §5.5 for checking | Contract check before paid tests |
 | **OD-26** | Retrieval limits | **Approved as amended (A3):** 0.70 is an advisory flag only; the model judges relevance; 4 searches is a ceiling; ≥3 passages per search | Done |
-| **OD-27** (approved, A9: US$1.00 total, US$0.05 per consultation, staged per §5.6) | M3 budgets | **Per consultation:** ≤6 rounds, ≤4 searches, largest round ≤25k input tokens, ≤US$0.05. **M3 total paid cap: US$1.00** (about US$2.27 of your API balance is estimated to remain, INFERRED). Covers 13 live end-to-end traces, the 40-question labelling check and repair or retry headroom. | M3 start |
+| **OD-27** (amended 2026-11-11: **US$0.15 authorized** for initial live testing at ≤US$0.05 per consultation, synthetic charts only; the rest of the proposed US$1.00 needs **separate approval**) | M3 budgets | **Per consultation:** ≤6 rounds, ≤4 searches, largest round ≤25k input tokens, ≤US$0.05. **M3 total paid cap: US$1.00** (about US$2.27 of your API balance is estimated to remain, INFERRED). Covers 13 live end-to-end traces, the 40-question labelling check and repair or retry headroom. | M3 start |
 | **OD-28** (new) | Charts for live traces | Synthetic reference charts R1–R5 only. Your own chart only with explicit per-run consent; never committed. | M3 start |
 | **OD-29** (new) | Out of scope for M3, declared `calculation_unavailable` | Muhurta and panchanga, kundli matching, shadbala, prashna, longevity | M3 start |
+| **OD-31** (new) | Derived Jaimini counting points (12th from Karakamsha, 2nd from UL) added to `get_jaimini_facts`: new, trivial sign-counting computations | Approve only the named points, with hand-counted tests. Until then they are `calculation_unavailable` | Before the M3 wrappers |
+| **OD-32** (new) | Read-only `get_natal_aspects` wrapper over the existing Parashari aspects | Approve: an existing computation, needed for aspect-based core factors (C1) | Before the M3 wrappers |
 | **OD-30** (new) | M2 billing reconciliation | Compare the OpenAI dashboard for 2026-11-11 with US$0.0743. It settles the direct-search price used in budgets. | Before the M3 live phase |
 
 Unchanged in placement: automatic memory (OD-6) stays in **M5**. M3 keeps the existing opt-in memory working, so M3 does not have to deliver the privacy controls for automatic memory.
@@ -478,4 +481,4 @@ Unchanged in placement: automatic memory (OD-6) stays in **M5**. M3 keeps the ex
 
 ---
 
-**Next step (revision 3):** you review `astrology/methodology/domains.v0.yaml` (OD-24) and the §5.5 tool contracts, decide the remaining parts of OD-22, OD-28, OD-29 and OD-30, and approve revision 3. M3 then starts on `claude/m3-general-agent` with a scope record (`docs/claude_migration/M3_SCOPE.md`). Until then no M3 application code is written.
+**Next step (revision 3, profile revision 2):** you give a final review of `astrology/methodology/domains.v0.yaml` (OD-24; changes explained in `docs/claude_migration/M3_DOMAIN_PROFILE_CHANGES.md`) and the §5.5 tool contracts, decide OD-31 and OD-32, decide the remaining parts of OD-22, OD-28, OD-29 and OD-30, and approve revision 3. M3 then starts on `claude/m3-general-agent` with a scope record (`docs/claude_migration/M3_SCOPE.md`). Until then no M3 application code is written.
