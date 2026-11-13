@@ -240,7 +240,7 @@ def build_brief(question, plan, tables, passages, profile, today):
     for y in t.jaimini_yogas[:4]:
         jaimini.append(f"- Jaimini combination detected: {y['name']}." + (f" {y['finding']}" if y['finding'] else ''))
     if jaimini:
-        sections['JAIMINI (7 Chara karakas; house padas without the disputed exceptions)'] = jaimini
+        sections['JAIMINI (7 Chara karakas; house padas with the classical exception applied)'] = jaimini
 
     focus = plan.focus_houses
     periods = []

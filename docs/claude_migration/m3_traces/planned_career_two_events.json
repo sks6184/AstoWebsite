@@ -31,11 +31,12 @@
       "event": [
         6,
         12,
+        5,
+        9,
         11
       ],
       "supporting": [
         1,
-        5,
         8,
         2
       ]
@@ -304,9 +305,9 @@
       "arguments": {
         "topic": "career",
         "concepts": [
-          "the natal promise"
+          "the 10th lord in the 8th house"
         ],
-        "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change",
+        "query": "Results of the lord of the 10th house placed in the 8th house; effect on profession",
         "result_count": 5
       },
       "status": "partial"
@@ -316,9 +317,9 @@
       "arguments": {
         "topic": "career",
         "concepts": [
-          "the running periods"
+          "the Mars sub-period in the Jupiter Mahadasha"
         ],
-        "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession",
+        "query": "Effects of the sub-period (antardasha) of Mars in the Mahadasha of Jupiter",
         "result_count": 5
       },
       "status": "partial"
@@ -328,9 +329,9 @@
       "arguments": {
         "topic": "career",
         "concepts": [
-          "the transits in the window"
+          "Saturn's transit through the 3rd from the Moon"
         ],
-        "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus",
+        "query": "Results of the transit of Saturn through the 3rd house from the natal Moon (gochara)",
         "result_count": 5
       },
       "status": "partial"
@@ -340,9 +341,9 @@
       "arguments": {
         "topic": "career",
         "concepts": [
-          "contrary or cautionary indications"
+          "a cautionary principle from the rule engine"
         ],
-        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles",
+        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work",
         "result_count": 5
       },
       "status": "partial"
@@ -351,69 +352,73 @@
   "4_retrieval": {
     "searches": [
       {
-        "purpose": "the natal promise",
+        "purpose": "the 10th lord in the 8th house",
         "stance": "supporting",
-        "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change"
+        "query": "Results of the lord of the 10th house placed in the 8th house; effect on profession"
       },
       {
-        "purpose": "the running periods",
+        "purpose": "the Mars sub-period in the Jupiter Mahadasha",
         "stance": "supporting",
-        "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession"
+        "query": "Effects of the sub-period (antardasha) of Mars in the Mahadasha of Jupiter"
       },
       {
-        "purpose": "the transits in the window",
+        "purpose": "Saturn's transit through the 3rd from the Moon",
         "stance": "supporting",
-        "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus"
+        "query": "Results of the transit of Saturn through the 3rd house from the natal Moon (gochara)"
       },
       {
-        "purpose": "contrary or cautionary indications",
+        "purpose": "a cautionary principle from the rule engine",
         "stance": "contrary",
-        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles"
+        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work"
       }
     ],
     "ranking": [
       {
         "id": "Kec69aaf7d0657719619e",
         "title": "Synthetic Parashari Notes",
-        "purpose": "contrary or cautionary indications",
+        "purpose": "a cautionary principle from the rule engine",
         "stance": "contrary",
         "semantic": 0.81,
         "overlap": 1.0,
         "guided_book": null,
-        "score": 0.96,
+        "worked_example": false,
+        "score": 0.91,
         "kept": true
       },
       {
-        "id": "K129139ddead5666f3778",
+        "id": "K812595453d04cc2ca882",
         "title": "Synthetic Parashari Notes",
-        "purpose": "the natal promise",
+        "purpose": "the 10th lord in the 8th house",
         "stance": "supporting",
         "semantic": 0.81,
-        "overlap": 0.75,
+        "overlap": 0.5,
         "guided_book": null,
-        "score": 0.9225,
-        "kept": true
-      },
-      {
-        "id": "K5cd944c0d7a70aaba959",
-        "title": "Synthetic Parashari Notes",
-        "purpose": "the running periods",
-        "stance": "supporting",
-        "semantic": 0.81,
-        "overlap": 0.4,
-        "guided_book": null,
-        "score": 0.87,
-        "kept": true
-      },
-      {
-        "id": "K96387cf7ba521e122418",
-        "title": "Synthetic Parashari Notes",
-        "purpose": "the transits in the window",
-        "stance": "supporting",
-        "semantic": 0.81,
-        "overlap": 0.33,
-        "guided_book": null,
+        "worked_example": false,
         "score": 0.86,
+        "kept": true
+      },
+      {
+        "id": "Kf03a65fa7eab3edc6d35",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "Saturn's transit through the 3rd from the Moon",
+        "stance": "supporting",
+        "semantic": 0.81,
+        "overlap": 0.5,
+        "guided_book": null,
+        "worked_example": false,
+        "score": 0.86,
+        "kept": true
+      },
+      {
+        "id": "K61173033706cdb223636",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "the Mars sub-period in the Jupiter Mahadasha",
+        "stance": "supporting",
+        "semantic": 0.81,
+        "overlap": 0.0,
+        "guided_book": null,
+        "worked_example": false,
+        "score": 0.81,
         "kept": true
       }
     ],
@@ -424,39 +429,83 @@
         "title": "Synthetic Parashari Notes",
         "chapter": "1",
         "page": null,
-        "purpose": "contrary or cautionary indications",
+        "purpose": "a cautionary principle from the rule engine",
         "stance": "contrary",
-        "score": 0.96
+        "score": 0.91,
+        "semantic": 0.81,
+        "citation": {
+          "file_id": "file-syn-0",
+          "filename": "Synthetic_Parashari_Notes.pdf",
+          "document": null,
+          "book": null,
+          "chapter": "1",
+          "page": null,
+          "tradition": null
+        },
+        "snippet": "Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord in 6th, 8th, or 12th can show ."
       },
       {
         "marker": "P2",
-        "id": "K129139ddead5666f3778",
+        "id": "K812595453d04cc2ca882",
         "title": "Synthetic Parashari Notes",
         "chapter": "1",
         "page": null,
-        "purpose": "the natal promise",
+        "purpose": "the 10th lord in the 8th house",
         "stance": "supporting",
-        "score": 0.9225
+        "score": 0.86,
+        "semantic": 0.81,
+        "citation": {
+          "file_id": "file-syn-0",
+          "filename": "Synthetic_Parashari_Notes.pdf",
+          "document": null,
+          "book": null,
+          "chapter": "1",
+          "page": null,
+          "tradition": null
+        },
+        "snippet": "Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Results of the lord of the 10th house pl."
       },
       {
         "marker": "P3",
-        "id": "K5cd944c0d7a70aaba959",
+        "id": "Kf03a65fa7eab3edc6d35",
         "title": "Synthetic Parashari Notes",
         "chapter": "1",
         "page": null,
-        "purpose": "the running periods",
+        "purpose": "Saturn's transit through the 3rd from the Moon",
         "stance": "supporting",
-        "score": 0.87
+        "score": 0.86,
+        "semantic": 0.81,
+        "citation": {
+          "file_id": "file-syn-0",
+          "filename": "Synthetic_Parashari_Notes.pdf",
+          "document": null,
+          "book": null,
+          "chapter": "1",
+          "page": null,
+          "tradition": null
+        },
+        "snippet": "Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Results of the transit of Saturn through."
       },
       {
         "marker": "P4",
-        "id": "K96387cf7ba521e122418",
+        "id": "K61173033706cdb223636",
         "title": "Synthetic Parashari Notes",
         "chapter": "1",
         "page": null,
-        "purpose": "the transits in the window",
+        "purpose": "the Mars sub-period in the Jupiter Mahadasha",
         "stance": "supporting",
-        "score": 0.86
+        "score": 0.81,
+        "semantic": 0.81,
+        "citation": {
+          "file_id": "file-syn-0",
+          "filename": "Synthetic_Parashari_Notes.pdf",
+          "document": null,
+          "book": null,
+          "chapter": "1",
+          "page": null,
+          "tradition": null
+        },
+        "snippet": "Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Effects of the sub-period (antardasha) o."
       }
     ]
   },
@@ -476,9 +525,10 @@
     "- 10th house (primary): sign Aries. Its lord Mars is placed in Aquarius, house 8. Occupants: Mercury. Aspected by (Parashari): none. SAV 30.",
     "- 6th house (named for this event): sign Sagittarius. Its lord Jupiter is placed in Gemini, house 12. Occupants: none. Aspected by (Parashari): Jupiter. SAV 30.",
     "- 12th house (named for this event): sign Gemini. Its lord Mercury is placed in Aries, house 10. Occupants: Jupiter. Aspected by (Parashari): none. SAV 25.",
+    "- 5th house (named for this event): sign Scorpio. Its lord Mars is placed in Aquarius, house 8. Occupants: none. Aspected by (Parashari): Sun. SAV 35.",
+    "- 9th house (named for this event): sign Pisces. Its lord Jupiter is placed in Gemini, house 12. Occupants: Venus. Aspected by (Parashari): Saturn. SAV 32.",
     "- 11th house (named for this event): sign Taurus. Its lord Venus is placed in Pisces, house 9 (exalted). Occupants: Sun. Aspected by (Parashari): Mars. SAV 28.",
     "- 1st house (supporting): sign Cancer. Its lord Moon is placed in Capricorn, house 7. Occupants: Ketu. Aspected by (Parashari): Moon, Saturn, Rahu. SAV 23.",
-    "- 5th house (supporting): sign Scorpio. Its lord Mars is placed in Aquarius, house 8. Occupants: none. Aspected by (Parashari): Sun. SAV 35.",
     "- 8th house (supporting): sign Aquarius. Its lord Saturn is placed in Capricorn, house 7 (in its own sign). Occupants: Mars. Aspected by (Parashari): Jupiter. SAV 28.",
     "- 2nd house (supporting): sign Leo. Its lord Sun is placed in Taurus, house 11. Occupants: none. Aspected by (Parashari): Mars. SAV 27.",
     "",
@@ -503,12 +553,12 @@
     "- Harsha Yoga (strength moderate): Lord of 6th house is placed in dusthana house 12.",
     "- Vipareeta Raja Yoga (strength strong): Present forms: Harsha Yoga.",
     "",
-    "JAIMINI (7 Chara karakas; house padas without the disputed exceptions)",
+    "JAIMINI (7 Chara karakas; house padas with the classical exception applied)",
     "- Atmakaraka: Mars, in Aquarius, house 8.",
     "- Amatyakaraka: Moon, in Capricorn, house 7.",
     "- Karakamsha (D9 sign of the Atmakaraka): Taurus.",
-    "- Arudha Lagna (AL): Cancer, house 1 from the Lagna.",
-    "- 10th from the Arudha Lagna: Aries, house 10 from the Lagna. Occupants: Mercury. Influenced by (occupation or rasi drishti): Mars, Mercury.",
+    "- Arudha Lagna (AL): Aries, house 10 from the Lagna.",
+    "- 10th from the Arudha Lagna: Capricorn, house 7 from the Lagna. Occupants: Moon, Saturn, Rahu. Influenced by (occupation or rasi drishti): Sun, Moon, Saturn, Rahu.",
     "- 10th from the Karakamsha: Aquarius, house 8 from the Lagna. Occupants: Mars. Influenced by (occupation or rasi drishti): Mars, Mercury, Ketu.",
     "- Jaimini combination detected: Atmakaraka-Putrakaraka. Atmakaraka-Putrakaraka are together or in mutual Jaimini aspect.",
     "- Jaimini combination detected: Atmakaraka-fifth lord. Atmakaraka-fifth lord are together or in mutual Jaimini aspect.",
@@ -532,18 +582,19 @@
     "  - Yogini sub-period Pingala (Sun) / Ulka (Saturn): 2026-11-29 to 2027-03-30.",
     "  - Yogini sub-period Pingala (Sun) / Siddha (Venus): 2027-03-30 to 2027-08-20.",
     "  - Yogini sub-period Pingala (Sun) / Sankata (Rahu): 2027-08-20 to 2028-01-29.",
-    "  - Yogini period lords in D1: Sun rules house 2; sits in house 11; aspects house 5. Saturn rules houses 7, 8; sits in house 7; aspects house 1. Venus rules houses 4, 11; sits in house 9. Rahu sits in house 7; aspects house 1.",
+    "  - Yogini period lords in D1: Sun rules house 2; sits in house 11; aspects house 5. Saturn rules houses 7, 8; sits in house 7; aspects houses 9, 1. Venus rules houses 4, 11; sits in house 9. Rahu sits in house 7; aspects house 1.",
     "",
     "TRANSITS IN THE WINDOW (daily noon samples: sign-change dates are approximate)",
-    "- Jupiter transits Leo: house 2 from the Lagna, house 8 from the Moon, 2027-01-01 to 2027-01-24; SAV of that sign 27.",
-    "- Jupiter transits Cancer: house 1 from the Lagna, house 7 from the Moon, 2027-01-25 to 2027-06-25; SAV of that sign 23.",
-    "- Jupiter transits Leo: house 2 from the Lagna, house 8 from the Moon, 2027-06-26 to 2027-11-26; SAV of that sign 27.",
-    "- Jupiter transits Virgo: house 3 from the Lagna, house 9 from the Moon, 2027-11-27 to 2027-12-31; SAV of that sign 27.",
-    "- Saturn transits Pisces: house 9 from the Lagna, house 3 from the Moon, 2027-01-01 to 2027-06-02; SAV of that sign 32.",
-    "- Saturn transits Aries: house 10 from the Lagna, house 4 from the Moon, 2027-06-03 to 2027-10-19; SAV of that sign 30.",
-    "- Saturn transits Pisces: house 9 from the Lagna, house 3 from the Moon, 2027-10-20 to 2027-12-31; SAV of that sign 32.",
-    "- Rahu transits Capricorn: house 7 from the Lagna, house 1 from the Moon, 2027-01-01 to 2027-12-31; SAV of that sign 26.",
-    "- Ketu transits Cancer: house 1 from the Lagna, house 7 from the Moon, 2027-01-01 to 2027-12-31; SAV of that sign 23.",
+    "Houses are counted from the Lagna unless a line says \"counted from the Moon\". A count from the Moon is where the planet stands relative to the Moon; it is not an aspect and not a Lagna house.",
+    "- Jupiter transits Leo, 2027-01-01 to 2027-01-24: it occupies house 2 from the Lagna (counted from the Moon it is the 8th sign from the Moon). From there it aspects houses 6, 8, 10 from the Lagna (Parashari aspect). SAV of Leo: 27. Jupiter's own BAV in Leo: 6 of 8.",
+    "- Jupiter transits Cancer, 2027-01-25 to 2027-06-25: it occupies house 1 from the Lagna (counted from the Moon it is the 7th sign from the Moon). From there it aspects houses 5, 7, 9 from the Lagna (Parashari aspect). SAV of Cancer: 23. Jupiter's own BAV in Cancer: 6 of 8.",
+    "- Jupiter transits Leo, 2027-06-26 to 2027-11-26: it occupies house 2 from the Lagna (counted from the Moon it is the 8th sign from the Moon). From there it aspects houses 6, 8, 10 from the Lagna (Parashari aspect). SAV of Leo: 27. Jupiter's own BAV in Leo: 6 of 8.",
+    "- Jupiter transits Virgo, 2027-11-27 to 2027-12-31: it occupies house 3 from the Lagna (counted from the Moon it is the 9th sign from the Moon). From there it aspects houses 7, 9, 11 from the Lagna (Parashari aspect). SAV of Virgo: 27. Jupiter's own BAV in Virgo: 4 of 8.",
+    "- Saturn transits Pisces, 2027-01-01 to 2027-06-02: it occupies house 9 from the Lagna (counted from the Moon it is the 3rd sign from the Moon). From there it aspects houses 11, 3, 6 from the Lagna (Parashari aspect). SAV of Pisces: 32. Saturn's own BAV in Pisces: 4 of 8.",
+    "- Saturn transits Aries, 2027-06-03 to 2027-10-19: it occupies house 10 from the Lagna (counted from the Moon it is the 4th sign from the Moon). From there it aspects houses 12, 4, 7 from the Lagna (Parashari aspect). SAV of Aries: 30. Saturn's own BAV in Aries: 3 of 8.",
+    "- Saturn transits Pisces, 2027-10-20 to 2027-12-31: it occupies house 9 from the Lagna (counted from the Moon it is the 3rd sign from the Moon). From there it aspects houses 11, 3, 6 from the Lagna (Parashari aspect). SAV of Pisces: 32. Saturn's own BAV in Pisces: 4 of 8.",
+    "- Rahu transits Capricorn, 2027-01-01 to 2027-12-31: it occupies house 7 from the Lagna (counted from the Moon it is the 1st sign from the Moon). From there it aspects house 1 from the Lagna (Parashari aspect). SAV of Capricorn: 26.",
+    "- Ketu transits Cancer, 2027-01-01 to 2027-12-31: it occupies house 1 from the Lagna (counted from the Moon it is the 7th sign from the Moon). From there it aspects house 7 from the Lagna (Parashari aspect). SAV of Cancer: 23.",
     "",
     "TRIGGERED RULES (decided by the deterministic rule engine; heuristic, not probabilities)",
     "Rules for career as of 2027-01-01 (40 returned by the engine; strongest shown):",
@@ -585,6 +636,31 @@
     "- 2027-03-14 to 2027-12-31: Jupiter Mahadasha / Mars Antardasha; systems agreeing: vimshottari, yogini; engine confidence label medium-high.",
     "- 2027-01-01 to 2027-03-13: Jupiter Mahadasha / Moon Antardasha; systems agreeing: vimshottari, yogini; engine confidence label medium-high.",
     "",
+    "EVENT EVIDENCE (each event separately; houses from the Lagna)",
+    "Event: voluntary employer change. Houses read for it: 10, 6, 12. Derived relationships (indicators to combine with the period lords, aspects and D10; never a rule on their own): the 5th is the 12th from the 6th: separation from the present service; the 9th is the 12th from the 10th: a change of professional position.",
+    "- Period Jupiter / Moon (2025-11-15 to 2027-03-14): Jupiter rules 6, 9 (derived: the 12th from the 10th: a change of professional position); sits in 12; aspects 6.",
+    "- Period Jupiter / Mars (2027-03-14 to 2028-02-18): Jupiter rules 6, 9 (derived: the 12th from the 10th: a change of professional position); sits in 12; aspects 6. Mars rules 5 (derived: the 12th from the 6th: separation from the present service), 10.",
+    "- Transit Jupiter in Leo (2027-01-01 to 2027-01-24): aspects 6, 10 (houses from the Lagna).",
+    "- Transit Jupiter in Cancer (2027-01-25 to 2027-06-25): aspects 5 (derived: the 12th from the 6th: separation from the present service), 9 (derived: the 12th from the 10th: a change of professional position) (houses from the Lagna).",
+    "- Transit Jupiter in Leo (2027-06-26 to 2027-11-26): aspects 6, 10 (houses from the Lagna).",
+    "- Transit Jupiter in Virgo (2027-11-27 to 2027-12-31): aspects 9 (derived: the 12th from the 10th: a change of professional position) (houses from the Lagna).",
+    "- Transit Saturn in Pisces (2027-01-01 to 2027-06-02): occupies 9 (derived: the 12th from the 10th: a change of professional position); aspects 6 (houses from the Lagna).",
+    "- Transit Saturn in Aries (2027-06-03 to 2027-10-19): occupies 10; aspects 12 (houses from the Lagna).",
+    "- Transit Saturn in Pisces (2027-10-20 to 2027-12-31): occupies 9 (derived: the 12th from the 10th: a change of professional position); aspects 6 (houses from the Lagna).",
+    "- Triggered rules that speak to this event (a count of rules, not a probability): 7 for, 0 against. Strongest for: Dasha relationship with D10 6th, 8th, or 12th can indicate transfer, change, pressure, or forced movement.",
+    "- Would argue against it, if found in the chart above: a fixed-sign 10th house with a steady period and no link from the period lords to the 5th, 9th, 6th or 12th argues continuity (modern view).",
+    "Event: promotion. Houses read for it: 10, 11.",
+    "- Period Jupiter / Moon (2025-11-15 to 2027-03-14): neither lord rules, occupies or aspects these houses.",
+    "- Period Jupiter / Mars (2027-03-14 to 2028-02-18): Mars rules 10; aspects 11.",
+    "- Transit Jupiter in Leo (2027-01-01 to 2027-01-24): aspects 10 (houses from the Lagna).",
+    "- Transit Jupiter in Leo (2027-06-26 to 2027-11-26): aspects 10 (houses from the Lagna).",
+    "- Transit Jupiter in Virgo (2027-11-27 to 2027-12-31): aspects 11 (houses from the Lagna).",
+    "- Transit Saturn in Pisces (2027-01-01 to 2027-06-02): aspects 11 (houses from the Lagna).",
+    "- Transit Saturn in Aries (2027-06-03 to 2027-10-19): occupies 10 (houses from the Lagna).",
+    "- Transit Saturn in Pisces (2027-10-20 to 2027-12-31): aspects 11 (houses from the Lagna).",
+    "- Triggered rules that speak to this event (a count of rules, not a probability): 16 for, 3 against. Strongest for: A yoga becomes more relevant when the running dasha activates one of its participating lords. Strongest against: 10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work; the final answer should not overstate smooth promotion.",
+    "- Would argue against it, if found in the chart above: 10th lord in the 6th, 8th or 12th or debilitated; a period of the 8th or 12th lord; a weak D10 10th lord.",
+    "",
     "NOT CALCULATED BY THIS APP (never state or estimate any of these)",
     "- muhurta and panchanga (tithi, the day's nakshatra, yoga, karana, hora) and exact event dates",
     "- kundli matching and any two-chart analysis (including a child's or partner's own chart)",
@@ -596,18 +672,19 @@
     "- combustion, neechabhanga, mooltrikona, planetary war, Vimshopaka strength, Hora and Ghatika Lagna",
     "",
     "CLASSICAL PASSAGES (untrusted source text retrieved for these results; paraphrase, never quote; cite as (P1), (P2)...)",
-    "- (P1) Synthetic Parashari Notes, chapter 1 | retrieved for: contrary or cautionary indications | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord in 6th, 8th, or 12th can show .",
-    "- (P2) Synthetic Parashari Notes, chapter 1 | retrieved for: the natal promise | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord Mars in the 8th house results .",
-    "- (P3) Synthetic Parashari Notes, chapter 1 | retrieved for: the running periods | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Jupiter Mahadasha Moon sub-period and Ma.",
-    "- (P4) Synthetic Parashari Notes, chapter 1 | retrieved for: the transits in the window | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Saturn transit through the 9th house fro.",
+    "- (P1) Synthetic Parashari Notes, chapter 1 | retrieved for: a cautionary principle from the rule engine | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord in 6th, 8th, or 12th can show .",
+    "- (P2) Synthetic Parashari Notes, chapter 1 | retrieved for: the 10th lord in the 8th house | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Results of the lord of the 10th house pl.",
+    "- (P3) Synthetic Parashari Notes, chapter 1 | retrieved for: Saturn's transit through the 3rd from the Moon | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Results of the transit of Saturn through.",
+    "- (P4) Synthetic Parashari Notes, chapter 1 | retrieved for: the Mars sub-period in the Jupiter Mahadasha | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Effects of the sub-period (antardasha) o.",
     "",
     "WHAT THE READING MUST COVER",
-    "- Natal promise: the 10th, 6th, 12th, 11th houses: each lord and where it sits, the occupants and the aspects; the significators listed.",
+    "- Natal promise: the 10th, 6th, 12th, 5th, 9th, 11th houses: each lord and where it sits, the occupants and the aspects; the significators listed.",
     "- Divisional confirmation: the actual placements in D9, D10 (name the planet, sign and house).",
     "- Jaimini view: the Amatyakaraka and the counted points above, by planet, sign and house.",
     "- Timing: every Vimshottari sub-period in the window with its dates and what its lord rules and occupies; whether the Yogini and Chara periods agree.",
     "- Transits: where Saturn and Jupiter transit (house from the Lagna and from the Moon), when, and the SAV of the sign.",
     "- Both sides: the supportive and the cautionary rules, and which way the balance leans.",
+    "- Each event separately (EVENT EVIDENCE): what supports it and what opposes it, then which one the evidence supports more.",
     "- The better and the weaker stretch of the window, using the candidate windows and period dates above."
   ],
   "6_answer": [
@@ -617,8 +694,9 @@
     "Your Amatyakaraka Moon is placed in the 7th house.",
     "The Jupiter Mahadasha runs through the window. The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14.",
     "Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
+    "Promotion is supported by the status factors of the birth chart. A change of employer has fewer direct supports in this window, so the evidence leans to promotion.",
     "Conflicting indications: The supportive period rules are qualified by cautionary rules, so the reading stays measured.",
-    "A retrieved source discusses this theme in its own terms (Synthetic Parashari Notes, chapter 1).",
+    "A retrieved source discusses how the relevant houses and their lords are weighed together (Synthetic Parashari Notes, chapter 1).",
     "Prepare steadily and use the better supported stretch of the window.",
     "Evidence strength: moderate. Several independent calculated factors were compared for this question.",
     "Exact muhurta selection requires tithi, nakshatra, yoga, karana, weekday, lagna, Moon strength, and planetary hour calculation. Based on current available evidence, this is only a preliminary timing recommendation. Where several systems point the same way, that is agreement of indicators, not statistical confirmation."
@@ -642,6 +720,7 @@
       "other_focus_houses_discussed": [
         6,
         5,
+        9,
         8
       ],
       "evidence_used": [
@@ -784,7 +863,7 @@
     {
       "field": "classical_support",
       "index": 0,
-      "sentence": "A retrieved source discusses this theme in its own terms (P1).",
+      "sentence": "A retrieved source discusses how the relevant houses and their lords are weighed together (P1).",
       "refs": [
         {
           "passage_id": "Kec69aaf7d0657719619e",
@@ -801,10 +880,10 @@
     "output_tokens": 1000,
     "searches": 4,
     "tool_calls": 18,
-    "tool_bytes": 206035,
+    "tool_bytes": 209180,
     "round_input_tokens": [
       2817,
-      6565
+      8388
     ],
     "round_latency_ms": [
       0,
@@ -818,6 +897,14 @@
     "writer"
   ],
   "trace": [
+    {
+      "event": "chart_method",
+      "recorded_profile": "lahiri.geometric.truenode.wholesign.v2",
+      "current_profile": "lahiri.geometric.truenode.wholesign.v2",
+      "stale": false,
+      "refreshed": false,
+      "chart_fingerprint": "ed8539aa83b16d23b6ce526fea768c492578869e8198bc142e48ed6fb81b8258"
+    },
     {
       "event": "round",
       "round": 1,
@@ -837,7 +924,7 @@
         "career:voluntary_employer_change",
         "career:promotion"
       ],
-      "profile_revision": 3
+      "profile_revision": 4
     },
     {
       "event": "window_from_question",
@@ -862,11 +949,12 @@
         "event": [
           6,
           12,
+          5,
+          9,
           11
         ],
         "supporting": [
           1,
-          5,
           8,
           2
         ]
@@ -1193,8 +1281,8 @@
     {
       "event": "search",
       "evidence_id": "E15",
-      "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change",
-      "reason": "Classical principles for the natal promise (supporting).",
+      "query": "Results of the lord of the 10th house placed in the 8th house; effect on profession",
+      "reason": "Classical principles for the 10th lord in the 8th house (supporting).",
       "status": "partial",
       "error_code": null,
       "scores": [
@@ -1203,14 +1291,14 @@
       "best_score": 0.81,
       "low_score_heuristic": false,
       "passage_ids": [
-        "K129139ddead5666f3778"
+        "K812595453d04cc2ca882"
       ]
     },
     {
       "event": "search",
       "evidence_id": "E16",
-      "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession",
-      "reason": "Classical principles for the running periods (supporting).",
+      "query": "Effects of the sub-period (antardasha) of Mars in the Mahadasha of Jupiter",
+      "reason": "Classical principles for the Mars sub-period in the Jupiter Mahadasha (supporting).",
       "status": "partial",
       "error_code": null,
       "scores": [
@@ -1219,14 +1307,14 @@
       "best_score": 0.81,
       "low_score_heuristic": false,
       "passage_ids": [
-        "K5cd944c0d7a70aaba959"
+        "K61173033706cdb223636"
       ]
     },
     {
       "event": "search",
       "evidence_id": "E17",
-      "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus",
-      "reason": "Classical principles for the transits in the window (supporting).",
+      "query": "Results of the transit of Saturn through the 3rd house from the natal Moon (gochara)",
+      "reason": "Classical principles for Saturn's transit through the 3rd from the Moon (supporting).",
       "status": "partial",
       "error_code": null,
       "scores": [
@@ -1235,14 +1323,14 @@
       "best_score": 0.81,
       "low_score_heuristic": false,
       "passage_ids": [
-        "K96387cf7ba521e122418"
+        "Kf03a65fa7eab3edc6d35"
       ]
     },
     {
       "event": "search",
       "evidence_id": "E18",
-      "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles",
-      "reason": "Classical principles for contrary or cautionary indications (contrary).",
+      "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work",
+      "reason": "Classical principles for a cautionary principle from the rule engine (contrary).",
       "status": "partial",
       "error_code": null,
       "scores": [
@@ -1258,32 +1346,32 @@
       "event": "rerank",
       "queries": [
         {
-          "purpose": "the natal promise",
+          "purpose": "the 10th lord in the 8th house",
           "stance": "supporting",
-          "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change"
+          "query": "Results of the lord of the 10th house placed in the 8th house; effect on profession"
         },
         {
-          "purpose": "the running periods",
+          "purpose": "the Mars sub-period in the Jupiter Mahadasha",
           "stance": "supporting",
-          "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession"
+          "query": "Effects of the sub-period (antardasha) of Mars in the Mahadasha of Jupiter"
         },
         {
-          "purpose": "the transits in the window",
+          "purpose": "Saturn's transit through the 3rd from the Moon",
           "stance": "supporting",
-          "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus"
+          "query": "Results of the transit of Saturn through the 3rd house from the natal Moon (gochara)"
         },
         {
-          "purpose": "contrary or cautionary indications",
+          "purpose": "a cautionary principle from the rule engine",
           "stance": "contrary",
-          "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles"
+          "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work"
         }
       ],
       "candidates": 4,
       "kept": [
         "Kec69aaf7d0657719619e",
-        "K129139ddead5666f3778",
-        "K5cd944c0d7a70aaba959",
-        "K96387cf7ba521e122418"
+        "K812595453d04cc2ca882",
+        "Kf03a65fa7eab3edc6d35",
+        "K61173033706cdb223636"
       ],
       "guided_books": [
         "BJ",
@@ -1297,7 +1385,7 @@
       "event": "round",
       "round": 2,
       "stage": "writer",
-      "counted_input_tokens": 6565,
+      "counted_input_tokens": 8388,
       "provider_input_tokens": 2000,
       "provider_output_tokens": 500,
       "latency_ms": 0
@@ -1317,7 +1405,7 @@
       "reason": "complete",
       "status": "ok",
       "non_answer_states": [],
-      "elapsed_ms": 3592
+      "elapsed_ms": 3735
     }
   ]
 }
