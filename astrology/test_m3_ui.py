@@ -101,6 +101,34 @@ class M3InterpretiveUiTests(M3Base):
         self.assertNotIn('repair_requested', events)
         self.assertTrue(saved['tools'])
 
+    def test_repeated_requests_are_reported_and_next_round_must_answer(self):
+        """Live run of 2026-11-13 (message 468): rounds 2-6 repeated round 1's requests with identical input
+        until the round limit. A repeat is now reported back, and the next round is answer-only."""
+        from astrology.agent.general_provider import reply_schema
+        lab = label('predictive_timing', 'career', events=['career:unemployment_and_reemployment'])
+        reqs = domain_requests(self.profile, ['career'])
+        provider = Script(reply(lab, reqs), reply(requests=reqs), lambda p: reply(final=final(p)))
+        response = self.post(provider, 'can I get a new job next year ?')
+        self.assertContains(response, 'Evidence strength')
+        self.assertTrue(provider.payloads[2].get('answer_only'))
+        self.assertTrue(provider.payloads[2]['already_fetched'])
+        self.assertNotIn('answer_only', provider.payloads[1])
+        saved = Message.objects.filter(role=Message.ASSISTANT, conversation__user=self.owner).latest('pk').provenance['evidence']
+        self.assertEqual(saved['stop_reason'], 'complete', saved)
+        self.assertIn('stalled_round', [e['event'] for e in saved['agent_events']])
+        forced = reply_schema(answer_only=True)['schema']['properties']['final']
+        self.assertNotIn('anyOf', forced)                       # final cannot be null in an answer-only round
+        self.assertIn('anyOf', reply_schema()['schema']['properties']['final'])
+
+    def test_model_that_ignores_answer_only_stops_at_once(self):
+        lab = label('predictive_timing', 'career', events=['career:promotion'])
+        reqs = domain_requests(self.profile, ['career'])
+        provider = Script(reply(lab, reqs), reply(requests=reqs), reply(requests=reqs))
+        self.post(provider, 'can I get a new job next year ?')
+        saved = Message.objects.filter(role=Message.ASSISTANT, conversation__user=self.owner).latest('pk').provenance['evidence']
+        self.assertEqual(saved['stop_reason'], 'missing_final')
+        self.assertEqual(len(provider.payloads), 3)             # no further paid rounds
+
     def test_false_untagged_sentence_is_never_auto_grounded(self):
         from astrology.validation.prose_validator import ground
         from astrology.synthesis.fact_catalog import build_catalog

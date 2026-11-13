@@ -200,6 +200,9 @@ class GeneralConsultation:
         self.judgements, self.rejected, self.expand = {}, [], []
         self.repair = None
         self.repaired = False
+        # The model is stateless between rounds: repeats are reported back (already_fetched), and a
+        # round that only repeats earlier requests switches the next round to answer-only.
+        self.notices, self.stalled, self.must_answer = [], False, False
         self.stop_reason = 'complete'
         self.final = self.final_validation = None
         self.menu = None
@@ -272,8 +275,12 @@ class GeneralConsultation:
                 self.trace.append({'event': 'arguments_normalized', 'tool': tool, 'keys': changed})
         key = json.dumps([tool, args], sort_keys=True)
         if key in self.seen:
-            self.trace.append({'event': 'deduplicated', 'tool': tool, 'evidence_id': self.seen[key]})
-            return self.seen[key]
+            eid = self.seen[key]
+            self.trace.append({'event': 'deduplicated', 'tool': tool, 'evidence_id': eid})
+            self.notices.append({'tool': tool, 'evidence_id': eid,
+                                 'note': f'You already requested this in an earlier round. Its result is evidence {eid} and its '
+                                         'fact IDs are listed there. Do not request it again: use those facts.'})
+            return eid
         if self.usage['tool_calls'] >= self.limits.tool_calls:
             return self.reject(tool, 'tool call limit reached')
         if tool == SEARCH_TOOL:
@@ -383,6 +390,11 @@ class GeneralConsultation:
                                    for eid in dict.fromkeys(self.expand)}
         if self.rejected:
             payload['rejected_requests'] = self.rejected[-8:]
+        if self.notices:
+            payload['already_fetched'] = self.notices[-8:]
+        if self.must_answer:
+            # The reply format now requires final; requests sent this round are not run.
+            payload['answer_only'] = True
         if self.repair:
             payload['repair'] = self.repair
         if self.context is not None:
@@ -406,12 +418,14 @@ class GeneralConsultation:
         self.check_time()
         if self.usage['rounds'] >= self.limits.rounds:
             raise Stop('model_round_limit')
-        final_required = self.limits.rounds - self.usage['rounds'] <= 1 or self.repair is not None
+        last = self.limits.rounds - self.usage['rounds'] <= 1
+        self.must_answer = self.label is not None and (last or self.stalled)
+        final_required = last or self.stalled or self.repair is not None
         payload = self.payload(final_required)
         counted = self.sized(payload, provider)
         self.usage['rounds'] += 1
         self.usage['round_input_tokens'].append(counted)
-        self.expand, self.rejected = [], []
+        self.expand, self.rejected, self.notices = [], [], []
         started = self.clock()
         progress('answer')
         try:
@@ -489,7 +503,9 @@ class GeneralConsultation:
                     return 'out_of_scope'
             self.apply_judgements(reply['search_judgements'])
             pending = type(reply['requests']) is list and len(reply['requests']) > 0
-            if reply['final'] is not None and pending and self.usage['rounds'] < self.limits.rounds:
+            if self.must_answer and reply['final'] is None:
+                raise Stop('missing_final')
+            if reply['final'] is not None and pending and not self.must_answer and self.usage['rounds'] < self.limits.rounds:
                 # A draft written before its own requests ran cannot cite their results: run the
                 # requests and set the draft aside (it is neither validated nor counted as a repair).
                 self.trace.append({'event': 'premature_final_set_aside', 'requests': len(reply['requests'])})
@@ -532,8 +548,13 @@ class GeneralConsultation:
                 raise Stop('empty_round')
             if len(requests) > self.limits.requests_per_round:
                 self.reject('batch', f'only the first {self.limits.requests_per_round} requests in a round are run')
+            before, repeats = len(self.evidence), len(self.notices)
             for request in requests[:self.limits.requests_per_round]:
                 self.execute(request)
+            if len(self.evidence) == before and len(self.notices) > repeats:
+                # Nothing new, only repeats: the next round must answer from the evidence already held.
+                self.stalled = True
+                self.trace.append({'event': 'stalled_round', 'repeats': len(self.notices) - repeats})
 
     def conflicts_present(self):
         for entry in self.evidence.values():

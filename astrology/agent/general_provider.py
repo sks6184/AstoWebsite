@@ -53,11 +53,14 @@ Each round, reply with one JSON object: label, requests, search_judgements, fina
   illness prediction, death, longevity or infertility statements; no remedies unless a retrieved passage
   supports them. Follow each domain's sensitivity note. Agreement between systems is agreement of
   indicators, not proof.
+- You do not remember earlier rounds; the payload is your whole state. Everything already fetched is
+  under evidence (E IDs) with its facts in facts. already_fetched lists requests you repeated: never
+  repeat them, use those facts. When answer_only is true, write final now from the evidence you have.
 - When final_required is true you must send final. If repair is present, fix every listed issue.'''
 INSTRUCTIONS += ' ' + SOURCE_TEXT_POLICY
 
 
-def reply_schema(profile=None):
+def reply_schema(profile=None, answer_only=False):
     profile = profile or load_profile()
     from .general import AGENT_TOOLS
     string_list = {'type': 'array', 'items': {'type': 'string'}}
@@ -89,7 +92,8 @@ def reply_schema(profile=None):
             'schema': {'type': 'object', 'additionalProperties': False, 'required': ['label', 'requests', 'search_judgements', 'final'],
                        'properties': {'label': {'anyOf': [label, {'type': 'null'}]}, 'requests': {'type': 'array', 'items': request},
                                       'search_judgements': {'type': 'array', 'items': judgement},
-                                      'final': {'anyOf': [final, {'type': 'null'}]}}}}
+                                      # Answer-only rounds: final cannot be null, so the model must answer.
+                                      'final': final if answer_only else {'anyOf': [final, {'type': 'null'}]}}}}
 
 
 class GeneralProvider:
@@ -100,7 +104,8 @@ class GeneralProvider:
 
     def request(self, payload, max_output_tokens=1800):
         return {'model': self.model(), 'instructions': INSTRUCTIONS, 'input': json.dumps(payload, ensure_ascii=False),
-                'max_output_tokens': max_output_tokens, 'store': False, 'text': {'format': reply_schema()}}
+                'max_output_tokens': max_output_tokens, 'store': False,
+                'text': {'format': reply_schema(answer_only=bool(payload.get('answer_only')))}}
 
     def count_tokens(self, payload):
         """tiktoken count of the full serialized request (instructions, input and schema), M3-AC16."""

@@ -726,8 +726,10 @@ class M3LimitsAndFailureTests(M3Base):
         provider = Script(reply(lab, [req('get_chart_facts', charts=['d1'])]), *([loop] * 10))
         result = self.run_agent('What does my chart say about my career overall?', provider)
         self.assertEqual(result['usage']['rounds'], 6)
-        self.assertEqual(result['stop_reason'], 'model_round_limit')
+        # The 6th round is answer-only; a model that still sends no final stops there.
+        self.assertEqual(result['stop_reason'], 'missing_final')
         self.assertTrue(provider.payloads[-1]['final_required'])
+        self.assertTrue(provider.payloads[-1]['answer_only'])
         rounds = [t for t in result['trace'] if t['event'] == 'round']
         self.assertEqual(len(rounds), 6)
         self.assertTrue(all(r['provider_input_tokens'] == 1200 and r['counted_input_tokens'] > 0 and 'latency_ms' in r for r in rounds))
