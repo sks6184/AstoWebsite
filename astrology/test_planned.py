@@ -83,7 +83,7 @@ def astrologer(consultation, **override):
                    f"from {first['start']} to {first['end']}.")
     saturn = next((x for x in t.transits if x['planet'] == 'Sa'), None)
     transits = f"Saturn transits {S(saturn['sign'])}, the {ordinal(saturn['house'])} house from the Lagna, until {saturn['end']}." if saturn else ''
-    cite = f"A retrieved source discusses this theme in its own terms ({consultation.kept[0]['marker']})." if consultation.kept else ''
+    cite = f"A retrieved source discusses how the relevant houses and their lords are weighed together ({consultation.kept[0]['marker']})." if consultation.kept else ''
     answer = {'direct_answer': f"The indications for the period from {plan.window['start']} to {plan.window['end']} are mixed but workable. "
                                f"Your {ordinal(h)} lord {P(code)} is the main factor.",
               'natal_promise': natal.strip(), 'divisional_confirmation': divisional, 'jaimini_view': jaimini, 'periods': periods, 'transits': transits,
@@ -152,6 +152,9 @@ class FactCheckTests(PlannedBase):
         'Jupiter transits Cancer, the 7th sign counted from the Moon, in early 2027.',
         'Saturn in transit through Pisces aspects your 11th house.',
         'Jupiter, transiting your 1st house, aspects the 5th, 7th and 9th houses.',
+        'Jupiter transits through Cancer, where it supports houses 1 (self) and 5 (intelligence) during 2027.',   # occupies 1, aspects 5
+        'Mars supports your 10th house as its lord.',
+        'Saturn strengthens your 9th house by its aspect.',
         'Jupiter in the 12th house aspects the 8th, where exalted Venus is not involved.',
     ]
     FALSE = [
@@ -187,6 +190,12 @@ class FactCheckTests(PlannedBase):
         ('The Arudha Lagna falls in Cancer.', 'wrong_pada_or_karakamsha'),           # the uncorrected direct count
         ('Jupiter transits Cancer, your 7th house, in early 2027.', 'wrong_placement'),   # 7th is its count from the Moon
         ('Saturn in transit through Pisces aspects your 10th house.', 'wrong_aspect'),
+        # The sentence form of the live error of 2026-11-13: a planet said to "support" a house it neither occupies,
+        # rules nor aspects (in the synthetic chart Jupiter in Cancer occupies 1 and aspects 5, 7 and 9, not 3).
+        ('Jupiter transits through Cancer, where it indicates gains as it supports houses 1 (identity) and 3 (effort) during 2027.', 'unsupported_relation'),
+        ('Jupiter transits Leo, your 8th house, late in 2027.', 'wrong_placement'),          # 8th is its count from the Moon; from the Lagna it is the 2nd
+        ('Saturn strengthens the connection with your 11th house.', 'unsupported_relation'),      # no occupation, lordship or aspect
+        ('Venus activates your 10th house during this period.', 'unsupported_relation'),
     ]
 
     def test_true_statements_are_accepted(self):
@@ -330,9 +339,12 @@ class PipelineTests(PlannedBase):
         self.assertGreater(order.index('search'), max(i for i, e in enumerate(order) if e == 'tool_result'))
         queries = self.library.queries
         self.assertTrue(2 <= len(queries) <= AgentLimits().searches)
-        self.assertIn('10th lord Mars in the 8th house', queries[0])                       # chart fact
-        self.assertTrue(any('Jupiter Mahadasha Moon sub-period' in q for q in queries))    # running periods
-        self.assertTrue(any('Saturn transit through the' in q for q in queries))           # transits in the window
+        # One principle per search, each made applicable by a calculated result (synthetic chart: the 10th lord is
+        # in the 8th; Jupiter/Mars covers most of 2027; Saturn's longest stay is in Pisces, the 3rd from the Moon).
+        self.assertEqual(queries[0], 'Results of the lord of the 10th house placed in the 8th house; effect on profession')
+        self.assertIn('Effects of the sub-period (antardasha) of Mars in the Mahadasha of Jupiter', queries)
+        self.assertIn('Results of the transit of Saturn through the 3rd house from the natal Moon (gochara)', queries)
+        self.assertTrue(all(q.count(';') <= 1 for q in queries))                           # no string of chart factors
         rerank_event = next(t for t in result['trace'] if t['event'] == 'rerank')
         self.assertIn('contrary', [q['stance'] for q in rerank_event['queries']])          # contrary principles are searched too
         self.assertTrue(all(len(q['query'].encode()) <= 200 for q in rerank_event['queries']))
@@ -358,6 +370,56 @@ class PipelineTests(PlannedBase):
         self.assertTrue(by_id['4']['kept'])                                # a contrary passage is always carried when one qualifies
         self.assertEqual(by_id['4']['overlap'], 1.0)                       # "Xth" matches house 10
         self.assertEqual([p['marker'] for p in kept], ['P1', 'P2', 'P3'])
+
+    def test_worked_examples_of_other_charts_are_held_back_from_the_writer(self):
+        from astrology.planned.retrieval import worked_example
+
+        def passage(i, score, text):
+            citation = {'file_id': f'f{i}', 'filename': 'Synthetic_Notes.pdf', 'document': None, 'book': None, 'chapter': None, 'page': None, 'tradition': None}
+            return {'evidence_id': f'K{i:020d}', 'snippet': text, 'citation': citation, 'score': score}
+        example = ('Synthetic Chart 12. Analysis of the chart: the native has the tenth lord Mars in the eighth house. In 1994 he changed '
+                   'his work, and his position improved.')
+        principle = 'Synthetic principle: when the lord of the tenth house is placed in the eighth house, the work meets interruptions.'
+        self.assertTrue(worked_example(example))
+        self.assertFalse(worked_example(principle))
+        natal = {'purpose': 'the 10th lord in the 8th house', 'stance': 'supporting', 'query': 'q', 'keys': {'planets': [], 'houses': [10, 8]}}
+        other = {'purpose': "Saturn's transit", 'stance': 'supporting', 'query': 't', 'keys': {'planets': ['Sa'], 'houses': [3]}}
+        label = {'question_type': 'predictive_timing', 'domains': ['career'], 'events': []}
+        kept, report = rerank([(natal, [passage(1, 0.85, example), passage(2, 0.70, principle)]),
+                               (other, [passage(3, 0.80, example.replace('Chart 12', 'Chart 13'))])], label)
+        by_id = {r['id'][-1]: r for r in report}
+        self.assertTrue(by_id['1']['worked_example'] and not by_id['1']['kept'])     # a higher score does not save a case study
+        self.assertTrue(by_id['2']['kept'] and not by_id['2']['worked_example'])
+        # When a search finds nothing but a worked example, it is passed on, labelled as one.
+        self.assertTrue(by_id['3']['kept'] and by_id['3']['worked_example'])
+        self.assertLess(by_id['1']['score'], by_id['2']['score'])
+
+    def test_brief_labels_a_worked_example_and_carries_transit_ashtakavarga(self):
+        result = self.consult(Scripted(CAREER, self.truthful()))
+        self.assertNotIn('a worked example from another person', result['brief'])    # the synthetic passages state principles
+        self.assertRegex(result['brief'], r"SAV of Aries: 30\. Saturn's own BAV in Aries: \d of 8\.")
+        self.assertRegex(result['brief'], r"SAV of Cancer: 23\. Jupiter's own BAV in Cancer: \d of 8\.")
+
+    def test_a_citation_must_be_about_what_the_sentence_says(self):
+        self.consult(Scripted(CAREER, self.truthful()))
+        c = self.consultation
+        marker = c.kept[0]['marker']
+        passages = {p['marker']: p for p in c.kept}
+        on_topic = SentenceCheck(f'A source explains how the houses and their lords are weighed together ({marker}).', c.tables, c.plan, passages, TODAY).run()
+        self.assertEqual(on_topic.findings, [])
+        off_topic = SentenceCheck(f'Marriage after thirty brings lasting happiness ({marker}).', c.tables, c.plan, passages, TODAY).run()
+        self.assertEqual([f['code'] for f in off_topic.findings], ['citation_not_supported'])
+
+    def test_saved_record_keeps_the_retained_passages_with_their_sources(self):
+        from chat.evidence_manifest import manifest
+        result = self.consult(Scripted(CAREER, self.truthful()))
+        saved = manifest(result)
+        self.assertEqual([s['evidence_id'] for s in saved['sources']], [p['id'] for p in result['passages']])
+        first = saved['sources'][0]
+        self.assertEqual(first['citation']['filename'], 'Synthetic_Parashari_Notes.pdf')
+        self.assertTrue(first['excerpt'].startswith('Synthetic test passage'))
+        self.assertTrue(first['retrieved_for'] and first['marker'] == 'P1')
+        self.assertFalse(saved.get('truncated'))
 
     def test_answer_has_no_internal_tags_and_provenance_is_kept_internally(self):
         result = self.consult(Scripted(CAREER, self.truthful()))

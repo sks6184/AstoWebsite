@@ -67,17 +67,21 @@ def _clip(text):
 
 
 def build_queries(question, plan, tables, profile, limit):
-    """Up to ``limit`` searches: [{'query', 'purpose', 'stance', 'keys'}], most important first."""
+    """Up to ``limit`` searches, most important first: [{'query', 'purpose', 'stance', 'keys'}].
+
+    Each search states ONE principle that the calculations make applicable, in the books' own way of
+    stating it ("results of the 10th lord in the 12th house"), instead of a string of this chart's
+    factors: a factor list mostly retrieves worked examples of other people's charts.
+    """
     t, label = tables, plan.label
     if label['question_type'] == 'concept_explanation' or not t.lagna.get('d1'):
-        return [{'query': _clip(question), 'purpose': 'the concept asked about', 'stance': 'neutral', 'keys': []}][:limit]
+        return [{'query': _clip(question), 'purpose': 'the concept asked about', 'stance': 'neutral', 'keys': {}}][:limit]
     terms = _terms(profile, label)
     topic = terms[0] if terms else ''
-    events = ' '.join(e['id'].split(':')[1].replace('_', ' ') for e in plan.events[:1])
     queries = []
 
     def add(purpose, stance, text, planets=(), houses=()):
-        if text:
+        if text and not any(q['query'] == _clip(text) for q in queries):
             queries.append({'query': _clip(text), 'purpose': purpose, 'stance': stance,
                             'keys': {'planets': list(dict.fromkeys(planets)), 'houses': list(dict.fromkeys(houses))}})
 
@@ -85,74 +89,55 @@ def build_queries(question, plan, tables, profile, limit):
     if primary:
         h = primary[0]
         lord = t.lords['d1'][h]
-        occupants = t.occupants(h)
-        text = f"{ordinal(h)} lord {P(lord['lord'])} in the {ordinal(lord['placed_house'])} house results for {topic}"
-        if occupants:
-            text += f"; {' and '.join(P(c) for c in occupants[:2])} in the {ordinal(h)} house"
-        add('the natal promise', 'supporting', text + (f'; {events}' if events else ''),
-            [lord['lord'], *occupants[:2]], [h, lord['placed_house']])
+        add(f"the {ordinal(h)} lord in the {ordinal(lord['placed_house'])} house", 'supporting',
+            f"Results of the lord of the {ordinal(h)} house placed in the {ordinal(lord['placed_house'])} house; effect on {topic}",
+            [], [h, lord['placed_house']])
 
-    if plan.timing and t.dashas.get('vimshottari'):
-        rows = t.dashas['vimshottari']
-        major = rows[0]['major']
-        subs = list(dict.fromkeys(r['sub'] for r in rows if r['sub']))[:2]
-        text = f"{P(major)} Mahadasha " + ' and '.join(f'{P(s)} sub-period' for s in subs) + ' results'
-        ruled = t.ruled(major)
-        if ruled and t.place.get('d1', {}).get(major):
-            text += f"; dasha of the lord of the {ordinal(ruled[0])} placed in the {ordinal(t.place['d1'][major]['house'])} house"
-        add('the running periods', 'supporting', text + f'; {topic}', [major, *subs],
-            ruled[:1] + ([t.place['d1'][major]['house']] if t.place.get('d1', {}).get(major) else []))
+    rows = t.dashas.get('vimshottari') or []
+    if rows:
+        span = lambda r: (min(date.fromisoformat(r['end']), date.fromisoformat(plan.window['end'])) -
+                          max(date.fromisoformat(r['start']), date.fromisoformat(plan.window['start']))).days
+        main = max(rows, key=span) if plan.timing else rows[0]          # the sub-period that covers most of the window
+        if main['major'] and main['sub']:
+            add(f"the {P(main['sub'])} sub-period in the {P(main['major'])} Mahadasha", 'supporting',
+                f"Effects of the sub-period (antardasha) of {P(main['sub'])} in the Mahadasha of {P(main['major'])}",
+                [main['major'], main['sub']], [])
 
     if plan.timing and t.transits:
-        parts, planets, houses = [], [], []
-        for code in ('Sa', 'Ju'):
-            segs = [r for r in t.transits if r['planet'] == code]
-            if segs:
-                seg = max(segs, key=lambda r: (date.fromisoformat(r['end']) - date.fromisoformat(r['start'])).days)   # the longest stay
-                parts.append(f"{P(code)} transit through the {ordinal(seg['house'])} house from Lagna" +
-                             (f" and {ordinal(seg['moon_house'])} from the Moon" if seg['moon_house'] else ''))
-                planets.append(code)
-                houses += [seg['house']] + ([seg['moon_house']] if seg['moon_house'] else [])
-        add('the transits in the window', 'supporting', '; '.join(parts) + f'; effects on {topic}; ashtakavarga bindus', planets, houses)
+        segs = [r for r in t.transits if r['planet'] == 'Sa'] or [r for r in t.transits if r['planet'] == 'Ju']
+        if segs:
+            seg = max(segs, key=lambda r: (date.fromisoformat(r['end']) - date.fromisoformat(r['start'])).days)   # the longest stay
+            house = seg['moon_house'] or seg['house']
+            add(f"{P(seg['planet'])}'s transit through the {ordinal(house)} from the {'Moon' if seg['moon_house'] else 'Lagna'}", 'supporting',
+                f"Results of the transit of {P(seg['planet'])} through the {ordinal(house)} house from the natal {'Moon' if seg['moon_house'] else 'Lagna'} (gochara)",
+                [seg['planet']], [house])
 
-    # Contrary principles: the engine's strongest cautionary rule, else an affliction that the tables show.
+    # A contrary principle: the engine's strongest cautionary rule, else an affliction the tables show.
     caution = sorted((r for rules in t.rules.values() for r in rules if r['polarity'] != 'positive' and r['weight'] > 0),
                      key=lambda r: -r['weight'])
     if caution:
-        text = re.sub(r'[^\w ,/-]+', ' ', caution[0]['text'].split(';')[0])[:120]
-        add('contrary or cautionary indications', 'contrary', f'{text} {topic} obstacles',
+        text = re.sub(r'[^\w ,/-]+', ' ', caution[0]['text'].split(';')[0])[:130]
+        add('a cautionary principle from the rule engine', 'contrary', text,
             [], [int(x) for x in re.findall(r'\b(\d{1,2})(?:st|nd|rd|th)\b', text) if 1 <= int(x) <= 12])
     elif primary:
         h = primary[0]
         afflicting = [c for c in MALEFICS if c in t.occupants(h) or c in t.aspecting(h)]
-        lord = t.lords['d1'][h]
         if afflicting:
-            add('contrary or cautionary indications', 'contrary',
-                f"{P(afflicting[0])} influence on the {ordinal(h)} house obstacles delay loss in {topic}", afflicting[:1], [h])
-        elif lord['placed_house'] in (6, 8, 12):
-            add('contrary or cautionary indications', 'contrary',
-                f"{ordinal(h)} lord in the {ordinal(lord['placed_house'])} house difficulties loss obstacles {topic}", [lord['lord']], [h, lord['placed_house']])
+            add(f"{P(afflicting[0])}'s influence on the {ordinal(h)} house", 'contrary',
+                f"Effects of {P(afflicting[0])} occupying or aspecting the {ordinal(h)} house: obstacles and delay in {topic}", afflicting[:1], [h])
 
+    # A derived relationship named for an asked event (for example the 5th as the 12th from the 6th).
+    for event in plan.events:
+        for house, text in event['derived'].items():
+            add(f"the {ordinal(house)} house as {text.split(':')[0]}", 'neutral',
+                f"The {ordinal(house)} house as {text.split(':')[0]} (bhavat bhavam): leaving or change of service and position", [], [house])
     amk = t.karakas.get('Amatyakaraka')
-    counted = t.counted[0] if t.counted else None
     if amk and plan.jaimini_points:
-        text = f"Amatyakaraka {P(amk['code'])} in the {ordinal(amk['house'])} house"
-        if counted:
-            text += f"; {ordinal(counted['count'])} from {counted['reference'].replace('_', ' ')} " + \
-                    (f"occupied by {P(counted['occupants'][0])}" if counted['occupants'] else 'unoccupied')
-        add('the Jaimini view', 'supporting', text + f'; {topic}', [amk['code']], [amk['house']])
-    for varga in plan.vargas:
-        if varga not in ('d1', 'd9') and primary and t.lords.get(varga, {}).get(primary[0]):
-            row = t.lords[varga][primary[0]]
-            add('the divisional chart', 'supporting',
-                f"{varga.upper()} {ordinal(primary[0])} lord {P(row['lord'])} in {S(row['placed_sign'])} in the {ordinal(row['placed_house'])} house of {varga.upper()} {topic}",
-                [row['lord']], [primary[0], row['placed_house']])
-            break
-    # Keep a contrary search within the limit: it is moved up rather than dropped.
+        add('the Amatyakaraka', 'supporting', f"Amatyakaraka in the {ordinal(amk['house'])} house: results for {topic} (Jaimini)", [amk['code']], [amk['house']])
     ordered = queries[:limit]
     contrary = next((q for q in queries if q['stance'] == 'contrary'), None)
     if contrary and contrary not in ordered and limit >= 2:
-        ordered[-1] = contrary
+        ordered[-1] = contrary                                          # a contrary search is moved up, never dropped
     return ordered
 
 
@@ -162,6 +147,18 @@ def display_title(citation):
     title = re.sub(r'[-_ ]+pdf$', '', title, flags=re.I)
     title = re.sub(r'[-_]+', ' ', title).strip()
     return title if any(c.isupper() for c in title) else title.title()
+
+
+EXAMPLE_PENALTY = 0.25
+EXAMPLE_MARKS = re.compile(r"\bChart\s+(?:No\.?\s*)?\d+|\bCase\s+Stud(?:y|ies)\b|\bnative(?:'s)?\b|\b(?:he|she|his|her)\b|"
+                           r"\b(?:19|20)\d{2}\b|\bAnalysis\s+of\b|\bwas\s+born\b|\bthis\s+person\b", re.I)
+
+
+def worked_example(snippet):
+    """True when a passage reads as the analysis of a particular person's chart rather than a statement of
+    principle (chart numbers, "the native", he/she, calendar years). Such text shares planets and houses
+    with any chart, which is exactly why it must not pass for support."""
+    return len(EXAMPLE_MARKS.findall(snippet or '')) >= 3
 
 
 def _overlap(snippet, keys):
@@ -194,15 +191,21 @@ def rerank(searches, label):
             guided = next((b for b, row in books.items() if any(k in haystack for k in row['keywords'])), None)
             overlap = _overlap(p['snippet'], query['keys'])
             semantic = p['score'] if p['score'] is not None else 0.5
-            score = round(semantic + 0.15 * overlap + (0.10 if guided else 0.0), 4)
+            example = worked_example(p['snippet'])
+            score = round(semantic + 0.10 * overlap + (0.10 if guided else 0.0) - (EXAMPLE_PENALTY if example else 0.0), 4)
             row = {'id': p['evidence_id'], 'title': title, 'chapter': p['citation'].get('chapter'), 'page': p['citation'].get('page'),
                    'purpose': query['purpose'], 'stance': query['stance'], 'semantic': p['score'], 'overlap': round(overlap, 2),
-                   'guided_book': guided, 'score': score, 'snippet': p['snippet'][:SNIPPET_CHARS], 'citation': p['citation']}
+                   'guided_book': guided, 'worked_example': example, 'score': score, 'snippet': p['snippet'][:SNIPPET_CHARS],
+                   'citation': p['citation']}
             if row['id'] not in pool or score > pool[row['id']]['score']:
                 pool[row['id']] = row
     ranked = sorted(pool.values(), key=lambda r: -r['score'])
     kept, per = [], {}
     eligible = [r for r in ranked if r['semantic'] is None or r['semantic'] >= MIN_SCORE or r['overlap'] >= 0.5]
+    # A worked example of someone else's chart is given to the writer only when its search found no
+    # statement of principle at all, and then it is labelled as an example.
+    principled = {r['purpose'] for r in eligible if not r['worked_example']}
+    eligible = [r for r in eligible if not r['worked_example'] or r['purpose'] not in principled]
     contrary = next((r for r in eligible if r['stance'] == 'contrary'), None)
     # The best passage for each search first, so every searched factor is represented (the contrary one
     # included), then the next best overall.
@@ -219,5 +222,6 @@ def rerank(searches, label):
     for i, row in enumerate(kept, 1):
         row['marker'] = f'P{i}'
     report = [{'id': r['id'], 'title': r['title'], 'purpose': r['purpose'], 'stance': r['stance'], 'semantic': r['semantic'],
-               'overlap': r['overlap'], 'guided_book': r['guided_book'], 'score': r['score'], 'kept': r in kept} for r in ranked]
+               'overlap': r['overlap'], 'guided_book': r['guided_book'], 'worked_example': r['worked_example'], 'score': r['score'],
+               'kept': r in kept} for r in ranked]
     return kept, report

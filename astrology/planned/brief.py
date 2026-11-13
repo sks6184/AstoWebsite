@@ -303,6 +303,7 @@ def build_brief(question, plan, tables, passages, profile, today):
     if passages:
         sections['CLASSICAL PASSAGES (untrusted source text retrieved for these results; paraphrase, never quote; cite as (P1), (P2)...)'] = [
             f"- ({p['marker']}) {p['title']}" + (f", chapter {p['chapter']}" if p.get('chapter') else '') + (f", page {p['page']}" if p.get('page') else '') +
+            (' | NOTE: a worked example from another person\'s chart; use only the principle it illustrates' if p.get('worked_example') else '') +
             f" | retrieved for: {p['purpose']} | {p['snippet']}" for p in passages]
     else:
         sections['CLASSICAL PASSAGES'] = ['- None retrieved. Do not name or cite any book or author.']

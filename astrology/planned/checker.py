@@ -42,7 +42,7 @@ ENTITY = re.compile(
     rf'(?P<lagl>\b(?:lagna|ascendant)\s+(?:lord|ruler)\b|\blagnesh\b|\b(?:lord|ruler)\s+of\s+(?:the\s+|your\s+)?(?:lagna|ascendant)\b)|'
     rf'(?P<lord1>\b{_NUM})[- ](?:house[- ])?(?:lord|ruler)\b|\b(?:lord|ruler|owner)\s+of\s+(?:the\s+|your\s+)?(?P<lord2>{_NUM})(?:\s+house)?\b|'
     rf'(?P<itslord>\b(?:its|whose)\s+(?:lord|ruler)\b)|'
-    rf'(?P<hlist>\b(?:houses?|bhavas?)\s+\d{{1,2}}(?:\s*(?:,|and|&|or)\s*\d{{1,2}})*\b)|'
+    rf'(?P<hlist>\b(?:houses?|bhavas?)\s+\d{{1,2}}\b(?:\s*\([^)]{{0,40}}\))?(?:\s*(?:,|and|&|or)\s*\d{{1,2}}\b(?:\s*\([^)]{{0,40}}\))?)*)|'
     rf'(?P<h>\b\d{{1,2}})(?:st|nd|rd|th)\b(?:\s+(?:house|bhava)s?\b)?|(?P<hw>\b(?:{_ORDW}))\s+(?:house|bhava)\b|'
     rf'(?P<karaka>\b(?:{_KARAKAS})\b|\bAmK\b|\bAK\b|\bDK\b|\bPK\b)|'
     rf'(?P<pada>\bArudha\s+Lagna\b|\bUpapada(?:\s+Lagna)?\b|\bDarapada\b|\bKarakams[h]?a\b|\bAL\b|\bUL\b|\bA(?:[1-9]|1[0-2])\b)|'
@@ -59,6 +59,12 @@ ASPECT = re.compile(r'\b(aspect\w*|drishti|glance\w*|gaze\w*)\b', re.I)
 TRANSIT = re.compile(r'\btransit\w*|\bgochar\w*', re.I)
 FILLER = re.compile(r"^[\s,(:\u2013\u2014-]*(?:(?:is|are|was|being|as|the|your|this|a|an|also|namely|who|which|that|itself|planet|here|i\.e\.)[\s,]*)*[\s,(:\u2013\u2014-]*$", re.I)
 CHAIN = re.compile(r"^[\s,(:;\u2013\u2014-]*(?:(?:and|or|in|of|the|your|sign|its|own|which|is|house|as\s+well\s+as|along\s+with|both)[\s,]*)*[\s,(:\u2013\u2014-]*$", re.I)
+INFLUENCE = re.compile(r'\b(supports?|supporting|influenc\w+|affect\w*|activat\w+|impact\w*|energi[sz]\w+|strengthen\w*|benefit\w*|'
+                       r'bless\w*|afflict\w*|pressur\w+|connect\w*|link\w*|accentuat\w+|touch\w*)\b', re.I)
+PRONOUN = re.compile(r'\b(it|its|which|that)\b', re.I)
+CONTENT_WORD = re.compile(r'[a-z]{6,}')
+COMMON = frozenset('''retrieved source sources passage passages classical though although however because therefore indicates indicate
+    suggests suggest during within period periods should would could chart charts planet planets astrology'''.split())
 MOVING = re.compile(r'transit\w*|moves?|moving|enter\w*|through|across|crosses|crossing', re.I)
 RULES_CHAIN = re.compile(r"^[\s,(&]*(?:(?:and|or|the|your|as\s+well\s+as|both)[\s,]*)*(?:house\s*)?$", re.I)
 PASSIVE_PLACE = re.compile(r'\b(occupied\s+by|tenanted\s+by|contains?|holds?|hosts?|home\s+to)\b', re.I)
@@ -148,7 +154,7 @@ def entities(text):
         elif kind == 'itslord':
             found.append(Entity('L', None, m.start(), m.end()))
         elif kind == 'hlist':
-            for n in re.findall(r'\d{1,2}', raw):
+            for n in re.findall(r'\d{1,2}', re.sub(r'\([^)]*\)', ' ', raw)):
                 if 1 <= int(n) <= 12:
                     found.append(Entity('H', int(n), m.start(), m.end()))
         elif kind in ('h', 'hw'):
@@ -198,6 +204,7 @@ class SentenceCheck:
         self.ents = entities(blank)
         self.transit = bool(TRANSIT.search(blank)) or field == 'transits'
         self.moving = False            # the statement being checked uses a transit verb
+        self.scope = {}                # planet -> transit signs this sentence has placed it in ("Jupiter transits Cancer ...")
         self.vargas = list(dict.fromkeys(['d1'] + [e.value for e in self.ents if e.kind == 'V' and e.value in tables.lagna]))
         self.named_varga = len(self.vargas) > 1
 
@@ -228,14 +235,20 @@ class SentenceCheck:
                 elif row['house'] == target.value:
                     return row['ref']
         if self.transit:
-            for seg in t.transits:
-                if seg['planet'] != code:
-                    continue
-                if target.kind == 'S' and seg['sign'] == target.value:
-                    return seg['ref']
-                if target.kind == 'H' and (seg['moon_house'] if target.ref == 'moon' else seg['house']) == target.value:
+            for seg in self.segments(code):
+                hit = (target.kind == 'S' and seg['sign'] == target.value) or \
+                      (target.kind == 'H' and (seg['moon_house'] if target.ref == 'moon' else seg['house']) == target.value)
+                if hit:
+                    if self.moving:
+                        # Once the sentence has put the planet in a transit sign, its other claims about
+                        # that planet are judged from that sign, not from anywhere it goes in the window.
+                        self.scope.setdefault(code, set()).add(seg['sign'])
                     return seg['ref']
         return None
+
+    def segments(self, code):
+        signs = self.scope.get(code)
+        return [s for s in self.t.transits if s['planet'] == code and (not signs or s['sign'] in signs)]
 
     def placement_fact(self, code):
         t = self.t
@@ -297,10 +310,10 @@ class SentenceCheck:
 
     def check_aspect(self, code, house):
         row = self.t.aspects.get(code)
-        segments = [s for s in self.t.transits if s['planet'] == code] if self.transit else []
+        segments = self.segments(code) if self.transit else []
         if row is None and not segments:
             return self.soft.append('aspects unavailable')
-        if row and house in row['houses']:
+        if row and house in row['houses'] and code not in self.scope:
             return self.ok(row['ref'])
         hit = next((s for s in segments if house in s['aspects']), None)
         if hit:
@@ -430,18 +443,20 @@ class SentenceCheck:
                     self.check_house_sign(prev if prev.kind == 'H' else e, e if e.kind == 'S' else prev)
                 last_target = e
                 continue
-            span = text[subject_end:e.start]
+            pronoun = [m.end() for m in PRONOUN.finditer(text, subject_end, e.start)]
+            span = text[max([subject_end] + pronoun):e.start]
             between = REFERENCE.sub(' ', text[last_target.end:e.start]) if last_target is not None else ''
             # "rules the 2nd and 11th" continues a lordship; "the 10th lord in the 6th" does not.
             chained = relation and last_target is relation[1] and (RULES_CHAIN if relation[0] == 'rules' else CHAIN).match(between)
             if ORIGIN.search(before) and not (e.kind == 'H' and e.ref):
                 kind = None                                       # "aspects the 10th from the 4th": origin, not verified here
-            elif chained and relation[0] in ('place', 'rules', 'aspect'):
+            elif chained and relation[0] in ('place', 'rules', 'aspect', 'influence'):
                 kind = relation[0]                                # "in the 12th house, in Cancer" / "rules the 2nd and 11th"
             elif len(span.split()) > 14:
                 kind = None
             else:
-                cues = [(m.start(), name) for name, pattern in (('rules', RULES), ('aspect', ASPECT), ('place', PLACE)) for m in pattern.finditer(span)]
+                cues = [(m.start(), name) for name, pattern in (('rules', RULES), ('aspect', ASPECT), ('place', PLACE), ('influence', INFLUENCE))
+                        for m in pattern.finditer(span)]
                 kind = max(cues)[1] if cues else None             # the cue nearest to the house or sign decides
             if subject.get('lagna') and kind is None and FILLER.match(span):
                 kind = 'place'                                    # "Lagna is Leo"
@@ -456,14 +471,65 @@ class SentenceCheck:
                     self.check_lordship(subject['code'], house)
             elif kind == 'aspect' and subject['kind'] == 'P' and e.kind == 'H':
                 self.check_aspect(subject['code'], e.value)
+            elif kind == 'influence' and subject['kind'] == 'P':
+                self.check_relation(subject, e)                   # "supports", "activates", "connects": some real relation is needed
             else:
                 if prev and {prev.kind, e.kind} == {'H', 'S'} and APPOSITION.match(gap) and not self.transit and not (relation and last_target is prev):
                     self.check_house_sign(prev if prev.kind == 'H' else e, e if e.kind == 'S' else prev)
+                elif subject['kind'] == 'P' and kind is None and len(span.split()) <= 14 and not (e.kind == 'H' and e.ref == 'other') \
+                        and not ORIGIN.search(before):
+                    # The wording is not one of the known forms. It still links a planet with a house or sign:
+                    # that needs some relation in the calculations, otherwise it is an unsupported chart claim.
+                    self.check_relation(subject, e, known_form=False)
                 else:
                     self.soft.append(f"{subject['name']} with {self.describe(e)}: statement form not recognised, not verified")
                 kind = None
             relation = (kind, e) if kind else None
             last_target = e
+
+    def relation_of(self, code, target):
+        """Any calculated relation between a planet and a house or sign: occupation, lordship or aspect, at
+        birth (in the charts named) or, in a transit statement, in transit. Returns its reference or None."""
+        t = self.t
+        scoped = code in self.scope                       # a transit statement: birth-chart placement and aspects do not answer it
+        moving, self.moving = self.moving, scoped
+        ref = self.placement(code, target)
+        self.moving = moving
+        if ref:
+            return ref
+        house = target.value if target.kind == 'H' else t.sign_house(target.value)
+        if target.kind == 'H' and target.ref == 'moon':
+            return None                                   # a count from the Moon is a position only
+        if house:
+            if self.lordship(code, house):
+                return self.lordship(code, house)
+            if not scoped and house in (t.aspects.get(code) or {}).get('houses', []):
+                return t.aspects[code]['ref']
+            if self.transit:
+                hit = next((s for s in self.segments(code) if house in s['aspects']), None)
+                if hit:
+                    return hit['ref']
+        return None
+
+    def check_relation(self, subject, target, known_form=True):
+        code = subject['code']
+        ref = self.relation_of(code, target)
+        if ref:
+            if known_form:
+                return self.ok(ref, subject.get('ref'))
+            return self.soft.append(f"{subject['name']} with {self.describe(target)}: wording not recognised; a calculated relation exists")
+        if not self.t.place.get('d1', {}).get(code):
+            return self.soft.append('planet unavailable')
+        ruled = self.t.ruled(code)
+        aspects = (self.t.aspects.get(code) or {}).get('houses', [])
+        fact = self.placement_fact(code) + '.' + (f" It rules house{'s' if len(ruled) > 1 else ''} {', '.join(map(str, ruled))}." if ruled else '') + \
+               (f" At birth it aspects house{'s' if len(aspects) > 1 else ''} {', '.join(map(str, aspects))}." if aspects else '')
+        if self.transit:
+            seen = {s['sign']: s for s in self.segments(code)}
+            if seen:
+                fact += ' In transit it aspects ' + '; '.join(f"{', '.join(map(str, s['aspects']))} from {S(s['sign'])}" for s in seen.values()) + \
+                        ' (houses from the Lagna). A count from the Moon is a position, not an aspect.'
+        self.fail('unsupported_relation', f"{subject['name']} is linked with {self.describe(target)}, but it does not occupy, rule or aspect it", fact)
 
     def counted_subject(self, count, reference):
         """The n-th sign from the Arudha Lagna, Upapada Lagna or Karakamsha, if the engine counted it."""
@@ -620,7 +686,7 @@ class SentenceCheck:
             return
         t = self.t
         allowed = {row['sav'] for row in t.sav.values() if row['sav'] is not None} | {s['sav'] for s in t.transits if s['sav'] is not None}
-        allowed |= {v for row in t.sav.values() for v in row['bav'].values() if v is not None} | {28}
+        allowed |= {v for row in t.sav.values() for v in row['bav'].values() if v is not None} | {28, 8}
         if not allowed:
             return
         text = DURATION.sub(lambda m: ' ' * len(m.group()), self.blank)
@@ -644,6 +710,21 @@ class SentenceCheck:
             elif SECOND_PERSON.search(self.text) and not MARKER.search(self.text) and not NEGATED.search(self.text):
                 self.fail('yoga_not_detected', f'{name} Yoga is stated for this chart', "It is not among the app's detected yogas.")
 
+    def passage_supports(self, passage):
+        """A cited passage must share the sentence's subject: a planet or house the sentence names, or at
+        least two of its content words. (A wording test: it shows the citation is on topic, not that the
+        book proves the point.)"""
+        snippet = str(passage.get('snippet') or '').casefold()
+        if not snippet:
+            return True
+        from .retrieval import _overlap
+        planets = [e.value for e in self.ents if e.kind == 'P']
+        houses = [e.value for e in self.ents if e.kind in ('H', 'L') and e.value]
+        if (planets or houses) and _overlap(snippet, {'planets': planets, 'houses': houses}) > 0:
+            return True
+        words = set(CONTENT_WORD.findall(MARKER.sub(' ', self.text).casefold())) - COMMON
+        return len({w for w in words if w in snippet}) >= 2
+
     def policy(self):
         text = self.text
         uncalculated = UNCALCULATED.search(text)
@@ -654,6 +735,9 @@ class SentenceCheck:
                 self.fail('unknown_source_marker', f'({marker}) is not a retrieved passage')
             else:
                 self.refs.append({'passage_id': self.passages[marker]['id'], 'marker': marker})
+                if not self.passage_supports(self.passages[marker]):
+                    self.fail('citation_not_supported', f'({marker}) does not discuss what this sentence says',
+                              'Cite a passage only for what it actually says about a factor; otherwise drop the citation or the sentence.')
         mention = SOURCE_TERMS.search(text)
         if mention and not MARKER.search(text):
             if not self.passages or not _title_matches(mention.group(), [p['citation'] for p in self.passages.values()]):
