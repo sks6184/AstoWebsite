@@ -26,7 +26,7 @@
 #   investigation only and prescribe no conclusion (C5).
 
 schema_version: 0
-revision: 3
+revision: 4
 status: owner_approved_for_offline_m3
 date: '2026-11-11'
 
@@ -161,10 +161,28 @@ domains:
       - Amatyakaraka and the 10th from AL
       - deterministic career rules evaluated for the window
     event_guides:                                                    # [owner] C1 and C5; investigation only
-      promotion: {focus: "10th and 11th, their lords, the Sun (authority), D10 Lagna and 10th lord; periods and transits in the window", note: Distinguish advancement within the same employer from a change of employer.}
-      voluntary_employer_change: {focus: "10th and its lord, plus the 6th (service) and 12th (leaving) when a move is initiated; whether periods link the 10th with 6/12", note: The user chooses to move; do not treat it as a loss.}
+      # Revision 4 (owner, 2026-11-13): promotion, voluntary change and involuntary change are evaluated as distinct events, each
+      # with supporting and opposing evidence. derived_houses are derived relationships, never rules: they are read only together
+      # with the period lords, the houses, the aspects, D10 and the other career factors. opposing is [matrix] wording (draft);
+      # rule_outcomes [draft] names the rule-engine outcome keys that speak to the event (a tally, never a probability).
+      promotion:
+        focus: "10th and 11th, their lords, the Sun (authority), D10 Lagna and 10th lord; periods and transits in the window"
+        note: Distinguish advancement within the same employer from a change of employer.
+        opposing: "10th lord in the 6th, 8th or 12th or debilitated; a period of the 8th or 12th lord; a weak D10 10th lord"
+        rule_outcomes: [promotion_score, authority_score]
+      voluntary_employer_change:
+        focus: "10th and its lord, plus the 6th (service) and 12th (leaving) when a move is initiated; whether periods link the 10th with 6/12"
+        note: The user chooses to move; do not treat it as a loss.
+        derived_houses: {5: "the 12th from the 6th: separation from the present service", 9: "the 12th from the 10th: a change of professional position"}
+        opposing: "a fixed-sign 10th house with a steady period and no link from the period lords to the 5th, 9th, 6th or 12th argues continuity (modern view)"
+        rule_outcomes: [job_change_score]
       lateral_change: {focus: "6th and 10th; a change of role or employer at a similar level; Mercury and Saturn", note: A move without clear rise or fall; avoid framing it as promotion or setback.}
-      involuntary_disruptive_change: {focus: "8th-lord and 8th-house influence on the 10th, the 6th, Saturn and Rahu in the window, and protective or mitigating factors", note: "Report disruption indicators as possibilities to compare; state mitigating evidence; no verdict of job loss."}
+      involuntary_disruptive_change:
+        focus: "8th-lord and 8th-house influence on the 10th, the 6th, Saturn and Rahu in the window, and protective or mitigating factors"
+        note: "Report disruption indicators as possibilities to compare; state mitigating evidence; no verdict of job loss."
+        derived_houses: {9: "the 12th from the 10th: loss or change of position", 5: "the 12th from the 6th: separation from the present service"}
+        opposing: "a strong 10th lord, Jupiter's aspect on the 10th, or an operating raja yoga protects the position"
+        rule_outcomes: [risk_score]
       foreign_relocation: {focus: "12th, 9th and 4th alongside the 10th; Rahu; combines with the foreign_settlement guidance", note: A mixed career and foreign question.}
       unemployment_and_reemployment: {focus: "the 6th and 10th and their lords for the gap; the 2nd and 11th lords for the return of income; periods across the window", note: "Present a gap and a return as indicators to compare; no verdict on how long unemployment lasts.", basis_note: "[matrix] Graded B for a KP-style grouping, otherwise C; provisional."}   # [matrix, M3-8]
       leadership_and_senior_management: {focus: "the 10th and Lagna and their lords; kendra-trikona lord connections (raja yoga) where detected; the Sun; D10 and D9", note: "Raja yoga indicates status in the classical texts; mapping it to corporate rank is interpretation.", basis_note: "[matrix] A for the raja-yoga promise; C for the corporate mapping; provisional."}   # [matrix, M3-8]

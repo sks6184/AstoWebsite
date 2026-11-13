@@ -18,7 +18,7 @@ from astrology.validation.prose_validator import (
     _title_matches, copied_runs, sentences)
 from .tables import planet_name as P, sign_name as S
 
-FIELDS = ('direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'conflicts',
+FIELDS = ('direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'event_assessment', 'conflicts',
           'classical_support', 'guidance')
 MARKER = re.compile(r'\(\s*(P\d{1,2}(?:\s*(?:,|;|and|&)\s*P\d{1,2})*)\s*\)')      # (P1) or (P1, P4)
 
@@ -714,6 +714,8 @@ def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
             missing.append('timing')
         if conflicts_present and not str(answer.get('conflicts') or '').strip():
             missing.append('conflicting_signals')
+        if len(plan.events) > 1 and len(sentences(str(answer.get('event_assessment') or ''))) < len(plan.events):
+            missing.append('event_comparison')
     if passages and not markers(' '.join(str(answer.get(f) or '') for f in FIELDS)):
         missing.append('classical_support')
     strength = answer.get('evidence_strength')
@@ -745,6 +747,7 @@ def _report(findings, soft, provenance, missing, verified, coverage):
                       'timing': '- Explain the timing from the periods and transits in the window.',
                       'conflicting_signals': '- State the conflicting indications; the brief contains cautionary rules.',
                       'primary_house_logic': '- Discuss the primary house for this question and its lord.',
+                      'event_comparison': '- In event_assessment, take each event in EVENT EVIDENCE in turn: what supports it, what opposes it; then say which the evidence supports more strongly, or that it does not separate them.',
                       'classical_support': '- In classical_support, say what the CLASSICAL PASSAGES add for this chart (supporting and contrary), paraphrased, and cite each one you use as (P1), (P2).',
                       'natal_basis': '- Add the natal basis: the house, its lord and where that lord sits, from NATAL CHART.',
                       'divisional_basis': '- Add the divisional confirmation with actual placements from DIVISIONAL CHARTS (for example where the 10th lord sits in D10 or D9).',

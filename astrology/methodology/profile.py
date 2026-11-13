@@ -27,6 +27,12 @@ DASHA_SYSTEMS = frozenset(('vimshottari', 'chara', 'yogini'))
 REQUIRED_DOMAIN_KEYS = ('label', 'rule_categories', 'houses', 'natural_karakas', 'vargas', 'dasha_systems',
                         'core_factors', 'vocabulary', 'sensitivity', 'known_gaps')
 # Guidance must say what to examine, never in what order to call tools (A1) or what a factor means (G-6).
+def _rule_outcomes():
+    from astrology.structures import business_score_template, career_score_template
+    return frozenset(career_score_template()) | frozenset(business_score_template())
+
+
+RULE_OUTCOMES = _rule_outcomes()
 SEQUENCE_MARKERS = re.compile(r'\b(step\s*\d|first,?\s+(call|request|run|use)|then\s+(call|request|run)|'
                               r'after\s+that|followed\s+by|in\s+this\s+order)\b|->|→', re.I)
 VERDICT_MARKERS = re.compile(r'\b(will\s+(bring|give|cause|result|deny|deliver)|(?<!no )guarantees?|ensures?|'
@@ -112,8 +118,16 @@ def validate_profile(data):
             for event, guide in entry.get('event_guides', {}).items():
                 if not re.fullmatch(r'[a-z][a-z_]{1,60}', event) or type(guide) is not dict or type(guide.get('focus')) is not str:
                     fail(f'{name}.{event}: an event guide needs a focus')
-                if set(guide) - {'focus', 'note', 'basis_note'}:
+                if set(guide) - {'focus', 'note', 'basis_note', 'derived_houses', 'opposing', 'rule_outcomes'}:
                     fail(f'{name}.{event}: unknown event-guide keys')
+                derived = guide.get('derived_houses', {})
+                if type(derived) is not dict or not all(type(h) is int and 1 <= h <= 12 and type(t) is str and 10 <= len(t) <= 160 for h, t in derived.items()):
+                    fail(f'{name}.{event}: derived_houses maps a house (1-12) to a short description')
+                if 'opposing' in guide and (type(guide['opposing']) is not str or not 10 <= len(guide['opposing']) <= 300):
+                    fail(f'{name}.{event}: opposing must be 10-300 characters')
+                outcomes = guide.get('rule_outcomes', [])
+                if type(outcomes) is not list or not set(outcomes) <= RULE_OUTCOMES:
+                    fail(f'{name}.{event}: unknown rule outcome')
             if 'disclosure' in entry and (type(entry['disclosure']) is not str or not 20 <= len(entry['disclosure']) <= 400):
                 fail(f'{name}: disclosure must be 20-400 characters')
         if not set(entry.get('rule_categories', [])) <= categories:

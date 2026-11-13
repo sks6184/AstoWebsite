@@ -87,6 +87,8 @@ def astrologer(consultation, **override):
     answer = {'direct_answer': f"The indications for the period from {plan.window['start']} to {plan.window['end']} are mixed but workable. "
                                f"Your {ordinal(h)} lord {P(code)} is the main factor.",
               'natal_promise': natal.strip(), 'divisional_confirmation': divisional, 'jaimini_view': jaimini, 'periods': periods, 'transits': transits,
+              'event_assessment': ('Promotion is supported by the status factors of the birth chart. A change of employer has fewer direct supports '
+                                   'in this window, so the evidence leans to promotion.') if len(plan.events) > 1 else '',
               'conflicts': 'The supportive period rules are qualified by cautionary rules, so the reading stays measured.' if t.conflicts else '',
               'classical_support': cite, 'guidance': 'Prepare steadily and use the better supported stretch of the window.',
               'evidence_strength': {'label': 'moderate', 'reason': 'Several independent calculated factors were compared for this question.'}}
@@ -407,7 +409,7 @@ class PipelineTests(PlannedBase):
 
     def test_an_answer_without_calculated_basis_is_repaired_then_falls_back_to_the_evidence_report(self):
         empty = {'direct_answer': 'Things look promising.', 'natal_promise': 'Stay positive.', 'divisional_confirmation': '', 'jaimini_view': '',
-                 'periods': 'Soon.', 'transits': '', 'conflicts': 'None.',
+                 'periods': 'Soon.', 'transits': '', 'event_assessment': '', 'conflicts': 'None.',
                  'classical_support': '', 'guidance': 'Work hard.', 'evidence_strength': {'label': 'strong', 'reason': 'It simply feels right to say so.'}}
         provider = Scripted(CAREER, empty, empty)
         result = self.consult(provider)
@@ -450,7 +452,7 @@ class PipelineTests(PlannedBase):
         intent = {'question_type': 'concept_explanation', 'domains': ['general'], 'events': [], 'window': WINDOW}
         explain = lambda p: {'direct_answer': 'Upapada is the pada of the twelfth house, read for marriage matters.',
                              'natal_promise': f"A retrieved source describes how it is weighed ({self.consultation.kept[0]['marker']}).",
-                             'divisional_confirmation': '', 'jaimini_view': '', 'periods': '', 'transits': '',
+                             'divisional_confirmation': '', 'jaimini_view': '', 'periods': '', 'transits': '', 'event_assessment': '',
                              'conflicts': '', 'classical_support': '', 'guidance': '',
                              'evidence_strength': {'label': 'limited', 'reason': 'This explanation rests on one retrieved passage only.'}}
         result = self.consult(Scripted(intent, explain), 'What is Upapada?')
@@ -510,7 +512,7 @@ class PipelineTests(PlannedBase):
     def test_brief_ends_with_the_coverage_checklist(self):
         result = self.consult(Scripted(CAREER, self.truthful()))
         checklist = result['brief'].split('WHAT THE READING MUST COVER')[1]
-        for needle in ('Natal promise: the 10th, 6th, 12th, 11th houses', 'Divisional confirmation: the actual placements in D9, D10',
+        for needle in ('Natal promise: the 10th, 6th, 12th, 5th, 9th, 11th houses', 'Each event separately (EVENT EVIDENCE)', 'Divisional confirmation: the actual placements in D9, D10',
                        'Jaimini view', 'every Vimshottari sub-period', 'where Saturn and Jupiter transit', 'Both sides'):
             self.assertIn(needle, checklist)
 
@@ -554,6 +556,86 @@ class PipelineTests(PlannedBase):
 
 
 @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',))
+class EventEvaluationTests(PlannedBase):
+    """Promotion and a change of employer are distinct events: each has its own houses, derived relationships,
+    opposing factors and rule count, and the reading must weigh them separately."""
+
+    def test_profile_revision_4_keeps_the_three_career_events_distinct(self):
+        from astrology.methodology.profile import ProfileError, validate_profile
+        import yaml
+        guides = self.profile.entry('career')['event_guides']
+        self.assertEqual(self.profile.data['revision'], 4)
+        self.assertEqual(guides['voluntary_employer_change']['derived_houses'],
+                         {5: 'the 12th from the 6th: separation from the present service', 9: 'the 12th from the 10th: a change of professional position'})
+        self.assertNotIn('derived_houses', guides['promotion'])
+        self.assertEqual((guides['promotion']['rule_outcomes'], guides['voluntary_employer_change']['rule_outcomes'],
+                          guides['involuntary_disruptive_change']['rule_outcomes']), (['promotion_score', 'authority_score'], ['job_change_score'], ['risk_score']))
+        for name in ('promotion', 'voluntary_employer_change', 'involuntary_disruptive_change'):
+            self.assertTrue(guides[name]['opposing'])
+        # Nothing here states an outcome: a derived house is described, never judged.
+        self.assertNotRegex(' '.join(guides['voluntary_employer_change']['derived_houses'].values()), r'(?i)job loss|will|must')
+        data = yaml.safe_load(open(self.profile_path(), encoding='utf-8'))
+        data['domains']['career']['event_guides']['promotion']['rule_outcomes'] = ['luck_score']
+        with self.assertRaises(ProfileError):
+            validate_profile(data)
+
+    @staticmethod
+    def profile_path():
+        from astrology.methodology.profile import PROFILE_PATH
+        return PROFILE_PATH
+
+    def test_each_event_keeps_its_own_houses_in_the_plan(self):
+        self.consult(Scripted(CAREER, self.truthful()))
+        events = {e['id']: e for e in self.consultation.plan.events}
+        self.assertEqual(events['career:promotion']['houses'], [10, 11])
+        self.assertEqual(events['career:promotion']['derived'], {})
+        self.assertEqual(events['career:voluntary_employer_change']['houses'], [10, 6, 12])
+        self.assertEqual(sorted(events['career:voluntary_employer_change']['derived']), [5, 9])
+        self.assertTrue({5, 9} <= set(self.consultation.plan.houses['event']))      # the derived houses are calculated and shown too
+
+    def test_brief_gives_each_event_its_own_evidence(self):
+        result = self.consult(Scripted(CAREER, self.truthful()))
+        section = result['brief'].split('EVENT EVIDENCE')[1].split('NOT CALCULATED')[0]
+        change, promotion = section.split('Event: promotion.')
+        self.assertIn('Event: voluntary employer change. Houses read for it: 10, 6, 12.', change)
+        self.assertIn('never a rule on their own): the 5th is the 12th from the 6th: separation from the present service; '
+                      'the 9th is the 12th from the 10th: a change of professional position.', change)
+        # Synthetic chart: Mars rules 5 and 10 and sits in 8; Jupiter rules 6 and 9 and sits in 12.
+        self.assertIn('Period Jupiter / Mars (2027-03-14 to 2028-02-18): Jupiter rules 6, 9 (derived: the 12th from the 10th: a change of professional position); '
+                      'sits in 12; aspects 6. Mars rules 5 (derived: the 12th from the 6th: separation from the present service), 10.', change)
+        self.assertIn('Houses read for it: 10, 11.', promotion)
+        self.assertIn('Period Jupiter / Mars (2027-03-14 to 2028-02-18): Mars rules 10; aspects 11.', promotion)
+        self.assertNotIn('derived', promotion)
+        self.assertIn('Transit Saturn in Aries (2027-06-03 to 2027-10-19): occupies 10', promotion)
+        for part in (change, promotion):
+            self.assertRegex(part, r'Triggered rules that speak to this event \(a count of rules, not a probability\): \d+ for, \d+ against\.')
+            self.assertIn('Would argue against it, if found in the chart above:', part)
+        self.assertNotRegex(section, r'(?i)probability of|\d+\s?%|score')
+
+    def test_a_reading_that_merges_the_two_events_is_sent_back(self):
+        merged = self.truthful(event_assessment='')
+        provider = Scripted(CAREER, merged, self.truthful())
+        result = self.consult(provider)
+        self.assertEqual(result['attempts'][0]['missing'], ['event_comparison'])
+        self.assertIn('take each event in EVENT EVIDENCE in turn', provider.calls[2][1]['corrections'])
+        self.assertEqual((result['status'], result['stop_reason']), ('ok', 'complete'))
+        self.assertIn('the evidence leans to promotion', result['answer'])
+
+    def test_one_event_needs_no_comparison(self):
+        intent = {**CAREER, 'events': ['career:promotion']}
+        result = self.consult(Scripted(intent, self.truthful()))
+        self.assertEqual(result['stop_reason'], 'complete')
+        self.assertTrue(result['validation']['passed'], result['validation'])
+
+    def test_rule_engine_scores_are_never_given_to_the_writer(self):
+        # The legacy summary scores add weight x outcome over every triggered rule and clamp at 100, so they
+        # saturate and cannot separate two events; the brief carries rule texts and counts instead.
+        result = self.consult(Scripted(CAREER, self.truthful()))
+        rules = next(v for v in result['evidence'].values() if v['tool'] == 'evaluate_astrology_rules')['result']['data']
+        self.assertEqual(rules['score_kind'], 'heuristic outcome scores, not probabilities')
+        self.assertNotRegex(result['brief'], r'promotion_score|job_change_score|summary_scores')
+
+
 class ChartFreshnessTests(PlannedBase):
     """A chart stored under an earlier calculation method is never read silently."""
 

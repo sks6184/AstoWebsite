@@ -87,6 +87,11 @@ Reply with one JSON object:
 - transits: where Saturn and Jupiter transit in the window (house from the Lagna and from the Moon), with
   the dates and the SAV of the sign, and whether each supports or strains the matter. Three to five
   sentences. "" when the brief has no transits.
+- event_assessment: when the brief has EVENT EVIDENCE for more than one event, weigh each event separately:
+  for each, the period lords and transits that touch its houses, what supports it and what opposes it.
+  Treat a derived relationship as one indicator to combine with the others, never as proof and never as a
+  loss. Then say which event the evidence supports more strongly and why, or say plainly that the evidence
+  does not separate them. The rule counts are counts, not probabilities. "" when only one event is asked.
 - conflicts: the conflicting indications and what they mean for the answer. Use "" only when there are none.
 - classical_support: what the passages add, with (P) citations. Use "" when there are no passages.
 - guidance: practical guidance that follows from the evidence above.
@@ -115,10 +120,10 @@ def answer_schema():
     text = {'type': 'string'}
     return {'type': 'json_schema', 'name': 'astrogpt_consultation', 'strict': True, 'schema': {
         'type': 'object', 'additionalProperties': False,
-        'required': ['direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'conflicts',
+        'required': ['direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'event_assessment', 'conflicts',
                      'classical_support', 'guidance', 'evidence_strength'],
         'properties': {'direct_answer': text, 'natal_promise': text, 'divisional_confirmation': text, 'jaimini_view': text, 'periods': text,
-                       'transits': text, 'conflicts': text, 'classical_support': text, 'guidance': text,
+                       'transits': text, 'event_assessment': text, 'conflicts': text, 'classical_support': text, 'guidance': text,
                        'evidence_strength': {'type': 'object', 'additionalProperties': False, 'required': ['label', 'reason'],
                                              'properties': {'label': {'type': 'string', 'enum': list(STRENGTH_LABELS)}, 'reason': text}}}}}
 

@@ -135,10 +135,15 @@ def build_plan(profile, label, window, today):
         guide = profile.entry(domain).get('event_guides', {}).get(name) or {}
         focus = str(guide.get('focus') or '')
         h, p, v = _text_focus(focus)
-        event_houses += h
+        derived = {int(k): str(text) for k, text in (guide.get('derived_houses') or {}).items()}
+        event_houses += h + list(derived)
         planets += p
         vargas += v
-        events.append({'id': event, 'focus': focus, 'note': str(guide.get('note') or '')})
+        own = list(dict.fromkeys(_domain_houses(profile.entry(domain))[0] + h))
+        # Each event keeps its own houses, derived relationships, opposing factors and rule outcomes, so
+        # that two events asked together are weighed separately and never merged into one verdict.
+        events.append({'id': event, 'focus': focus, 'note': str(guide.get('note') or ''), 'houses': own, 'derived': derived,
+                       'opposing': str(guide.get('opposing') or ''), 'rule_outcomes': list(guide.get('rule_outcomes') or [])})
         guidance_text += [focus, str(guide.get('note') or '')]
     order = lambda items: list(dict.fromkeys(items))
     primary = order(primary)

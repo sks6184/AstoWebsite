@@ -86,6 +86,63 @@ def _links(t, code, focus, plan=None):
     return f"{P(code)} {'; '.join(parts)}"
 
 
+def _event_evidence(t, plan):
+    """For each event asked about: which period lords and transits touch its houses, and which triggered
+    rules speak to it. Lookups and counts only; the weighing is the astrologer's."""
+    lines = []
+    rules = {}
+    first = min((as_of for _, as_of in t.rules), default=None)
+    for (category, as_of), rows in t.rules.items():
+        if as_of == first:
+            for r in rows:
+                rules.setdefault(r['id'] or r['text'], r)
+    usable = [r for r in rules.values() if not (DEATH.search(r['text']) or DIAGNOSIS.search(r['text']) or FERTILITY.search(r['text']))]
+    for event in plan.events:
+        name = event['id'].split(':')[1].replace('_', ' ')
+        houses, derived = event['houses'], event['derived']
+        every = set(houses) | set(derived)
+        tag = lambda h: f"{h} (derived: {derived[h]})" if h in derived and h not in houses else str(h)
+        lines.append(f"Event: {name}. Houses read for it: {', '.join(map(str, houses))}." +
+                     (' Derived relationships (indicators to combine with the period lords, aspects and D10; never a rule on their own): ' +
+                      '; '.join(f'the {ordinal(h)} is {text}' for h, text in derived.items()) + '.' if derived else ''))
+        for r in t.dashas.get('vimshottari', [])[:6]:
+            parts = []
+            for code in dict.fromkeys(c for c in (r['major'], r['sub']) if c):
+                row = t.place.get('d1', {}).get(code)
+                if not row:
+                    continue
+                bits = []
+                ruled = [h for h in t.ruled(code) if h in every]
+                if ruled:
+                    bits.append('rules ' + ', '.join(tag(h) for h in ruled))
+                if row['house'] in every:
+                    bits.append('sits in ' + tag(row['house']))
+                aspects = [h for h in t.aspects.get(code, {}).get('houses', []) if h in every]
+                if aspects:
+                    bits.append('aspects ' + ', '.join(tag(h) for h in aspects))
+                if bits:
+                    parts.append(f"{P(code)} {'; '.join(bits)}")
+            lines.append(f"- Period {r['major_name']} / {r['sub_name']} ({r['start']} to {r['end']}): " +
+                         ('. '.join(parts) + '.' if parts else 'neither lord rules, occupies or aspects these houses.'))
+        for s in t.transits:
+            if s['planet'] not in ('Sa', 'Ju'):
+                continue
+            bits = ([f"occupies {tag(s['house'])}"] if s['house'] in every else []) + \
+                   ([f"aspects {', '.join(tag(h) for h in s['aspects'] if h in every)}"] if every & set(s['aspects']) else [])
+            if bits:
+                lines.append(f"- Transit {P(s['planet'])} in {S(s['sign'])} ({s['start']} to {s['end']}): {'; '.join(bits)} (houses from the Lagna).")
+        keys = event['rule_outcomes']
+        if keys and usable:
+            score = lambda r: sum(r['outcomes'].get(k, 0) for k in keys)
+            support = sorted((r for r in usable if r['weight'] > 0 and score(r) > 0), key=lambda r: -r['weight'] * score(r))
+            oppose = sorted((r for r in usable if r['weight'] > 0 and score(r) < 0), key=lambda r: r['weight'] * score(r))
+            lines.append(f"- Triggered rules that speak to this event (a count of rules, not a probability): {len(support)} for, {len(oppose)} against." +
+                         (f" Strongest for: {support[0]['text']}" if support else '') + (f" Strongest against: {oppose[0]['text']}" if oppose else ''))
+        if event['opposing']:
+            lines.append(f"- Would argue against it, if found in the chart above: {event['opposing']}.")
+    return lines
+
+
 def _rules(t, plan):
     lines, seen = [], set()
     for (category, as_of), rules in sorted(t.rules.items(), key=lambda x: x[0][1]):
@@ -235,6 +292,9 @@ def build_brief(question, plan, tables, passages, profile, today):
             f"- {c['start']} to {c['end']}: {c['label']}" + (f"; systems agreeing: {', '.join(c['systems'])}" if c['systems'] else '') +
             (f"; engine confidence label {c['confidence']}" if c['confidence'] else '') + '.' for c in t.candidates[:4]]
 
+    if plan.events and t.lagna.get('d1'):
+        sections['EVENT EVIDENCE (each event separately; houses from the Lagna)'] = _event_evidence(t, plan)
+
     missing = [f"- {u['name']}" for u in plan.unsupported]
     missing += [f"- {f['tool']}: {f['message'] or f['code'] or 'unavailable'}" for f in t.failed]
     missing += [f"- {v['name']}" for k, v in profile.data['declared_unavailable'].items() if k not in {u['id'] for u in plan.unsupported}]
@@ -260,6 +320,8 @@ def build_brief(question, plan, tables, passages, profile, today):
             cover.append('- Transits: where Saturn and Jupiter transit (house from the Lagna and from the Moon), when, and the SAV of the sign.')
         if rules:
             cover.append('- Both sides: the supportive and the cautionary rules, and which way the balance leans.')
+        if len(plan.events) > 1:
+            cover.append('- Each event separately (EVENT EVIDENCE): what supports it and what opposes it, then which one the evidence supports more.')
         if t.candidates:
             cover.append('- The better and the weaker stretch of the window, using the candidate windows and period dates above.')
         sections['WHAT THE READING MUST COVER'] = cover

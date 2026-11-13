@@ -141,6 +141,7 @@ class Tables:
             if text:
                 rows.append({'id': rule.get('rule_id') or rule.get('id'), 'system': rule.get('system') or '', 'text': text.strip(),
                              'polarity': rule.get('polarity') or 'mixed', 'weight': rule.get('weight') if type(rule.get('weight')) is int else 0,
+                             'outcomes': {k: v for k, v in (rule.get('outcomes') or {}).items() if type(v) is int},
                              'ref': {'evidence_id': eid, 'path': f'/data/triggered_rules/{i}'}})
         conflicts = data.get('conflicts') or {}
         for issue in conflicts.get('issues') or []:
