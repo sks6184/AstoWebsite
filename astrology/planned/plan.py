@@ -53,6 +53,30 @@ class Plan:
                 'unsupported': [u['id'] for u in self.unsupported]}
 
 
+MONTH_COUNT = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'nine': 9, 'twelve': 12, 'eighteen': 18}
+
+
+def stated_window(question, today):
+    """The period a question states in plain calendar words, or None. Deterministic, so the same words always
+    give the same window: "next year" is the next calendar year, "this year" runs to 31 December."""
+    text = str(question).casefold()
+    year = re.search(r'\bin\s+(20\d{2})\b', text)
+    span = re.search(r'\b(?:next|coming|within|in\s+the\s+next)\s+(\d{1,2}|' + '|'.join(MONTH_COUNT) + r')\s+(months?|years?)\b', text)
+    if re.search(r'\bnext\s+year\b', text):
+        start, end = date(today.year + 1, 1, 1), date(today.year + 1, 12, 31)
+    elif re.search(r'\bthis\s+year\b', text):
+        start, end = today, date(today.year, 12, 31)
+    elif year and today.year <= int(year.group(1)) <= today.year + 3:
+        start, end = max(today, date(int(year.group(1)), 1, 1)), date(int(year.group(1)), 12, 31)
+    elif span:
+        count = MONTH_COUNT.get(span.group(1)) or int(span.group(1))
+        days = count * (365 if span.group(2).startswith('year') else 30)
+        start, end = today, today + timedelta(days=min(days, MAX_DAYS - 1))
+    else:
+        return None
+    return {'start': start.isoformat(), 'end': end.isoformat(), 'stated': True}
+
+
 def clamp_window(window, today):
     """A valid ISO window inside the tools' range; the default is today to twelve months ahead."""
     default = {'start': today.isoformat(), 'end': (today + timedelta(days=DEFAULT_DAYS)).isoformat(), 'stated': False}

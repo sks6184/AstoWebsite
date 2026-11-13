@@ -517,9 +517,9 @@
     "",
     "PERIODS IN THE WINDOW (period end dates are exclusive; calendar-date precision)",
     "- Vimshottari Mahadasha: Jupiter, 2014-07-15 to 2030-07-15.",
-    "  - Vimshottari sub-period Jupiter / Moon: 2025-11-15 to 2027-03-14.",
-    "  - Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18.",
-    "  - Vimshottari period lords in D1: Jupiter rules 6, 9; sits in house 12; aspects 6, 8. Moon rules 1; sits in house 7; aspects 1. Mars rules 5, 10; sits in house 8; aspects 11, 2.",
+    "  - Vimshottari sub-period Jupiter / Moon: 2025-11-15 to 2027-03-14. Sub-period lord: Moon rules house 1; sits in house 7; aspects house 1.",
+    "  - Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18. Sub-period lord: Mars rules houses 5, 10 (the primary house for this question); sits in house 8; aspects houses 11, 2.",
+    "  - Vimshottari Mahadasha lord in D1: Jupiter rules houses 6, 9; sits in house 12; aspects houses 6, 8.",
     "- Chara Mahadasha: Pisces, 2026-05-17 to 2035-05-17.",
     "  - Chara sub-period Pisces / Aries: 2026-05-17 to 2027-02-15.",
     "  - Chara sub-period Pisces / Taurus: 2027-02-15 to 2027-11-16.",
@@ -532,7 +532,7 @@
     "  - Yogini sub-period Pingala (Sun) / Ulka (Saturn): 2026-11-29 to 2027-03-30.",
     "  - Yogini sub-period Pingala (Sun) / Siddha (Venus): 2027-03-30 to 2027-08-20.",
     "  - Yogini sub-period Pingala (Sun) / Sankata (Rahu): 2027-08-20 to 2028-01-29.",
-    "  - Yogini period lords in D1: Sun rules 2; sits in house 11; aspects 5. Saturn rules 7, 8; sits in house 7; aspects 1. Venus rules 4, 11; sits in house 9. Rahu sits in house 7; aspects 1.",
+    "  - Yogini period lords in D1: Sun rules house 2; sits in house 11; aspects house 5. Saturn rules houses 7, 8; sits in house 7; aspects house 1. Venus rules houses 4, 11; sits in house 9. Rahu sits in house 7; aspects house 1.",
     "",
     "TRANSITS IN THE WINDOW (daily noon samples: sign-change dates are approximate)",
     "- Jupiter transits Leo: house 2 from the Lagna, house 8 from the Moon, 2027-01-01 to 2027-01-24; SAV of that sign 27.",
@@ -599,12 +599,24 @@
     "- (P1) Synthetic Parashari Notes, chapter 1 | retrieved for: contrary or cautionary indications | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord in 6th, 8th, or 12th can show .",
     "- (P2) Synthetic Parashari Notes, chapter 1 | retrieved for: the natal promise | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord Mars in the 8th house results .",
     "- (P3) Synthetic Parashari Notes, chapter 1 | retrieved for: the running periods | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Jupiter Mahadasha Moon sub-period and Ma.",
-    "- (P4) Synthetic Parashari Notes, chapter 1 | retrieved for: the transits in the window | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Saturn transit through the 9th house fro."
+    "- (P4) Synthetic Parashari Notes, chapter 1 | retrieved for: the transits in the window | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Saturn transit through the 9th house fro.",
+    "",
+    "WHAT THE READING MUST COVER",
+    "- Natal promise: the 10th, 6th, 12th, 11th houses: each lord and where it sits, the occupants and the aspects; the significators listed.",
+    "- Divisional confirmation: the actual placements in D9, D10 (name the planet, sign and house).",
+    "- Jaimini view: the Amatyakaraka and the counted points above, by planet, sign and house.",
+    "- Timing: every Vimshottari sub-period in the window with its dates and what its lord rules and occupies; whether the Yogini and Chara periods agree.",
+    "- Transits: where Saturn and Jupiter transit (house from the Lagna and from the Moon), when, and the SAV of the sign.",
+    "- Both sides: the supportive and the cautionary rules, and which way the balance leans.",
+    "- The better and the weaker stretch of the window, using the candidate windows and period dates above."
   ],
   "6_answer": [
     "The indications for the period from 2027-01-01 to 2027-12-31 are mixed but workable. Your 10th lord Mars is the main factor.",
-    "Your 10th lord Mars sits in the 8th house in Aquarius. Mars rules the 5th and 10th. The 10th house is occupied by Mercury. Your Amatyakaraka Moon is placed in the 7th house.",
-    "The Jupiter Mahadasha runs through the window. The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14. Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
+    "Your 10th lord Mars sits in the 8th house in Aquarius. Mars rules the 5th and 10th. The 10th house is occupied by Mercury.",
+    "In D10 the 10th lord Jupiter sits in the 6th house in Scorpio.",
+    "Your Amatyakaraka Moon is placed in the 7th house.",
+    "The Jupiter Mahadasha runs through the window. The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14.",
+    "Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
     "Conflicting indications: The supportive period rules are qualified by cautionary rules, so the reading stays measured.",
     "A retrieved source discusses this theme in its own terms (Synthetic Parashari Notes, chapter 1).",
     "Prepare steadily and use the better supported stretch of the window.",
@@ -620,7 +632,7 @@
     "unsupported_claims": [],
     "repair_instruction": "",
     "stage": "fact_check",
-    "verified_statements": 18,
+    "verified_statements": 21,
     "removed_statements": 0,
     "coverage": {
       "primary_houses_discussed": [
@@ -628,8 +640,16 @@
       ],
       "primary_houses_not_discussed": [],
       "other_focus_houses_discussed": [
+        6,
         5,
         8
+      ],
+      "evidence_used": [
+        "divisional",
+        "jaimini",
+        "natal",
+        "period",
+        "transit"
       ]
     }
   },
@@ -646,7 +666,7 @@
       ]
     },
     {
-      "field": "reading",
+      "field": "natal_promise",
       "index": 0,
       "sentence": "Your 10th lord Mars sits in the 8th house in Aquarius.",
       "refs": [
@@ -665,7 +685,7 @@
       ]
     },
     {
-      "field": "reading",
+      "field": "natal_promise",
       "index": 1,
       "sentence": "Mars rules the 5th and 10th.",
       "refs": [
@@ -680,7 +700,7 @@
       ]
     },
     {
-      "field": "reading",
+      "field": "natal_promise",
       "index": 2,
       "sentence": "The 10th house is occupied by Mercury.",
       "refs": [
@@ -691,8 +711,27 @@
       ]
     },
     {
-      "field": "reading",
-      "index": 3,
+      "field": "divisional_confirmation",
+      "index": 0,
+      "sentence": "In D10 the 10th lord Jupiter sits in the 6th house in Scorpio.",
+      "refs": [
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d10/all_lord_placements/10_lord"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d10/planets/4"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d10/planets/4"
+        }
+      ]
+    },
+    {
+      "field": "jaimini_view",
+      "index": 0,
       "sentence": "Your Amatyakaraka Moon is placed in the 7th house.",
       "refs": [
         {
@@ -706,7 +745,7 @@
       ]
     },
     {
-      "field": "timing",
+      "field": "periods",
       "index": 0,
       "sentence": "The Jupiter Mahadasha runs through the window.",
       "refs": [
@@ -717,7 +756,7 @@
       ]
     },
     {
-      "field": "timing",
+      "field": "periods",
       "index": 1,
       "sentence": "The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14.",
       "refs": [
@@ -728,8 +767,8 @@
       ]
     },
     {
-      "field": "timing",
-      "index": 2,
+      "field": "transits",
+      "index": 0,
       "sentence": "Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
       "refs": [
         {
@@ -764,9 +803,9 @@
     "tool_calls": 18,
     "tool_bytes": 206035,
     "round_input_tokens": [
-      2772,
-      5941,
-      6532
+      2817,
+      6565,
+      7258
     ],
     "round_latency_ms": [
       0,
@@ -786,7 +825,7 @@
       "event": "round",
       "round": 1,
       "stage": "intent",
-      "counted_input_tokens": 2772,
+      "counted_input_tokens": 2817,
       "provider_input_tokens": 2000,
       "provider_output_tokens": 500,
       "latency_ms": 0
@@ -802,6 +841,14 @@
         "career:promotion"
       ],
       "profile_revision": 3
+    },
+    {
+      "event": "window_from_question",
+      "window": {
+        "start": "2027-01-01",
+        "end": "2027-12-31",
+        "stated": true
+      }
     },
     {
       "event": "plan",
@@ -1253,7 +1300,7 @@
       "event": "round",
       "round": 2,
       "stage": "writer",
-      "counted_input_tokens": 5941,
+      "counted_input_tokens": 6565,
       "provider_input_tokens": 2000,
       "provider_output_tokens": 500,
       "latency_ms": 0
@@ -1262,11 +1309,11 @@
       "event": "validation",
       "passed": false,
       "issues": [
-        "reading: wrong_house_lord",
-        "reading: wrong_placement"
+        "natal_promise: wrong_house_lord",
+        "natal_promise: wrong_placement"
       ],
       "missing": [],
-      "verified_statements": 12,
+      "verified_statements": 17,
       "soft_notes": 0,
       "repair_round": false,
       "after_removal": false
@@ -1280,7 +1327,7 @@
       "event": "round",
       "round": 3,
       "stage": "repair",
-      "counted_input_tokens": 6532,
+      "counted_input_tokens": 7258,
       "provider_input_tokens": 2000,
       "provider_output_tokens": 500,
       "latency_ms": 0
@@ -1290,7 +1337,7 @@
       "passed": true,
       "issues": [],
       "missing": [],
-      "verified_statements": 18,
+      "verified_statements": 21,
       "soft_notes": 0,
       "repair_round": true,
       "after_removal": false
@@ -1300,7 +1347,7 @@
       "reason": "complete",
       "status": "ok",
       "non_answer_states": [],
-      "elapsed_ms": 3484
+      "elapsed_ms": 3562
     }
   ]
 }

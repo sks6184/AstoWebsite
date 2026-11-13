@@ -67,19 +67,22 @@ def _planet_line(t, code, vargas, why):
     return line
 
 
-def _links(t, code, focus):
-    """How a period lord connects to the houses in focus (ownership, occupation, aspect): lookups only."""
+def _links(t, code, focus, plan=None):
+    """How a period lord connects to the houses in focus (ownership, occupation, aspect): lookups only.
+    A house that is the primary house for the question is marked, so the connection is not overlooked."""
     row = t.place.get('d1', {}).get(code)
     if not row:
         return ''
+    primary = set(plan.houses['primary']) if plan else set()
+    mark = lambda h: f'{h} (the primary house for this question)' if h in primary else str(h)
     parts = []
     ruled = t.ruled(code)
     if ruled:
-        parts.append('rules ' + ', '.join(map(str, ruled)))
-    parts.append(f"sits in house {row['house']}")
+        parts.append(f"rules house{'s' if len(ruled) > 1 else ''} " + ', '.join(mark(h) for h in ruled))
+    parts.append(f"sits in house {mark(row['house'])}")
     aspects = [h for h in t.aspects.get(code, {}).get('houses', []) if h in focus]
     if aspects:
-        parts.append('aspects ' + ', '.join(map(str, aspects)))
+        parts.append(f"aspects house{'s' if len(aspects) > 1 else ''} " + ', '.join(mark(h) for h in aspects))
     return f"{P(code)} {'; '.join(parts)}"
 
 
@@ -191,11 +194,15 @@ def build_brief(question, plan, tables, passages, profile, today):
         for name, start, end in majors:
             periods.append(f"- {system.title()} Mahadasha: {name}, {start} to {end}.")
         for r in rows[:8]:
-            periods.append(f"  - {system.title()} sub-period {r['major_name']} / {r['sub_name']}: {r['start']} to {r['end']}.")
+            line = f"  - {system.title()} sub-period {r['major_name']} / {r['sub_name']}: {r['start']} to {r['end']}."
+            if system == 'vimshottari' and r['sub']:
+                line += f" Sub-period lord: {_links(t, r['sub'], focus, plan)}."
+            periods.append(line)
         if system != 'chara':
-            links = [x for x in (_links(t, c, focus) for c in dict.fromkeys(code for r in rows for code in (r['major'], r['sub']) if code)) if x]
+            lords = dict.fromkeys(code for r in rows for code in ((r['major'],) if system == 'vimshottari' else (r['major'], r['sub'])) if code)
+            links = [x for x in (_links(t, c, focus, plan) for c in lords) if x]
             if links:
-                periods.append(f"  - {system.title()} period lords in D1: " + '. '.join(links) + '.')
+                periods.append(f"  - {system.title()} {'Mahadasha lord' if system == 'vimshottari' else 'period lords'} in D1: " + '. '.join(links) + '.')
         else:
             for sign in dict.fromkeys(s for r in rows for s in (r['major_sign'], r['sub_sign']) if s):
                 periods.append(f"  - Chara sign {S(sign)} is house {t.sign_house(sign)} from the Lagna; occupants: {_names(t.occupants(t.sign_house(sign)) if t.sign_house(sign) else [])}.")
@@ -227,5 +234,22 @@ def build_brief(question, plan, tables, passages, profile, today):
             f" | retrieved for: {p['purpose']} | {p['snippet']}" for p in passages]
     else:
         sections['CLASSICAL PASSAGES'] = ['- None retrieved. Do not name or cite any book or author.']
+    if label['question_type'] != 'concept_explanation' and t.lagna.get('d1'):
+        named = plan.houses['primary'] + plan.houses['event']
+        cover = [f"- Natal promise: the {', '.join(ordinal(h) for h in named)} house{'s' if len(named) > 1 else ''}: each lord and where it sits, "
+                 'the occupants and the aspects; the significators listed.']
+        if any(v != 'd1' for v in t.lagna):
+            cover.append(f"- Divisional confirmation: the actual placements in {', '.join(v.upper() for v in plan.vargas if v != 'd1' and v in t.lagna)} (name the planet, sign and house).")
+        if jaimini:
+            cover.append('- Jaimini view: the Amatyakaraka and the counted points above, by planet, sign and house.')
+        if plan.timing and periods:
+            cover.append('- Timing: every Vimshottari sub-period in the window with its dates and what its lord rules and occupies; whether the Yogini and Chara periods agree.')
+        if t.transits:
+            cover.append('- Transits: where Saturn and Jupiter transit (house from the Lagna and from the Moon), when, and the SAV of the sign.')
+        if rules:
+            cover.append('- Both sides: the supportive and the cautionary rules, and which way the balance leans.')
+        if t.candidates:
+            cover.append('- The better and the weaker stretch of the window, using the candidate windows and period dates above.')
+        sections['WHAT THE READING MUST COVER'] = cover
     text = '\n\n'.join(heading + '\n' + '\n'.join(lines) for heading, lines in sections.items() if lines)
     return text, sections

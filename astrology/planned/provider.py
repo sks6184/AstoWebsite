@@ -20,8 +20,10 @@ Reply with one JSON object:
 - question_type: choose from label_menu.question_types.
 - domains: 1 to 3 domain ids from label_menu.domains, most important first. If none fits, use general.
 - events: every event id that the question asks about, written "domain:event", from the labelled domains'
-  event lists. A question can name several events (for example a promotion or a new employer). Use [] when
-  no listed event fits.
+  event lists. A question can name several events (for example a promotion or a new employer): include each
+  one, up to three. Do not assume circumstances the user has not stated (for example that they are
+  unemployed, married or already own a business); choose the events that fit the words used. Use [] when no
+  listed event fits.
 - window: the period the question asks about, as ISO dates. Work from "today". "Next year" means 1 January to
   31 December of the next calendar year; "this year" means today to 31 December; "in the next six months"
   means today to six months ahead. Set stated to true only when the question gives a period. When it gives
@@ -43,7 +45,11 @@ How to read the chart
   back, and how the conflicting indications limit the conclusion. Do not hide a difficulty and do not
   overstate a support.
 - Be specific. Name the actual factors ("your 10th lord Venus sits in the 12th house in Cancer") instead of
-  general phrases. Explain what each factor means for the question; do not merely list facts.
+  general phrases such as "planetary influences" or "the divisional charts show". Explain what each factor
+  means for the question; do not merely list facts.
+- The brief ends with WHAT THE READING MUST COVER. Cover every item there with the actual planets, houses,
+  signs, periods and dates. A reading that only mentions "Jaimini" or "the divisional charts" without the
+  actual factor is incomplete.
 
 Facts
 - Use only the placements, house lords, aspects, dignities, periods, dates, transits and figures given in the
@@ -67,9 +73,20 @@ Language and limits
 Reply with one JSON object:
 - direct_answer: two to four sentences that answer the question first: the overall leaning, the main reason,
   and the window you examined (say so when the default twelve months were used).
-- reading: the natal promise, with the divisional and Jaimini confirmation.
-- timing: the periods and transits, with the better and the weaker stretches and their dates from the brief.
-  Use "" when the brief has no window.
+- natal_promise: the birth-chart promise for this matter: the houses named in the brief, each lord and
+  where it sits, the occupants and aspects, the significators, and any detected yoga that bears on it, with
+  what each means for the question. Six to ten sentences.
+- divisional_confirmation: what the divisional charts in the brief add, with the actual planet, sign and
+  house in each (for example where the 10th lord sits in D10). Two to four sentences. "" if none in the brief.
+- jaimini_view: the Jaimini factors in the brief by planet, sign and house (for example the Amatyakaraka and
+  the 10th from the Arudha Lagna) and whether they agree with the reading. Two to four sentences. "" if the
+  brief has no Jaimini section.
+- periods: each period in the window by name with its dates, what its lord rules, occupies and aspects, and
+  what that means for the question; whether the Yogini and Chara periods agree; which stretch is better
+  supported. Five to eight sentences. For a question with no window, the period running now.
+- transits: where Saturn and Jupiter transit in the window (house from the Lagna and from the Moon), with
+  the dates and the SAV of the sign, and whether each supports or strains the matter. Three to five
+  sentences. "" when the brief has no transits.
 - conflicts: the conflicting indications and what they mean for the answer. Use "" only when there are none.
 - classical_support: what the passages add, with (P) citations. Use "" when there are no passages.
 - guidance: practical guidance that follows from the evidence above.
@@ -79,7 +96,8 @@ Reply with one JSON object:
 REPAIR = '''A fact check compared your consultation with the calculated brief and found the statements listed in
 "corrections". Rewrite the consultation: correct or delete only those statements, using the calculated values
 given, and adjust any conclusion that depended on them so the reading stays coherent. Keep everything else.
-Add nothing that is not in the brief.'''
+Add nothing that is not in the brief. Write the corrected sentence naturally: state the right fact or drop the
+point, and never mention the fact check, the correction or "the app".'''
 
 
 def intent_schema(profile):
@@ -97,8 +115,10 @@ def answer_schema():
     text = {'type': 'string'}
     return {'type': 'json_schema', 'name': 'astrogpt_consultation', 'strict': True, 'schema': {
         'type': 'object', 'additionalProperties': False,
-        'required': ['direct_answer', 'reading', 'timing', 'conflicts', 'classical_support', 'guidance', 'evidence_strength'],
-        'properties': {'direct_answer': text, 'reading': text, 'timing': text, 'conflicts': text, 'classical_support': text, 'guidance': text,
+        'required': ['direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'conflicts',
+                     'classical_support', 'guidance', 'evidence_strength'],
+        'properties': {'direct_answer': text, 'natal_promise': text, 'divisional_confirmation': text, 'jaimini_view': text, 'periods': text,
+                       'transits': text, 'conflicts': text, 'classical_support': text, 'guidance': text,
                        'evidence_strength': {'type': 'object', 'additionalProperties': False, 'required': ['label', 'reason'],
                                              'properties': {'label': {'type': 'string', 'enum': list(STRENGTH_LABELS)}, 'reason': text}}}}}
 

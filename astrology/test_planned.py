@@ -18,9 +18,9 @@ from astrology.agent.general import AgentLimits
 from astrology.planned.brief import ordinal
 from astrology.planned.checker import SentenceCheck, check_answer, clean_text, prune
 from astrology.planned.consultation import PlannedConsultation, run_planned_consultation
-from astrology.planned.plan import build_plan, clamp_window
+from astrology.planned.plan import build_plan, clamp_window, stated_window
 from astrology.planned.provider import PlannedProvider, answer_schema, intent_schema
-from astrology.planned.retrieval import build_queries, guided_books, rerank
+from astrology.planned.retrieval import build_queries, display_title, guided_books, rerank
 from astrology.planned.tables import Tables, planet_name as P, sign_name as S
 from astrology.test_m3 import M3Base, TODAY, FakeLibrary
 from chat.models import Message
@@ -30,6 +30,8 @@ WINDOW = {'start': '2027-01-01', 'end': '2027-12-31', 'stated': True}
 CAREER = {'question_type': 'predictive_timing', 'domains': ['career'],
           'events': ['career:voluntary_employer_change', 'career:promotion'], 'window': WINDOW}
 QUESTION = 'Can I get a good job next year?'
+# True divisional and Jaimini statements for the synthetic chart, for tests that write their own reading.
+BASIS = ' In D10 the 10th lord Jupiter sits in the 6th house in Scorpio. Your Amatyakaraka Moon is placed in the 7th house.'
 
 
 class Scripted:
@@ -61,31 +63,32 @@ def astrologer(consultation, **override):
     lord = t.lords['d1'][h]
     code = lord['lord']
     ruled = ' and '.join(ordinal(x) for x in t.ruled(code))
-    reading = (f"Your {ordinal(h)} lord {P(code)} sits in the {ordinal(lord['placed_house'])} house in {S(lord['placed_sign'])}. "
-               f"{P(code)} rules the {ruled}. ")
+    natal = (f"Your {ordinal(h)} lord {P(code)} sits in the {ordinal(lord['placed_house'])} house in {S(lord['placed_sign'])}. "
+             f"{P(code)} rules the {ruled}. ")
     occupants = t.occupants(h)
     if occupants:
-        reading += f"The {ordinal(h)} house is occupied by {' and '.join(P(c) for c in occupants)}. "
+        natal += f"The {ordinal(h)} house is occupied by {' and '.join(P(c) for c in occupants)}. "
     aspecting = t.aspecting(h)
     if aspecting:
-        reading += f"The {ordinal(h)} house is aspected by {P(aspecting[0])}. "
+        natal += f"The {ordinal(h)} house is aspected by {P(aspecting[0])}. "
+    d10 = t.lords.get('d10', {}).get(h)
+    divisional = f"In D10 the {ordinal(h)} lord {P(d10['lord'])} sits in the {ordinal(d10['placed_house'])} house in {S(d10['placed_sign'])}." if d10 else ''
     amk = t.karakas.get('Amatyakaraka')
-    if amk:
-        reading += f"Your Amatyakaraka {P(amk['code'])} is placed in the {ordinal(amk['house'])} house. "
-    timing = ''
+    jaimini = f"Your Amatyakaraka {P(amk['code'])} is placed in the {ordinal(amk['house'])} house." if amk else ''
+    periods = ''
     rows = t.dashas.get('vimshottari') or []
     if rows:
         first = rows[0]
-        timing = f"The {P(first['major'])} Mahadasha runs through the window. The {P(first['major'])}/{P(first['sub'])} period runs from {first['start']} to {first['end']}. "
-    saturn = next((s for s in t.transits if s['planet'] == 'Sa'), None)
-    if saturn:
-        timing += f"Saturn transits {S(saturn['sign'])}, the {ordinal(saturn['house'])} house from the Lagna, until {saturn['end']}."
-    cite = f" A retrieved source discusses this theme in its own terms ({consultation.kept[0]['marker']})." if consultation.kept else ''
+        periods = (f"The {P(first['major'])} Mahadasha runs through the window. The {P(first['major'])}/{P(first['sub'])} period runs "
+                   f"from {first['start']} to {first['end']}.")
+    saturn = next((x for x in t.transits if x['planet'] == 'Sa'), None)
+    transits = f"Saturn transits {S(saturn['sign'])}, the {ordinal(saturn['house'])} house from the Lagna, until {saturn['end']}." if saturn else ''
+    cite = f"A retrieved source discusses this theme in its own terms ({consultation.kept[0]['marker']})." if consultation.kept else ''
     answer = {'direct_answer': f"The indications for the period from {plan.window['start']} to {plan.window['end']} are mixed but workable. "
                                f"Your {ordinal(h)} lord {P(code)} is the main factor.",
-              'reading': reading.strip(), 'timing': timing.strip(),
+              'natal_promise': natal.strip(), 'divisional_confirmation': divisional, 'jaimini_view': jaimini, 'periods': periods, 'transits': transits,
               'conflicts': 'The supportive period rules are qualified by cautionary rules, so the reading stays measured.' if t.conflicts else '',
-              'classical_support': cite.strip(), 'guidance': 'Prepare steadily and use the better supported stretch of the window.',
+              'classical_support': cite, 'guidance': 'Prepare steadily and use the better supported stretch of the window.',
               'evidence_strength': {'label': 'moderate', 'reason': 'Several independent calculated factors were compared for this question.'}}
     answer.update(override)
     return answer
@@ -112,9 +115,9 @@ class FactCheckTests(PlannedBase):
         self.consult(Scripted(CAREER, self.truthful()))
         self.c = self.consultation
 
-    def codes(self, sentence):
+    def codes(self, sentence, field=None):
         passages = {p['marker']: p for p in self.c.kept}
-        check = SentenceCheck(sentence, self.c.tables, self.c.plan, passages, TODAY).run()
+        check = SentenceCheck(sentence, self.c.tables, self.c.plan, passages, TODAY, field).run()
         return [f['code'] for f in check.findings], check
 
     TRUE = [
@@ -140,6 +143,11 @@ class FactCheckTests(PlannedBase):
         'The Moon and Mars sub-periods cover the window.',
         'The app does not calculate combustion, so that cannot be assessed here.',
         'Sasa Yoga is detected in your chart.',
+        'Mars sits in Aquarius in your 8th house and is not exalted there.',
+        'The 10th from your Arudha Lagna is in Aries (house 10), occupied by Mercury.',
+        'In D10, Jupiter as the 10th lord sits in the 6th house.',
+        'Mars as the 10th lord in the 8th house of D1 shows pressure.',
+        'Jupiter in the 12th house aspects the 8th, where exalted Venus is not involved.',
     ]
     FALSE = [
         ('Your 10th lord Venus sits in the 12th house.', 'wrong_house_lord'),
@@ -166,6 +174,11 @@ class FactCheckTests(PlannedBase):
         ('Your Lagna is Leo.', 'wrong_pada_or_karakamsha'),
         ('This is confirmed by the passage (P9).', 'unknown_source_marker'),
         ('The cosmic energies favour you.', 'generic_phrase'),
+        ('Strong planetary influences favour employment in your chart.', 'generic_phrase'),
+        ('Venus sits in Pisces in your 9th house but is not exalted.', 'wrong_dignity'),
+        ('Saturn in Capricorn is not retrograde in your chart.', 'wrong_retrograde'),
+        ('Saturn transits Capricorn during 2027.', 'wrong_placement'),          # its natal sign is not its transit sign
+        ('The 10th from your Arudha Lagna is in Scorpio.', 'wrong_pada_or_karakamsha'),
     ]
 
     def test_true_statements_are_accepted(self):
@@ -185,6 +198,11 @@ class FactCheckTests(PlannedBase):
                 found, check = self.codes(sentence)
                 self.assertIn(code, found, check.findings or check.soft)
 
+    def test_a_sentence_in_the_transits_part_is_read_as_a_transit(self):
+        sentence = 'Saturn is in Aries (10th house) from 3 June 2027 to 19 October 2027.'
+        self.assertIn('wrong_placement', self.codes(sentence)[0])               # as a birth-chart statement it is false
+        self.assertEqual(self.codes(sentence, 'transits')[0], [])               # as a transit it is what the engine calculated
+
     def test_correction_states_the_calculated_value(self):
         _, check = self.codes('Your 10th lord Venus sits in the 12th house.')
         text = ' '.join(f['correction'] for f in check.findings)
@@ -199,12 +217,12 @@ class FactCheckTests(PlannedBase):
                 self.assertEqual(self.codes(sentence)[0], [])
 
     def test_prune_removes_only_the_wrong_sentence_and_a_sentence_leaning_on_it(self):
-        answer = astrologer(self.c, reading='Your 10th lord Mars sits in the 8th house. Saturn aspects your 10th house. '
-                                            'This gives heavy pressure at work. Mercury occupies your 10th house.')
+        answer = astrologer(self.c, natal_promise='Your 10th lord Mars sits in the 8th house. Saturn aspects your 10th house. '
+                                            'This gives heavy pressure at work. Mercury occupies your 10th house.' + BASIS)
         report = check_answer(answer, self.c.tables, self.c.plan, self.c.kept, today=TODAY, conflicts_present=True)
         self.assertEqual([f['code'] for f in report['findings']], ['wrong_aspect'])
         cleaned, removed = prune(answer, report['findings'])
-        self.assertEqual(cleaned['reading'], 'Your 10th lord Mars sits in the 8th house. Mercury occupies your 10th house.')
+        self.assertEqual(cleaned['natal_promise'], 'Your 10th lord Mars sits in the 8th house. Mercury occupies your 10th house.' + BASIS)
         self.assertEqual(len(removed), 2)
         self.assertTrue(check_answer(cleaned, self.c.tables, self.c.plan, self.c.kept, today=TODAY, conflicts_present=True)['passed'])
 
@@ -213,6 +231,9 @@ class FactCheckTests(PlannedBase):
         text = clean_text(f'A source agrees ({marker}). See F0123456789abcdef and [E3].', self.c.kept)
         self.assertIn('(Synthetic Parashari Notes', text)
         self.assertNotRegex(text, r'F0123456789abcdef|E3|\(P\d\)')
+        several = clean_text(f'Two sources agree ({marker}, P9 and {marker}).', self.c.kept)      # a list of markers in one bracket
+        self.assertEqual(several.count('Synthetic Parashari Notes'), 1)
+        self.assertNotIn('P9', several)
 
 
 def save_trace(name, result, provider):
@@ -332,7 +353,7 @@ class PipelineTests(PlannedBase):
 
     def test_answer_has_no_internal_tags_and_provenance_is_kept_internally(self):
         result = self.consult(Scripted(CAREER, self.truthful()))
-        self.assertNotRegex(result['answer'], r'\[[FKE][0-9a-f]+\]|\bE\d+\b|\(P\d+\)|Calculated facts referenced')
+        self.assertNotRegex(result['answer'], r'\[[FKE][0-9a-f]+\]|\bE\d+\b|\(P\d+|Calculated facts referenced')
         self.assertIn('(Synthetic Parashari Notes', result['answer'])
         self.assertTrue(result['provenance'])
         for row in result['provenance']:
@@ -343,7 +364,7 @@ class PipelineTests(PlannedBase):
         self.assertTrue(all(c['id'].startswith('F') for c in result['claims']))
 
     def test_an_incorrect_claim_gets_one_targeted_repair(self):
-        wrong = self.truthful(reading='Your 10th lord Venus sits in the 12th house. Mercury occupies your 10th house in Aries.')
+        wrong = self.truthful(natal_promise='Your 10th lord Venus sits in the 12th house. Mercury occupies your 10th house in Aries.')
         provider = Scripted(CAREER, wrong, self.truthful())
         result = self.consult(provider)
         save_trace('career_targeted_repair', result, provider)
@@ -358,8 +379,8 @@ class PipelineTests(PlannedBase):
         self.assertNotIn('10th lord Venus', result['answer'])
 
     def test_a_claim_still_wrong_after_repair_is_removed_not_the_whole_answer(self):
-        wrong = self.truthful(reading='Your 10th lord Mars sits in the 8th house in Aquarius. Saturn aspects your 10th house. '
-                                      'This brings heavy pressure. Mercury occupies your 10th house in Aries.')
+        wrong = self.truthful(natal_promise='Your 10th lord Mars sits in the 8th house in Aquarius. Saturn aspects your 10th house. '
+                                      'This brings heavy pressure. Mercury occupies your 10th house in Aries.' + BASIS)
         provider = Scripted(CAREER, wrong, wrong)
         result = self.consult(provider)
         self.assertEqual((result['status'], result['stop_reason'], result['published_by']), ('ok', 'complete', 'model'))
@@ -379,7 +400,8 @@ class PipelineTests(PlannedBase):
         self.assertEqual(result['stop_reason'], 'complete')
 
     def test_an_answer_without_calculated_basis_is_repaired_then_falls_back_to_the_evidence_report(self):
-        empty = {'direct_answer': 'Things look promising.', 'reading': 'Stay positive.', 'timing': 'Soon.', 'conflicts': 'None.',
+        empty = {'direct_answer': 'Things look promising.', 'natal_promise': 'Stay positive.', 'divisional_confirmation': '', 'jaimini_view': '',
+                 'periods': 'Soon.', 'transits': '', 'conflicts': 'None.',
                  'classical_support': '', 'guidance': 'Work hard.', 'evidence_strength': {'label': 'strong', 'reason': 'It simply feels right to say so.'}}
         provider = Scripted(CAREER, empty, empty)
         result = self.consult(provider)
@@ -408,7 +430,7 @@ class PipelineTests(PlannedBase):
 
     def test_natal_question_uses_the_running_period_and_no_transits(self):
         intent = {'question_type': 'natal_assessment', 'domains': ['career'], 'events': [], 'window': WINDOW}
-        result = self.consult(Scripted(intent, self.truthful(timing='')), 'What does my chart say about my career?')
+        result = self.consult(Scripted(intent, self.truthful(transits='')), 'What does my chart say about my career?')
         tools = [v['tool'] for v in result['evidence'].values()]
         self.assertNotIn('get_transits', tools)
         self.assertNotIn('get_timing_candidates', tools)
@@ -421,7 +443,8 @@ class PipelineTests(PlannedBase):
     def test_concept_question_is_retrieval_and_explanation_only(self):
         intent = {'question_type': 'concept_explanation', 'domains': ['general'], 'events': [], 'window': WINDOW}
         explain = lambda p: {'direct_answer': 'Upapada is the pada of the twelfth house, read for marriage matters.',
-                             'reading': f"A retrieved source describes how it is weighed ({self.consultation.kept[0]['marker']}).", 'timing': '',
+                             'natal_promise': f"A retrieved source describes how it is weighed ({self.consultation.kept[0]['marker']}).",
+                             'divisional_confirmation': '', 'jaimini_view': '', 'periods': '', 'transits': '',
                              'conflicts': '', 'classical_support': '', 'guidance': '',
                              'evidence_strength': {'label': 'limited', 'reason': 'This explanation rests on one retrieved passage only.'}}
         result = self.consult(Scripted(intent, explain), 'What is Upapada?')
@@ -431,10 +454,64 @@ class PipelineTests(PlannedBase):
 
     def test_a_default_window_is_stated_to_the_writer(self):
         intent = {**CAREER, 'window': {'start': 'soon', 'end': '', 'stated': False}}
-        result = self.consult(Scripted(intent, self.truthful()))
+        result = self.consult(Scripted(intent, self.truthful()), 'Can I get a good job?')
         self.assertEqual(result['plan']['window'], {'start': '2026-11-07', 'end': '2027-11-07', 'stated': False})
         self.assertIn('default: the user gave none', result['brief'])
         self.assertEqual(clamp_window({'start': '2027-01-01', 'end': '2040-01-01', 'stated': True}, TODAY)['end'], '2030-01-01')
+
+    def test_a_period_stated_in_plain_words_is_read_by_the_server(self):
+        for question, expected in (('Can I get a good job next year?', ('2027-01-01', '2027-12-31')),
+                                   ('Will I change jobs this year?', ('2026-11-07', '2026-12-31')),
+                                   ('Any promotion in 2028?', ('2028-01-01', '2028-12-31')),
+                                   ('Will I marry in the next six months?', ('2026-11-07', '2027-05-06'))):
+            window = stated_window(question, TODAY)
+            self.assertEqual((window['start'], window['end'], window['stated']), (*expected, True), question)
+        self.assertIsNone(stated_window('What does my chart say about my career?', TODAY))
+        # The model's own window is ignored when the question states one.
+        intent = {**CAREER, 'window': {'start': '2026-11-07', 'end': '2027-11-07', 'stated': True}}
+        result = self.consult(Scripted(intent, self.truthful()))
+        self.assertEqual(result['plan']['window'], WINDOW)
+        self.assertIn('window_from_question', [t['event'] for t in result['trace']])
+
+    def test_talk_of_jaimini_or_divisional_charts_without_the_actual_factors_is_sent_back(self):
+        vague = self.truthful(divisional_confirmation='The divisional charts confirm this.', jaimini_view='The Jaimini indicators agree.')
+        provider = Scripted(CAREER, vague, self.truthful())
+        result = self.consult(provider)
+        first = result['attempts'][0]
+        self.assertEqual(first['missing'], ['divisional_basis', 'jaimini_basis'])
+        corrections = provider.calls[2][1]['corrections']
+        self.assertIn('Add the divisional confirmation with actual placements', corrections)
+        self.assertIn('Add the Jaimini view with actual factors', corrections)
+        self.assertEqual((result['status'], result['stop_reason']), ('ok', 'complete'))
+        self.assertEqual(result['validation']['coverage']['evidence_used'], ['divisional', 'jaimini', 'natal', 'period', 'transit'])
+
+    def test_a_reading_still_missing_a_body_of_evidence_after_repair_is_published_as_partial(self):
+        vague = self.truthful(divisional_confirmation='The divisional charts confirm this.', jaimini_view='The Jaimini indicators agree.')
+        result = self.consult(Scripted(CAREER, vague, vague))
+        self.assertEqual((result['status'], result['stop_reason'], result['published_by']), ('partial', 'complete', 'model'))
+        self.assertEqual(result['validation']['missing_sections'], ['divisional_basis', 'jaimini_basis'])
+        self.assertIn('10th lord Mars sits in the 8th house', result['answer'])
+
+    def test_passages_given_but_not_cited_are_asked_for_and_then_disclosed_accurately(self):
+        silent = self.truthful(classical_support='')
+        provider = Scripted(CAREER, silent, silent)
+        result = self.consult(provider)
+        self.assertEqual(result['attempts'][0]['missing'], ['classical_support'])
+        self.assertIn('cite each one you use as (P1)', provider.calls[2][1]['corrections'])
+        self.assertIn('Classical passages were retrieved for these factors, but this reading does not cite them.', result['answer'])
+        self.assertNotIn('No classical support was retrieved', result['answer'])
+
+    def test_brief_ends_with_the_coverage_checklist(self):
+        result = self.consult(Scripted(CAREER, self.truthful()))
+        checklist = result['brief'].split('WHAT THE READING MUST COVER')[1]
+        for needle in ('Natal promise: the 10th, 6th, 12th, 11th houses', 'Divisional confirmation: the actual placements in D9, D10',
+                       'Jaimini view', 'every Vimshottari sub-period', 'where Saturn and Jupiter transit', 'Both sides'):
+            self.assertIn(needle, checklist)
+
+    def test_source_names_are_made_readable_without_adding_anything(self):
+        base = {'file_id': None, 'document': None, 'book': None, 'chapter': None, 'page': None, 'tradition': None}
+        self.assertEqual(display_title({**base, 'filename': '250256424-Synthetic-Notes-on-Houses-pdf'}), 'Synthetic Notes on Houses')
+        self.assertEqual(display_title({**base, 'filename': 'synthetic-varga-notes.pdf'}), 'Synthetic Varga Notes')
 
     def test_search_failure_is_disclosed_and_the_reading_is_still_written(self):
         self.library = FakeLibrary(fail=TimeoutError('search down'))
@@ -451,7 +528,8 @@ class PipelineTests(PlannedBase):
         for needle in ('Lagna (Ascendant): Cancer', '10th house (primary): sign Aries. Its lord Mars is placed in Aquarius, house 8',
                        'D10: Lagna Gemini. Its 10th lord Jupiter is in Scorpio, D10 house 6', 'Amatyakaraka: Moon',
                        '10th from the Arudha Lagna: Aries', 'Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18',
-                       'Yogini Mahadasha: Pingala (Sun)', 'Chara Mahadasha: Pisces', 'Saturn transits Aries: house 10 from the Lagna, house 4 from the Moon',
+                       'Yogini Mahadasha: Pingala (Sun)', 'Chara Mahadasha: Pisces',
+                       'Sub-period lord: Mars rules houses 5, 10 (the primary house for this question); sits in house 8', 'Saturn transits Aries: house 10 from the Lagna, house 4 from the Moon',
                        'Cautionary or mixed', 'Supportive', 'TIMING CANDIDATES', 'NOT CALCULATED BY THIS APP', 'KP cusps'):
             self.assertIn(needle, brief)
         rules = brief.split('TRIGGERED RULES')[1].split('TIMING CANDIDATES')[0]

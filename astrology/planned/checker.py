@@ -18,8 +18,14 @@ from astrology.validation.prose_validator import (
     _title_matches, copied_runs, sentences)
 from .tables import planet_name as P, sign_name as S
 
-FIELDS = ('direct_answer', 'reading', 'timing', 'conflicts', 'classical_support', 'guidance')
-MARKER = re.compile(r'\(\s*(P\d{1,2})\s*\)')
+FIELDS = ('direct_answer', 'natal_promise', 'divisional_confirmation', 'jaimini_view', 'periods', 'transits', 'conflicts',
+          'classical_support', 'guidance')
+MARKER = re.compile(r'\(\s*(P\d{1,2}(?:\s*(?:,|;|and|&)\s*P\d{1,2})*)\s*\)')      # (P1) or (P1, P4)
+
+
+def markers(text):
+    """Passage markers cited in a text, in order."""
+    return [m for group in MARKER.findall(text or '') for m in re.findall(r'P\d{1,2}', group)]
 INTERNAL_ID = re.compile(r'\[?\b(?:[FK][0-9a-f]{16,20}|E\d{1,3})\b\]?')
 _MONTH = '|'.join(sorted(MONTHS, key=len, reverse=True))
 DATE = re.compile(rf'(?P<iso>\b\d{{4}}-\d{{2}}-\d{{2}}\b)|(?P<dmy>\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:{_MONTH})\.?,?\s+\d{{4}}\b)|'
@@ -53,6 +59,8 @@ ASPECT = re.compile(r'\b(aspect\w*|drishti|glance\w*|gaze\w*)\b', re.I)
 TRANSIT = re.compile(r'\btransit\w*|\bgochar\w*', re.I)
 FILLER = re.compile(r"^[\s,(:\u2013\u2014-]*(?:(?:is|are|was|being|as|the|your|this|a|an|also|namely|who|which|that|itself|planet|here|i\.e\.)[\s,]*)*[\s,(:\u2013\u2014-]*$", re.I)
 CHAIN = re.compile(r"^[\s,(:;\u2013\u2014-]*(?:(?:and|or|in|of|the|your|sign|its|own|which|is|house|as\s+well\s+as|along\s+with|both)[\s,]*)*[\s,(:\u2013\u2014-]*$", re.I)
+MOVING = re.compile(r'transit\w*|moves?|moving|enter\w*|through|across|crosses|crossing', re.I)
+RULES_CHAIN = re.compile(r"^[\s,(&]*(?:(?:and|or|the|your|as\s+well\s+as|both)[\s,]*)*(?:house\s*)?$", re.I)
 PASSIVE_PLACE = re.compile(r'\b(occupied\s+by|tenanted\s+by|contains?|holds?|hosts?|home\s+to)\b', re.I)
 REFERENCE = re.compile(r"\b(?:as\s+)?(?:counted\s+)?from\s+(?:the\s+|your\s+)?(?:natal\s+)?(?:moon|chandra|lagna|ascendant)\b", re.I)
 REFERENCE_BEFORE = re.compile(r"\bfrom\s+(?:the\s+|your\s+)?(?:natal\s+)?$", re.I)
@@ -62,13 +70,28 @@ GENERAL = re.compile(r"\b(if|when|whenever|generally|in\s+general|traditionally|
 PASSIVE_ASPECT = re.compile(r'\baspect\w*\s+(?:by|of|from)\b|\b(?:aspect|drishti|gaze|glance)\s+(?:of|from)\b|\breceiv\w+\b.*\baspect', re.I)
 PASSIVE_RULES = re.compile(r'\b(?:ruled|owned|governed|lorded)\s+by\b|\b(?:lord|ruler)\s+(?:is|being)\b|\bunder\s+the\s+(?:lordship|rulership)\s+of\b', re.I)
 FROM_REF = re.compile(r"^\s*(?:house\s+)?(?:as\s+)?(?:counted\s+)?from\s+(?:the\s+|your\s+)?(?:natal\s+)?(?P<ref>moon|chandra|lagna|ascendant)?", re.I)
+DIGNITY_LABEL = {'exalted': 'exalted', 'debilitated': 'debilitated', 'own_sign': 'in its own sign'}
 DIGNITY_WORDS = {'exalted': r'exalt\w+', 'debilitated': r'debilitat\w+', 'own_sign': r'own\s+(?:sign|house)|swakshetra'}
 UNCALCULATED = re.compile(r'\b(combust\w*|shadbala|neecha\s?bhanga|vargottama|sub-?lords?|KP|tithi|hora\s+lagna|ghatika|pratyantar\w*|'
                           r'vimshopaka|planetary\s+war|graha\s+yuddha|mool\s?a?trikona|nakshatra\s+pada|bhava\s+chalit)\b', re.I)
+DENIED = re.compile(r"\b(not|no|never|without|lacks?|neither|nor|isn't|is\s+not|does\s+not)\b|n't\b", re.I)
+VAGUE = re.compile(r'\b((?:planetary|astrological|cosmic|celestial)\s+(?:influences?|energ\w+|alignments?|forces|configurations?|positions))\b', re.I)
 NEGATED = re.compile(r"\b(not|n't|never|cannot|unavailable|would\s+(?:need|require)|requires?|beyond|outside|does\s+not|is\s+not)\b", re.I)
 SAV_CUE = re.compile(r'\b(SAV|BAV|bindus?|sarvashtakavarga|ashtakavarga)\b', re.I)
 BOUNDARY_CUE = re.compile(r'\b(begin\w*|start\w*|end\w*|until|till|from|through|by|after|before|since|on|around|commenc\w+|runs?|lasts?)\b', re.I)
 DEPENDENT = re.compile(r'^(?:This|That|These|Those|Therefore|Thus|Hence|So|Consequently|As a result|Because of this|For this reason|Accordingly)\b')
+
+
+def kind_of(path):
+    """The body of evidence a verified statement rests on, from where its value sits in the tool results."""
+    varga = re.match(r'/data/charts/(d\d+)/', path)
+    if varga:
+        return 'natal' if varga.group(1) == 'd1' else 'divisional'
+    for prefix, kind in (('/data/samples/', 'transit'), ('/data/periods/', 'period'), ('/data/karakas', 'jaimini'), ('/data/padas', 'jaimini'),
+                         ('/data/karakamsha', 'jaimini'), ('/data/result', 'jaimini'), ('/data/planets/', 'natal'), ('/data/rows/', 'ashtakavarga')):
+        if path.startswith(prefix):
+            return kind
+    return 'other'
 
 
 class Entity:
@@ -165,14 +188,16 @@ def entities(text):
 class SentenceCheck:
     """Findings, soft notes and provenance for one sentence."""
 
-    def __init__(self, text, tables, plan, passages, today):
+    def __init__(self, text, tables, plan, passages, today, field=None):
         self.text, self.t, self.plan, self.passages, self.today = text, tables, plan, passages, today
         self.findings, self.soft, self.refs, self.verified = [], [], [], 0
+        self.kinds = set()             # which bodies of evidence this sentence's verified statements rest on
         self.period_rows = []          # the period rows this sentence names (its dates must be theirs)
         self.dates, blank = _dates(text)
         self.blank = blank
         self.ents = entities(blank)
-        self.transit = bool(TRANSIT.search(blank))
+        self.transit = bool(TRANSIT.search(blank)) or field == 'transits'
+        self.moving = False            # the statement being checked uses a transit verb
         self.vargas = list(dict.fromkeys(['d1'] + [e.value for e in self.ents if e.kind == 'V' and e.value in tables.lagna]))
         self.named_varga = len(self.vargas) > 1
 
@@ -181,12 +206,15 @@ class SentenceCheck:
 
     def ok(self, *refs):
         self.verified += 1
-        self.refs.extend(r for r in refs if r)
+        for ref in refs:
+            if ref:
+                self.refs.append(ref)
+                self.kinds.add(kind_of(ref.get('path', '')))
 
     # ── Truth lookups ────────────────────────────────────────────────────
     def placement(self, code, target):
         t = self.t
-        for varga in self.vargas:
+        for varga in () if self.moving else self.vargas:
             row = t.place.get(varga, {}).get(code)
             if not row:
                 continue
@@ -333,7 +361,12 @@ class SentenceCheck:
                 continue
             if e.kind in ('P', 'G') and REFERENCE_BEFORE.search(text[:e.start]):
                 continue                                          # "... from the Moon": a reference point, not a subject
+            if e.kind == 'A' and REFERENCE_BEFORE.search(text[:e.start]):
+                counted = self.counted_subject(prev, e)
+                subject, subject_end, relation = counted, e.end, None
+                continue
             if e.kind in ('P', 'L', 'K', 'A', 'G'):
+                self.moving = False
                 resolved = self.subject_of(e, last_house)
                 # "10th lord Venus", "Venus, the 10th lord", "the Amatyakaraka Moon": an identity statement.
                 if prev and prev.kind != e.kind and {prev.kind, e.kind} in ({'P', 'L'}, {'P', 'K'}) and FILLER.match(gap):
@@ -394,7 +427,9 @@ class SentenceCheck:
                 last_target = e
                 continue
             span = text[subject_end:e.start]
-            chained = relation and last_target is relation[1] and CHAIN.match(REFERENCE.sub(' ', text[last_target.end:e.start]))
+            between = REFERENCE.sub(' ', text[last_target.end:e.start]) if last_target is not None else ''
+            # "rules the 2nd and 11th" continues a lordship; "the 10th lord in the 6th" does not.
+            chained = relation and last_target is relation[1] and (RULES_CHAIN if relation[0] == 'rules' else CHAIN).match(between)
             if ORIGIN.search(before) and not (e.kind == 'H' and e.ref):
                 kind = None                                       # "aspects the 10th from the 4th": origin, not verified here
             elif chained and relation[0] in ('place', 'rules', 'aspect'):
@@ -407,6 +442,9 @@ class SentenceCheck:
             if subject.get('lagna') and kind is None and FILLER.match(span):
                 kind = 'place'                                    # "Lagna is Leo"
             if kind == 'place':
+                if not chained:
+                    verbs = [m for m in PLACE.finditer(span)]
+                    self.moving = bool(verbs and MOVING.fullmatch(verbs[-1].group()))
                 self.check_placement(subject, e)
             elif kind == 'rules' and subject['kind'] == 'P':
                 house = e.value if e.kind == 'H' else self.t.sign_house(e.value)
@@ -423,6 +461,18 @@ class SentenceCheck:
             relation = (kind, e) if kind else None
             last_target = e
 
+    def counted_subject(self, count, reference):
+        """The n-th sign from the Arudha Lagna, Upapada Lagna or Karakamsha, if the engine counted it."""
+        names = {1: 'arudha_lagna', 12: 'upapada_lagna', 0: 'karakamsha'}
+        if count is None or count.kind != 'H' or reference.value not in names:
+            return None
+        row = next((c for c in self.t.counted if c['reference'] == names[reference.value] and c['count'] == count.value), None)
+        if row is None:
+            self.soft.append(f"sign {count.value} from the {names[reference.value].replace('_', ' ')} was not calculated: not verified")
+            return None
+        return {'kind': 'A', 'name': f"Sign {count.value} from the {names[reference.value].replace('_', ' ').title()}",
+                'row': {'sign': row['sign'], 'house': row['house'], 'ref': row['ref']}}
+
     def check_house_sign(self, house, sign):
         """"your 10th house, Taurus": the sign on a house, by whole-sign counting from the stored Lagna."""
         if house.ref:
@@ -436,28 +486,37 @@ class SentenceCheck:
         self.fail('wrong_house_sign', f'house {house.value} is stated as {S(sign.value)}', f'House {house.value} is {S(actual)} in {varga.upper()}.')
 
     def dignity(self, entity):
+        """A dignity or retrograde word attached to this planet, stated or denied, against the stored chart."""
         if entity.kind != 'P' or self.transit:
             return
         before = self.blank[max(0, entity.start - 24):entity.start]
-        after = self.blank[entity.end:entity.end + 36]
         nxt = next((e for e in self.ents if e.start >= entity.end and e.kind == 'P'), None)
-        if nxt:
-            after = after[:max(0, nxt.start - entity.end)]
-        for name, pattern in DIGNITY_WORDS.items():
-            if re.search(rf'(?:{pattern})\s+$', before, re.I) or re.search(rf"^[\s,(]*(?:is|being|,|which is|stands|sits)?\s*(?:itself\s+)?(?:{pattern})", after, re.I):
-                rows = [self.t.place.get(v, {}).get(entity.value) for v in self.vargas]
-                if any(r and r.get('dignity') == name for r in rows):
-                    self.ok(next(r['ref'] for r in rows if r and r.get('dignity') == name))
-                elif any(rows):
-                    actual = next(r for r in rows if r)
-                    self.fail('wrong_dignity', f"{P(entity.value)} is stated as {name.replace('_', ' ')}",
-                              f"The app records {P(entity.value)} in {S(actual['sign'])} with dignity '{actual.get('dignity') or 'unstated'}'.")
-        if re.search(r'retrograde\s+$', before, re.I) or re.search(r'^[\s,(]*(?:is|being|,)?\s*retrograde', after, re.I):
-            row = self.t.place.get('d1', {}).get(entity.value)
-            if row and row['retrograde']:
-                self.ok(row['ref'])
-            elif row:
-                self.fail('wrong_retrograde', f'{P(entity.value)} is stated as retrograde', f'{P(entity.value)} is not retrograde in the stored chart.')
+        after = self.blank[entity.end:min(entity.end + 110, nxt.start if nxt else len(self.blank))]
+        words = '|'.join(DIGNITY_WORDS.values()) + '|retrograde'
+        after = re.sub(rf'(?:{words})\s+$', '', after, flags=re.I)       # "... aspects exalted Venus": that word belongs to Venus
+        rows = [self.t.place.get(v, {}).get(entity.value) for v in self.vargas]
+        if not any(rows):
+            return
+        for name, pattern in list(DIGNITY_WORDS.items()) + [('retrograde', 'retrograde')]:
+            leading = re.search(rf'(?:{pattern})\s+$', before, re.I)
+            trailing = re.search(rf'(?:{pattern})', after, re.I)
+            if not leading and not trailing:
+                continue
+            denied = bool(trailing and not leading and DENIED.search(after[max(0, trailing.start() - 28):trailing.start()]))
+            holds = [r for r in rows if r and (r['retrograde'] if name == 'retrograde' else r.get('dignity') == name)]
+            label = name.replace('_', ' ')
+            if bool(holds) != denied:
+                self.ok((holds or [r for r in rows if r])[0]['ref'])
+                continue
+            actual = next(r for r in rows if r)
+            if name == 'retrograde':
+                self.fail('wrong_retrograde', f"{P(entity.value)} is stated as {'not ' if denied else ''}retrograde",
+                          f"{P(entity.value)} is {'' if actual['retrograde'] else 'not '}retrograde in the stored chart.")
+            else:
+                true = DIGNITY_LABEL.get(actual.get('dignity'))
+                self.fail('wrong_dignity', f"{P(entity.value)} is stated as {'not ' if denied else ''}{label}",
+                          f"{P(entity.value)} is in {S(actual['sign'])}" + (f' and is {true} there.' if true else
+                          f'; it is not exalted, debilitated or in its own sign there, so say nothing about its dignity.'))
 
     def periods(self):
         t = self.t
@@ -586,7 +645,7 @@ class SentenceCheck:
         uncalculated = UNCALCULATED.search(text)
         if uncalculated and not NEGATED.search(text):
             self.fail('uncalculated_factor', f"'{uncalculated.group()}' is not calculated by this app", 'Remove it, or say plainly that the app does not calculate it.')
-        for marker in MARKER.findall(text):
+        for marker in markers(text):
             if marker not in self.passages:
                 self.fail('unknown_source_marker', f'({marker}) is not a retrieved passage')
             else:
@@ -603,14 +662,15 @@ class SentenceCheck:
                 self.fail(name, f"'{found.group()}' is not allowed", 'Describe the strength and direction of the indications in words; no odds, guarantees or medical statements.')
         if REMEDY.search(text) and not MARKER.search(text):
             self.fail('unsupported_remedy', f"'{REMEDY.search(text).group()}': remedies need a retrieved source")
-        if GENERIC_PHRASES.search(text):
-            self.fail('generic_phrase', f"'{GENERIC_PHRASES.search(text).group()}' names no actual factor")
+        vague = GENERIC_PHRASES.search(text) or VAGUE.search(text)
+        if vague:
+            self.fail('generic_phrase', f"'{vague.group()}' names no actual factor", 'Name the planet, house, period or transit you mean.')
 
 
 def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
     """Check a written answer. Returns the AGENTS.md validation shape plus per-sentence findings and provenance."""
     passages = {p['marker']: p for p in passages}
-    findings, soft, provenance, missing, verified = [], [], [], [], 0
+    findings, soft, provenance, missing, verified, kinds = [], [], [], [], 0, set()
     if type(answer) is not dict:
         return _report([{'field': 'answer', 'sentence': '', 'code': 'invalid_answer', 'detail': 'the writer returned no answer object', 'correction': ''}],
                        [], [], ['all'], 0, {})
@@ -619,8 +679,9 @@ def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
         if type(text) is not str:
             continue
         for index, sentence in enumerate(sentences(text)):
-            result = SentenceCheck(sentence, tables, plan, passages, today).run()
+            result = SentenceCheck(sentence, tables, plan, passages, today, field).run()
             verified += result.verified
+            kinds |= result.kinds
             findings += [{'field': field, 'index': index, 'sentence': sentence, **f} for f in result.findings]
             soft += [{'field': field, 'sentence': sentence[:120], 'note': note} for note in result.soft]
             if result.refs:
@@ -638,10 +699,19 @@ def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
     if qtype != 'concept_explanation':
         if verified < 3:
             missing.append('calculated_basis')
-        if plan.timing and not str(answer.get('timing') or '').strip():
+        # Every body of evidence the plan gathered must be used with at least one specific, verified statement
+        # (AGENTS.md: no Jaimini, divisional or timing talk without the actual factors).
+        t = tables
+        required = [('natal', bool(t.lagna.get('d1'))), ('divisional', any(v != 'd1' for v in t.lagna)),
+                    ('jaimini', bool(plan.jaimini_points and t.karakas)), ('period', bool(plan.timing and t.dashas)),
+                    ('transit', bool(plan.timing and t.transits))]
+        missing += [f'{kind}_basis' for kind, wanted in required if wanted and kind not in kinds and verified >= 3]
+        if plan.timing and not str(answer.get('periods') or '').strip():
             missing.append('timing')
         if conflicts_present and not str(answer.get('conflicts') or '').strip():
             missing.append('conflicting_signals')
+    if passages and not markers(' '.join(str(answer.get(f) or '') for f in FIELDS)):
+        missing.append('classical_support')
     strength = answer.get('evidence_strength')
     if type(strength) is not dict or strength.get('label') not in STRENGTH_LABELS:
         missing.append('evidence_strength_label')
@@ -655,6 +725,7 @@ def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
                 'other_focus_houses_discussed': [h for h in plan.focus_houses if h in mentioned and h not in plan.houses['primary']]}
     if qtype != 'concept_explanation' and plan.houses['primary'] and not coverage['primary_houses_discussed']:
         missing.append('primary_house_logic')
+    coverage['evidence_used'] = sorted(kinds)
     return _report(findings, soft, provenance, missing, verified, coverage)
 
 
@@ -670,6 +741,12 @@ def _report(findings, soft, provenance, missing, verified, coverage):
                       'timing': '- Explain the timing from the periods and transits in the window.',
                       'conflicting_signals': '- State the conflicting indications; the brief contains cautionary rules.',
                       'primary_house_logic': '- Discuss the primary house for this question and its lord.',
+                      'classical_support': '- In classical_support, say what the CLASSICAL PASSAGES add for this chart (supporting and contrary), paraphrased, and cite each one you use as (P1), (P2).',
+                      'natal_basis': '- Add the natal basis: the house, its lord and where that lord sits, from NATAL CHART.',
+                      'divisional_basis': '- Add the divisional confirmation with actual placements from DIVISIONAL CHARTS (for example where the 10th lord sits in D10 or D9).',
+                      'jaimini_basis': '- Add the Jaimini view with actual factors from JAIMINI (for example which planet is the Amatyakaraka and where it sits, or the 10th from the Arudha Lagna).',
+                      'period_basis': '- Add the running periods by name with their dates from PERIODS, and say how each period lord connects to the houses in question.',
+                      'transit_basis': '- Add the transits from TRANSITS: which house Saturn and Jupiter transit, when, and the SAV of that sign.',
                       'evidence_strength_label': '- Give evidence_strength a label (limited, moderate or strong).',
                       'evidence_strength_reason': '- Give a reason for the evidence strength.'}.get(m, f'- Provide {m}.'))
     instruction = ''
@@ -710,11 +787,13 @@ def clean_text(text, passages):
     by_marker = {p['marker']: p for p in passages}
 
     def cite(match):
-        p = by_marker.get(match.group(1))
-        if not p:
-            return ''
-        detail = ', '.join(f'{k} {p[k]}' for k in ('chapter', 'page') if p.get(k))
-        return f"({p['title']}{', ' + detail if detail else ''})"
+        names = []
+        for marker in re.findall(r'P\d{1,2}', match.group(1)):
+            p = by_marker.get(marker)
+            if p:
+                detail = ', '.join(f'{k} {p[k]}' for k in ('chapter', 'page') if p.get(k))
+                names.append(f"{p['title']}{', ' + detail if detail else ''}")
+        return f"({'; '.join(dict.fromkeys(names))})" if names else ''
     text = MARKER.sub(cite, text or '')
     text = INTERNAL_ID.sub('', text)
     return re.sub(r'\s+([.,;:])', r'\1', re.sub(r'[ \t]{2,}', ' ', text)).strip()

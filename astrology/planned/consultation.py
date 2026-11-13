@@ -21,16 +21,17 @@ import time
 
 from accounts.pilot_ops import progress
 from accounts.usage_policy import BudgetExceeded
-from astrology.agent.general import SEARCH_TOOL, GeneralConsultation, Stop
+from astrology.agent.general import DISCLOSURES, SEARCH_TOOL, GeneralConsultation, Stop
 from astrology.tools import invoke_tool
 from astrology.tools.contracts import validate_payload
 from .brief import build_brief
-from .checker import FIELDS, MARKER, check_answer, clean_text, prune
-from .plan import build_plan, supplementary_calls
+from .checker import FIELDS, check_answer, clean_text, markers, prune
+from .plan import build_plan, stated_window, supplementary_calls
 from .retrieval import build_queries, guided_books, rerank
 from .tables import Tables
 
 PROGRESS = {'get_chart_facts': 'charts', 'get_dasha_periods': 'periods', 'get_transits': 'transits', 'evaluate_astrology_rules': 'rules'}
+NOT_CITED = 'Classical passages were retrieved for these factors, but this reading does not cite them.'
 REMOVED_NOTE = 'One or more statements that could not be verified against the calculations were removed from this reading.'
 REPORT_SECTIONS = ('NATAL CHART', 'PERIODS', 'TRANSITS', 'TRIGGERED RULES', 'TIMING CANDIDATES')
 
@@ -42,7 +43,7 @@ class PlannedConsultation(GeneralConsultation):
         super().__init__(*args, **kwargs)
         self.plan = self.tables = None
         self.brief, self.sections, self.kept, self.retrieval, self.removed, self.intent = '', {}, [], [], [], None
-        self.models = []
+        self.models, self.attempts = [], []
 
     def default_provider(self):
         from .provider import PlannedProvider
@@ -136,7 +137,10 @@ class PlannedConsultation(GeneralConsultation):
         self.apply_label(self.normalize_label(intent))
         if self.label['question_type'] == 'out_of_scope':
             return 'out_of_scope'
-        self.plan = build_plan(self.profile, self.label, intent.get('window'), self.today)
+        window = stated_window(self.question, self.today)
+        if window:
+            self.trace.append({'event': 'window_from_question', 'window': window})
+        self.plan = build_plan(self.profile, self.label, window or intent.get('window'), self.today)
         self.trace.append({'event': 'plan', **self.plan.summary()})
         for call in self.plan.calls:
             self.calculate(call)
@@ -182,6 +186,9 @@ class PlannedConsultation(GeneralConsultation):
 
     def check(self, answer, repair=False, pruned=False):
         report = check_answer(answer, self.tables, self.plan, self.kept, today=self.today, conflicts_present=bool(self.tables.conflicts))
+        self.attempts.append({'stage': 'after_removal' if pruned else 'repair' if repair else 'writer', 'answer': answer,
+                              'findings': [{k: f[k] for k in ('field', 'sentence', 'code', 'detail', 'correction')} for f in report['findings']],
+                              'missing': report['missing_sections'], 'soft': report['soft']})
         self.trace.append({'event': 'validation', 'passed': report['passed'], 'issues': report['issues'][:12],
                            'missing': report['missing_sections'], 'verified_statements': report['verified_statements'],
                            'soft_notes': len(report['soft']), 'repair_round': repair, 'after_removal': pruned})
@@ -197,10 +204,13 @@ class PlannedConsultation(GeneralConsultation):
         strength = final.get('evidence_strength') or {}
         if strength.get('label'):
             blocks.append(f"Evidence strength: {strength['label']}. {clean_text(strength.get('reason') or '', self.kept)}")
-        used = {m for field in FIELDS for m in MARKER.findall(final.get(field) or '')}
+        used = {m for field in FIELDS for m in markers(final.get(field))}
         cited = [p['id'] for p in self.kept if p['marker'] in used]
         states, calculations, succeeded, failed = self.states(cited)
         notes = self.disclosures(states, calculations, succeeded, failed)
+        if self.kept and not cited:
+            # Passages were retrieved, but the reading cites none: say that, not that nothing was found.
+            notes = [NOT_CITED if n == DISCLOSURES['no_source_support'] else n for n in notes]
         if self.removed:
             notes.append(REMOVED_NOTE)
         if notes:
@@ -253,7 +263,7 @@ class PlannedConsultation(GeneralConsultation):
                 published['status'] = 'partial'
         return {**published, 'intent': self.intent, 'plan': self.plan.summary() if self.plan else None, 'brief': self.brief,
                 'retrieval': self.retrieval, 'passages': [{k: p[k] for k in ('marker', 'id', 'title', 'chapter', 'page', 'purpose', 'stance', 'score')} for p in self.kept],
-                'provenance': report.get('provenance', []), 'removed_statements': self.removed,
+                'provenance': report.get('provenance', []), 'removed_statements': self.removed, 'attempts': self.attempts,
                 'provider_models': list(dict.fromkeys(self.models)),
                 'unsupported': ([{'id': u['id'], 'name': u['name']} for u in self.plan.unsupported] if self.plan else []) +
                                ([{'tool': f['tool'], 'code': f['code']} for f in self.tables.failed] if self.tables else [])}

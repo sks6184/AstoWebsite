@@ -19,7 +19,7 @@ from .tables import planet_name as P, sign_name as S
 GUIDANCE_PATH = Path(__file__).resolve().parent.parent / 'methodology' / 'source_guidance.v0.yaml'
 MAX_QUERY_BYTES = 200
 KEEP = 6                 # passages given to the writer
-PER_PURPOSE = 3
+PER_PURPOSE = 2
 SNIPPET_CHARS = 700
 MIN_SCORE = 0.30         # below this a hit needs term overlap to be kept
 MALEFICS = ('Sa', 'Ma', 'Ra', 'Ke')
@@ -156,6 +156,14 @@ def build_queries(question, plan, tables, profile, limit):
     return ordered
 
 
+def display_title(citation):
+    """The stored source name made readable (upload prefixes and file suffixes removed); nothing is added."""
+    title = re.sub(r'^\d{5,}[-_ ]+', '', title_of(citation))
+    title = re.sub(r'[-_ ]+pdf$', '', title, flags=re.I)
+    title = re.sub(r'[-_]+', ' ', title).strip()
+    return title if any(c.isupper() for c in title) else title.title()
+
+
 def _overlap(snippet, keys):
     """Share of the query's calculated factors (planets and houses) that the passage mentions, in any spelling."""
     if not keys:
@@ -181,7 +189,7 @@ def rerank(searches, label):
     pool = {}
     for query, passages in searches:
         for p in passages:
-            title = title_of(p['citation'])
+            title = display_title(p['citation'])
             haystack = ' '.join(str(v) for v in p['citation'].values() if v).casefold().replace('_', ' ')
             guided = next((b for b, row in books.items() if any(k in haystack for k in row['keywords'])), None)
             overlap = _overlap(p['snippet'], query['keys'])
@@ -196,7 +204,13 @@ def rerank(searches, label):
     kept, per = [], {}
     eligible = [r for r in ranked if r['semantic'] is None or r['semantic'] >= MIN_SCORE or r['overlap'] >= 0.5]
     contrary = next((r for r in eligible if r['stance'] == 'contrary'), None)
-    for row in ([contrary] if contrary else []) + eligible:
+    # The best passage for each search first, so every searched factor is represented (the contrary one
+    # included), then the next best overall.
+    first = []
+    for row in eligible:
+        if row['purpose'] not in {r['purpose'] for r in first}:
+            first.append(row)
+    for row in ([contrary] if contrary else []) + first + eligible:
         if row in kept or len(kept) >= KEEP or per.get(row['purpose'], 0) >= PER_PURPOSE:
             continue
         kept.append(row)
