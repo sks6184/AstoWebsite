@@ -193,7 +193,14 @@ def _pada_from_house(chart_data: dict[str, Any], house_number: int) -> dict[str,
         }
 
     distance = sign_distance(house_sign, lord_sign)
-    pada_sign = normalize_sign_number(lord_sign + distance - 1)
+    direct_sign = normalize_sign_number(lord_sign + distance - 1)
+    # Classical exception (owner decision, 2026-11-13): a pada cannot stay in its own house or in the
+    # 7th from it. When direct counting lands there, the 10th sign from that result is the pada
+    # (so a result in the house itself gives the 10th from the house, and a result in the 7th gives
+    # the 4th from the house).
+    landed = sign_distance(house_sign, direct_sign)
+    exception = {1: "own_house", 7: "seventh_from_house"}.get(landed)
+    pada_sign = normalize_sign_number(direct_sign + 9) if exception else direct_sign
     return {
         "house": house_number,
         "house_sign_number": house_sign,
@@ -203,10 +210,13 @@ def _pada_from_house(chart_data: dict[str, Any], house_number: int) -> dict[str,
         "lord_sign_number": lord_sign,
         "lord_sign": SIGN_NAMES.get(lord_sign),
         "distance_from_house_to_lord": distance,
+        "direct_count_sign_number": direct_sign,
+        "direct_count_sign": SIGN_NAMES.get(direct_sign),
+        "exception_applied": exception,
         "pada_sign_number": pada_sign,
         "pada_sign": SIGN_NAMES.get(pada_sign),
         "pada_house_from_lagna": sign_distance(chart_data.get("ascendant", {}).get("sign_number"), pada_sign),
-        "method_note": "Count from the house to its lord, then count the same distance from the lord.",
+        "method_note": "Count from the house to its lord, then the same distance from the lord; if that lands in the house itself or the 7th from it, take the 10th sign from the result.",
     }
 
 
@@ -221,8 +231,8 @@ def build_padas(chart_data: dict[str, Any]) -> dict[str, Any]:
             "scoring_status": "unscored_reference_only",
             "reason": "Chapter 7 states that planetary padas should be calculated, but the reviewed pages do not define a sufficiently explicit formula.",
         },
-        "exceptions_applied": False,
-        "method_note": "All twelve house padas use direct counting. The source instructs readers to ignore the disputed exceptions.",
+        "exceptions_applied": True,
+        "method_note": "All twelve house padas use direct counting with the classical exception: a result in the house itself or in the 7th from it is replaced by the 10th sign from that result (owner decision 2026-11-13).",
     }
 
 

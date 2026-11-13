@@ -210,10 +210,22 @@ def build_brief(question, plan, tables, passages, profile, today):
         sections['PERIODS ' + ('IN THE WINDOW' if plan.timing else 'RUNNING NOW') + ' (period end dates are exclusive; calendar-date precision)'] = periods
 
     if t.transits:
-        sections['TRANSITS IN THE WINDOW (daily noon samples: sign-change dates are approximate)'] = [
-            f"- {P(r['planet'])} transits {S(r['sign'])}: house {r['house']} from the Lagna" +
-            (f", house {r['moon_house']} from the Moon" if r['moon_house'] else '') + f", {r['start']} to {r['end']}" +
-            (f"; SAV of that sign {r['sav']}" if r['sav'] is not None else '') + '.' for r in t.transits[:20]]
+        lines = ['Houses are counted from the Lagna unless a line says "counted from the Moon". A count from the Moon is where the planet '
+                 'stands relative to the Moon; it is not an aspect and not a Lagna house.']
+        for r in t.transits[:20]:
+            line = f"- {P(r['planet'])} transits {S(r['sign'])}, {r['start']} to {r['end']}: it occupies house {r['house']} from the Lagna"
+            if r['moon_house']:
+                line += f" (counted from the Moon it is the {ordinal(r['moon_house'])} sign from the Moon)"
+            line += '.'
+            if r['aspects']:
+                line += f" From there it aspects house{'s' if len(r['aspects']) > 1 else ''} {', '.join(map(str, r['aspects']))} from the Lagna (Parashari aspect)."
+            if r['sav'] is not None:
+                line += f" SAV of {S(r['sign'])}: {r['sav']}."
+            bav = t.sav.get(r['sign'], {}).get('bav', {}).get(r['planet'])
+            if bav is not None:
+                line += f" {P(r['planet'])}'s own BAV in {S(r['sign'])}: {bav} of 8."
+            lines.append(line)
+        sections['TRANSITS IN THE WINDOW (daily noon samples: sign-change dates are approximate)'] = lines
 
     rules = _rules(t, plan)
     if rules:

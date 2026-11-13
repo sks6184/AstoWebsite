@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 
 from astrology.calculations.varga import SUPPORTED_VARGAS, build_varga_facts
-from charts.vedic_utils import PLANET_NAMES, SIGN_NAMES, house_from_sign, transit_context_for_lord
+from charts.vedic_utils import PLANET_NAMES, SIGN_NAMES, aspected_houses, house_from_sign, transit_context_for_lord
 from chat.prediction_context import CATEGORY_RULES
 from chat.timing_windows import _transit_segments_for_lord
 from astrology.calculations import jaimini as jaimini_calc
@@ -128,6 +128,10 @@ def get_transits(request: TransitRequest, chart):
             _sanitize_sav(row, chart.chart_data)
             # OD-33: the same transit sign counted from the natal Moon, alongside the Lagna count.
             row["transit_house_from_moon"] = house_from_moon(chart.chart_data, row.get("transit_sign_number"))
+            # Transit graha drishti: the houses (from the natal Lagna) the planet aspects from its transit
+            # sign, by the same Parashari offsets used for natal aspects. A count from the Moon is a
+            # position, never an aspect.
+            row["transit_aspected_houses_from_lagna"] = aspected_houses(planet, row.get("transit_house_from_lagna"))
         rows.extend(samples)
     missing = any(row.get("sarvashtakavarga_points") is None for row in rows)
     warnings = ["SAV is unavailable for some sampled houses; missing values are not zero."] if missing else []
@@ -263,7 +267,7 @@ def get_timing_candidates(request: TimingRequest, chart):
 JAIMINI_PARTS = ("karakas", "karakamsha", "padas", "jaimini_yogas", "ak_amk")
 JAIMINI_CONVENTIONS = {
     "karakas": "7 Chara karakas (Sun to Saturn; Rahu and Ketu excluded), ranked by degrees within sign",
-    "padas": "All 12 house padas by direct counting (house to lord, same distance again); classical exceptions not applied; AL = A1, A7 = Darapada, UL = A12",
+    "padas": "All 12 house padas by direct counting (house to lord, same distance again); a result in the house itself or the 7th from it is replaced by the 10th sign from it (classical exception, applied); AL = A1, A7 = Darapada, UL = A12",
     "karakamsha": "Navamsha (D9) sign of the Atmakaraka; derived signs read in D1",
     "rasi_drishti": "Movable aspect fixed except adjacent; fixed aspect movable except adjacent; dual aspect other duals",
     "source": "astrology/calculations/jaimini.py and charts/astro_engine.py (existing; unchanged)",

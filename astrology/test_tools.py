@@ -374,9 +374,16 @@ class DeterministicToolTests(TestCase):
         result = self.invoke("get_transits", planets=planets, start_date="2027-05-01", end_date="2027-05-07")
         self.assertEqual(result["status"], "ok")
         expected = [segment for planet in planets for segment in _transit_segments_for_lord(self.calculated, planet, date(2027, 5, 1), date(2027, 5, 7), [])]
-        # M3 OD-33 adds only the Moon-based house; every legacy field is unchanged.
+        # M3 OD-33 adds the Moon-based house, and the 2026-11-13 audit adds transit aspects; every legacy field is unchanged.
         from astrology.calculations.counted_signs import house_from_moon
-        legacy = [{k: v for k, v in s.items() if k != "transit_house_from_moon"} for s in result["data"]["samples"]]
+        from charts.vedic_utils import aspected_houses
+        added = ("transit_house_from_moon", "transit_aspected_houses_from_lagna")
+        legacy = [{k: v for k, v in s.items() if k not in added} for s in result["data"]["samples"]]
+        self.assertTrue(all(s["transit_aspected_houses_from_lagna"] == aspected_houses(s["lord"], s["transit_house_from_lagna"])
+                            for s in result["data"]["samples"]))
+        jupiter = next(s for s in result["data"]["samples"] if s["lord"] == "Ju")
+        first = jupiter["transit_house_from_lagna"]
+        self.assertEqual(jupiter["transit_aspected_houses_from_lagna"], [(first + n - 2) % 12 + 1 for n in (5, 7, 9)])
         self.assertTrue(legacy == expected, "Selected-planet segments changed from legacy helper")
         self.assertTrue(all(s["transit_house_from_moon"] == house_from_moon(self.calculated, s["transit_sign_number"])
                             for s in result["data"]["samples"]))

@@ -69,7 +69,7 @@ APPOSITION = re.compile(r"^[\s,(:–—-]*(?:(?:is|in|of|the|your|sign|which|fal
 GENERAL = re.compile(r"\b(if|when|whenever|generally|in\s+general|traditionally|classically|usually|typically|as\s+a\s+rule)\b", re.I)
 PASSIVE_ASPECT = re.compile(r'\baspect\w*\s+(?:by|of|from)\b|\b(?:aspect|drishti|gaze|glance)\s+(?:of|from)\b|\breceiv\w+\b.*\baspect', re.I)
 PASSIVE_RULES = re.compile(r'\b(?:ruled|owned|governed|lorded)\s+by\b|\b(?:lord|ruler)\s+(?:is|being)\b|\bunder\s+the\s+(?:lordship|rulership)\s+of\b', re.I)
-FROM_REF = re.compile(r"^\s*(?:house\s+)?(?:as\s+)?(?:counted\s+)?from\s+(?:the\s+|your\s+)?(?:natal\s+)?(?P<ref>moon|chandra|lagna|ascendant)?", re.I)
+FROM_REF = re.compile(r"^\s*(?:(?:house|sign)\s+)?(?:as\s+)?(?:counted\s+|reckoned\s+)?from\s+(?:the\s+|your\s+)?(?:natal\s+)?(?P<ref>moon|chandra|lagna|ascendant)?", re.I)
 DIGNITY_LABEL = {'exalted': 'exalted', 'debilitated': 'debilitated', 'own_sign': 'in its own sign'}
 DIGNITY_WORDS = {'exalted': r'exalt\w+', 'debilitated': r'debilitat\w+', 'own_sign': r'own\s+(?:sign|house)|swakshetra'}
 UNCALCULATED = re.compile(r'\b(combust\w*|shadbala|neecha\s?bhanga|vargottama|sub-?lords?|KP|tithi|hora\s+lagna|ghatika|pratyantar\w*|'
@@ -156,7 +156,7 @@ def entities(text):
             if n and 1 <= n <= 12:
                 ref = FROM_REF.match(text[m.end():])
                 entity = Entity('H', n, m.start(), m.end())
-                if ref and re.match(r'\s*(?:house\s+)?(?:as\s+)?(?:counted\s+)?from\b', text[m.end():], re.I):
+                if ref:
                     name = (ref.group('ref') or '').casefold()
                     entity.ref = 'moon' if name in ('moon', 'chandra') else 'lagna' if name in ('lagna', 'ascendant') else 'other'
                 found.append(entity)
@@ -233,8 +233,7 @@ class SentenceCheck:
                     continue
                 if target.kind == 'S' and seg['sign'] == target.value:
                     return seg['ref']
-                if target.kind == 'H' and ((target.ref != 'moon' and seg['house'] == target.value) or
-                                           (target.ref != 'lagna' and seg['moon_house'] == target.value)):
+                if target.kind == 'H' and (seg['moon_house'] if target.ref == 'moon' else seg['house']) == target.value:
                     return seg['ref']
         return None
 
@@ -297,15 +296,20 @@ class SentenceCheck:
         self.fail('wrong_placement', f"{subject['name']} is stated in {self.describe(target)}", self.placement_fact(code) + '.')
 
     def check_aspect(self, code, house):
-        if self.transit:
-            return self.soft.append('transit aspect: not calculated, not verified')
         row = self.t.aspects.get(code)
-        if row is None:
+        segments = [s for s in self.t.transits if s['planet'] == code] if self.transit else []
+        if row is None and not segments:
             return self.soft.append('aspects unavailable')
-        if house in row['houses']:
+        if row and house in row['houses']:
             return self.ok(row['ref'])
-        self.fail('wrong_aspect', f'{P(code)} is stated to aspect house {house}',
-                  f"By Parashari aspect {P(code)}, in house {row['from']}, aspects house(s) {', '.join(map(str, row['houses']))}.")
+        hit = next((s for s in segments if house in s['aspects']), None)
+        if hit:
+            return self.ok(hit['ref'])
+        fact = f"By Parashari aspect {P(code)}, in house {row['from']} at birth, aspects house(s) {', '.join(map(str, row['houses']))}." if row else ''
+        if segments:
+            fact += ' In transit: ' + '; '.join(f"from {S(s['sign'])} (house {s['house']}) it aspects {', '.join(map(str, s['aspects']))}"
+                                                 for s in {s['sign']: s for s in segments}.values()) + '.'
+        self.fail('wrong_aspect', f'{P(code)} is stated to aspect house {house}', fact.strip())
 
     def describe(self, target):
         if target.kind == 'S':

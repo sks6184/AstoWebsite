@@ -22,6 +22,9 @@ import time
 from accounts.pilot_ops import progress
 from accounts.usage_policy import BudgetExceeded
 from astrology.agent.general import DISCLOSURES, SEARCH_TOOL, GeneralConsultation, Stop
+from astrology.calculations.method_profile import METHOD_PROFILE_ID
+from astrology.tools.fingerprints import chart_fingerprint
+from charts.models import SavedChart
 from astrology.tools import invoke_tool
 from astrology.tools.contracts import validate_payload
 from .brief import build_brief
@@ -31,6 +34,11 @@ from .retrieval import build_queries, guided_books, rerank
 from .tables import Tables
 
 PROGRESS = {'get_chart_facts': 'charts', 'get_dasha_periods': 'periods', 'get_transits': 'transits', 'evaluate_astrology_rules': 'rules'}
+STALE_CHART = ('This chart was calculated with an earlier version of the calculation method, and it could not be recalculated '
+               'automatically. Period and transit dates from it can be several days out, so this timing question was not answered. '
+               'Please open the chart so that it is recalculated, then ask again.')
+STALE_NOTE = 'This chart was calculated with an earlier version of the calculation method; open the chart to recalculate it.'
+REFRESHED_NOTE = 'Your chart was recalculated with the current calculation method before this reading.'
 NOT_CITED = 'Classical passages were retrieved for these factors, but this reading does not cite them.'
 REMOVED_NOTE = 'One or more statements that could not be verified against the calculations were removed from this reading.'
 REPORT_SECTIONS = ('NATAL CHART', 'PERIODS', 'TRANSITS', 'TRIGGERED RULES', 'TIMING CANDIDATES')
@@ -44,10 +52,40 @@ class PlannedConsultation(GeneralConsultation):
         self.plan = self.tables = None
         self.brief, self.sections, self.kept, self.retrieval, self.removed, self.intent = '', {}, [], [], [], None
         self.models, self.attempts = [], []
+        self.chart_method = None
 
     def default_provider(self):
         from .provider import PlannedProvider
         return PlannedProvider()
+
+    # ── Chart freshness ──────────────────────────────────────────────────
+    def refresh_chart(self):
+        """Never read a chart stored under an earlier calculation method without saying so. A stale chart is
+        recalculated by the app's own routine (the one the chart page uses); the method and the chart
+        fingerprints before and after are kept for the trace. Returns True when the chart is current."""
+        from charts.astro_engine import CHART_TEMPLATE
+        chart = SavedChart.objects.filter(pk=self.chart_id, user_id=self.user.pk).first()
+        if chart is None or type(chart.chart_data) is not dict:
+            return True                                   # ownership and shape are handled by the tools
+        state = lambda c: ((c.chart_data.get('calculation_method') or {}).get('profile') or 'unrecorded', c.chart_data.get('chart_template'))
+        recorded, template = state(chart)
+        info = {'recorded_profile': recorded, 'current_profile': METHOD_PROFILE_ID, 'stale': (recorded, template) != (METHOD_PROFILE_ID, CHART_TEMPLATE),
+                'refreshed': False, 'chart_fingerprint': chart_fingerprint(chart)}
+        if info['stale']:
+            from charts.views import _refresh_chart_calculation
+            try:
+                chart = _refresh_chart_calculation(chart)
+            except Exception:
+                pass                                      # reported below as still stale; nothing is guessed
+            info.update(refreshed=state(chart) == (METHOD_PROFILE_ID, CHART_TEMPLATE), fingerprint_before=info['chart_fingerprint'],
+                        chart_fingerprint=chart_fingerprint(chart), profile_after=state(chart)[0])
+        self.chart_method = info
+        self.trace.append({'event': 'chart_method', **info})
+        return not info['stale'] or info['refreshed']
+
+    def shortcut(self, query):
+        self.refresh_chart()
+        return super().shortcut(query)
 
     # ── One metered model call ───────────────────────────────────────────
     def call(self, provider, stage, payload):
@@ -129,6 +167,9 @@ class PlannedConsultation(GeneralConsultation):
 
     # ── The flow ─────────────────────────────────────────────────────────
     def investigate(self, provider):
+        current = self.refresh_chart()
+        if not current and stated_window(self.question, self.today):
+            raise Stop('chart_recalculation_required')       # a dated question: stop before any paid call
         intent = self.call(provider, 'intent', {'question': self.question, 'today': self.today.isoformat(),
                                                 'label_menu': self.profile.catalog(),
                                                 **({'consultation_context': {'trust': 'untrusted memory; never a chart fact', **self.context}}
@@ -142,6 +183,8 @@ class PlannedConsultation(GeneralConsultation):
             self.trace.append({'event': 'window_from_question', 'window': window})
         self.plan = build_plan(self.profile, self.label, window or intent.get('window'), self.today)
         self.trace.append({'event': 'plan', **self.plan.summary()})
+        if not current and self.plan.timing:
+            raise Stop('chart_recalculation_required')
         for call in self.plan.calls:
             self.calculate(call)
         self.tables = Tables(self.evidence)
@@ -208,6 +251,8 @@ class PlannedConsultation(GeneralConsultation):
         cited = [p['id'] for p in self.kept if p['marker'] in used]
         states, calculations, succeeded, failed = self.states(cited)
         notes = self.disclosures(states, calculations, succeeded, failed)
+        if self.chart_method and self.chart_method['stale']:
+            notes.append(REFRESHED_NOTE if self.chart_method['refreshed'] else STALE_NOTE)
         if self.kept and not cited:
             # Passages were retrieved, but the reading cites none: say that, not that nothing was found.
             notes = [NOT_CITED if n == DISCLOSURES['no_source_support'] else n for n in notes]
@@ -234,6 +279,9 @@ class PlannedConsultation(GeneralConsultation):
 
     def fallback(self, reason):
         """Deterministic evidence report from the brief (server text only), marked partial and unbilled."""
+        if reason == 'chart_recalculation_required':
+            self.trace.append({'event': 'fallback', 'reason': reason})
+            return STALE_CHART, [], [], []
         if not self.sections:
             return super().fallback(reason)
         states, calculations, succeeded, failed = self.states()
@@ -261,8 +309,9 @@ class PlannedConsultation(GeneralConsultation):
                                         'removed_statements': len(self.removed), 'coverage': report['coverage']}}
             if report['missing_sections']:
                 published['status'] = 'partial'
-        return {**published, 'intent': self.intent, 'plan': self.plan.summary() if self.plan else None, 'brief': self.brief,
-                'retrieval': self.retrieval, 'passages': [{k: p[k] for k in ('marker', 'id', 'title', 'chapter', 'page', 'purpose', 'stance', 'score')} for p in self.kept],
+        return {**published, 'chart_method': self.chart_method, 'intent': self.intent, 'plan': self.plan.summary() if self.plan else None, 'brief': self.brief,
+                'retrieval': self.retrieval, 'passages': [{k: p.get(k) for k in ('marker', 'id', 'title', 'chapter', 'page', 'purpose', 'stance', 'score', 'semantic', 'citation', 'snippet')}
+                             for p in self.kept],
                 'provenance': report.get('provenance', []), 'removed_statements': self.removed, 'attempts': self.attempts,
                 'provider_models': list(dict.fromkeys(self.models)),
                 'unsupported': ([{'id': u['id'], 'name': u['name']} for u in self.plan.unsupported] if self.plan else []) +

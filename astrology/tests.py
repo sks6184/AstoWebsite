@@ -56,6 +56,46 @@ def sample_chart_data():
     )
 
 
+class JaiminiPadaExceptionTests(TestCase):
+    """Owner decision 2026-11-13 (matches the owner's Jagannatha Hora): a pada that direct counting puts in its own
+    house, or in the 7th from it, is the 10th sign from that result. Minimal synthetic charts only."""
+
+    @staticmethod
+    def chart(lagna_sign, placements):
+        from astrology.constants import SIGNS
+        planets = [{"code": code, "name": code, "sign_number": sign, "sign": SIGNS[sign - 1], "house": (sign - lagna_sign) % 12 + 1}
+                   for code, sign in placements.items()]
+        return {"ascendant": {"sign_number": lagna_sign, "sign": SIGNS[lagna_sign - 1]}, "d1": {"planets": planets}}
+
+    def pada(self, lagna_sign, placements, house=1):
+        from astrology.calculations.jaimini import build_padas
+        return build_padas(self.chart(lagna_sign, placements))["all_padas"][str(house)]
+
+    def test_result_in_the_seventh_from_the_house_becomes_the_tenth_from_it(self):
+        # Leo Lagna, its lord the Sun in Taurus (10th): direct counting gives Aquarius, the 7th from Leo.
+        pada = self.pada(5, {"Su": 2})
+        self.assertEqual((pada["direct_count_sign"], pada["exception_applied"], pada["pada_sign"]), ("Aquarius", "seventh_from_house", "Scorpio"))
+        self.assertEqual(pada["pada_house_from_lagna"], 4)
+
+    def test_result_in_the_house_itself_becomes_the_tenth_from_it(self):
+        # Leo Lagna with the Sun in Leo: direct counting gives Leo itself.
+        pada = self.pada(5, {"Su": 5})
+        self.assertEqual((pada["direct_count_sign"], pada["exception_applied"], pada["pada_sign"]), ("Leo", "own_house", "Taurus"))
+        # Lord in the 7th: counting 7 and 7 again also returns to the house itself.
+        pada = self.pada(5, {"Su": 11})
+        self.assertEqual((pada["direct_count_sign"], pada["exception_applied"], pada["pada_sign"]), ("Leo", "own_house", "Taurus"))
+
+    def test_other_results_are_unchanged(self):
+        # Leo Lagna with the Sun in Libra (3rd): the 3rd from Libra is Sagittarius, the 5th from Leo.
+        pada = self.pada(5, {"Su": 7})
+        self.assertEqual((pada["direct_count_sign"], pada["exception_applied"], pada["pada_sign"]), ("Sagittarius", None, "Sagittarius"))
+
+    def test_tenth_from_the_arudha_lagna_follows_the_corrected_pada(self):
+        from astrology.calculations.counted_signs import counted_sign
+        result = counted_sign(self.chart(5, {"Su": 2, "Ve": 4}), "arudha_lagna", 10)
+        self.assertEqual((result["reference_sign"], result["sign"], result["house_from_lagna"]), ("Scorpio", "Leo", 1))
+
+
 class AstrologyEngineTests(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -419,7 +459,7 @@ class AstrologyEngineTests(TestCase):
         self.assertIn("tenth_from_karakamsha", jaimini["karakamsha"])
         self.assertIn("eleventh_from_arudha", jaimini["arudha_factors"])
         self.assertEqual(len(jaimini["padas"]["all_padas"]), 12)
-        self.assertFalse(jaimini["padas"]["exceptions_applied"])
+        self.assertTrue(jaimini["padas"]["exceptions_applied"])
         self.assertEqual(jaimini["padas"]["planetary_padas"]["calculation_status"], "deferred")
         self.assertEqual(
             len(jaimini["dasha_sign_as_lagna"]["mahadasha"]["houses_from_dasha_sign"]),

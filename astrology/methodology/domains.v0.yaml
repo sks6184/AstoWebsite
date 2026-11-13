@@ -103,7 +103,7 @@ jaimini_conventions:   # [code] unless marked
     source: astrology/calculations/jaimini.py::jaimini_aspected_signs
   house_padas:
     coverage: All 12 house padas (A1 to A12). Count from the house to its lord, then the same distance again from the lord.
-    exceptions: Not applied. The classical exceptions (a pada falling in the 1st or 7th from its house) are not used, following the source's instruction to ignore the disputed exceptions.
+    exceptions: "Applied (owner decision 2026-11-13, matching the owner's Jagannatha Hora). When direct counting lands in the house itself or in the 7th from it, the pada is the 10th sign from that result."
     named_padas: AL (Arudha Lagna) = A1; Darapada = A7; UL (Upapada Lagna) = A12
     source: astrology/calculations/jaimini.py::build_padas
   planetary_padas:

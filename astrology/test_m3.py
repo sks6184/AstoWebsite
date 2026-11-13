@@ -381,7 +381,10 @@ class M3WrapperParityTests(M3Base):
             self.skipTest('git is unavailable; the module diff is reported in M3_REPORT.md instead')
         if changed.returncode != 0:
             self.skipTest('branch base is unavailable in this checkout')
-        self.assertEqual([p for p in changed.stdout.split() if p], ['astrology/calculations/counted_signs.py'])   # additive only
+        # counted_signs.py is additive (M3). jaimini.py changed once, by owner decision of 2026-11-13: the classical
+        # Arudha exception (see JaiminiPadaExceptionTests in astrology/tests.py). Nothing else may change.
+        self.assertEqual([p for p in changed.stdout.split() if p],
+                         ['astrology/calculations/counted_signs.py', 'astrology/calculations/jaimini.py'])
 
 
 class M3ShortcutTests(M3Base):

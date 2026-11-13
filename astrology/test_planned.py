@@ -137,16 +137,19 @@ class FactCheckTests(PlannedBase):
         'Your Lagna is Cancer and the Lagna lord Moon is in the 7th house.',
         'Mars rules the 5th and 10th houses.',
         "Jupiter's transit through Cancer, the 1st house from the Lagna and the 7th from the Moon, runs from 25 January 2027 to 25 June 2027.",
-        'The Arudha Lagna falls in Cancer.',
+        'The Arudha Lagna falls in Aries.',
         'Mars, your 10th lord, also rules the 5th and sits in the 8th house, while Mercury occupies the 10th itself.',
         'With Venus, the 11th lord, exalted in the 9th house, gains are supported.',
         'The Moon and Mars sub-periods cover the window.',
         'The app does not calculate combustion, so that cannot be assessed here.',
         'Sasa Yoga is detected in your chart.',
         'Mars sits in Aquarius in your 8th house and is not exalted there.',
-        'The 10th from your Arudha Lagna is in Aries (house 10), occupied by Mercury.',
+        'The 10th from your Arudha Lagna is in Capricorn (house 7).',
         'In D10, Jupiter as the 10th lord sits in the 6th house.',
         'Mars as the 10th lord in the 8th house of D1 shows pressure.',
+        'Jupiter transits Cancer, the 7th sign counted from the Moon, in early 2027.',
+        'Saturn in transit through Pisces aspects your 11th house.',
+        'Jupiter, transiting your 1st house, aspects the 5th, 7th and 9th houses.',
         'Jupiter in the 12th house aspects the 8th, where exalted Venus is not involved.',
     ]
     FALSE = [
@@ -179,6 +182,9 @@ class FactCheckTests(PlannedBase):
         ('Saturn in Capricorn is not retrograde in your chart.', 'wrong_retrograde'),
         ('Saturn transits Capricorn during 2027.', 'wrong_placement'),          # its natal sign is not its transit sign
         ('The 10th from your Arudha Lagna is in Scorpio.', 'wrong_pada_or_karakamsha'),
+        ('The Arudha Lagna falls in Cancer.', 'wrong_pada_or_karakamsha'),           # the uncorrected direct count
+        ('Jupiter transits Cancer, your 7th house, in early 2027.', 'wrong_placement'),   # 7th is its count from the Moon
+        ('Saturn in transit through Pisces aspects your 10th house.', 'wrong_aspect'),
     ]
 
     def test_true_statements_are_accepted(self):
@@ -527,9 +533,12 @@ class PipelineTests(PlannedBase):
         brief = result['brief']
         for needle in ('Lagna (Ascendant): Cancer', '10th house (primary): sign Aries. Its lord Mars is placed in Aquarius, house 8',
                        'D10: Lagna Gemini. Its 10th lord Jupiter is in Scorpio, D10 house 6', 'Amatyakaraka: Moon',
-                       '10th from the Arudha Lagna: Aries', 'Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18',
+                       '10th from the Arudha Lagna: Capricorn',
+                       'A count from the Moon is where the planet stands relative to the Moon; it is not an aspect',
+                       'Jupiter transits Cancer, 2027-01-25 to 2027-06-25: it occupies house 1 from the Lagna (counted from the Moon it is the 7th sign from the Moon). '
+                       'From there it aspects houses 5, 7, 9 from the Lagna (Parashari aspect). SAV of Cancer: 23. Jupiter\'s own BAV in Cancer:', 'Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18',
                        'Yogini Mahadasha: Pingala (Sun)', 'Chara Mahadasha: Pisces',
-                       'Sub-period lord: Mars rules houses 5, 10 (the primary house for this question); sits in house 8', 'Saturn transits Aries: house 10 from the Lagna, house 4 from the Moon',
+                       'Sub-period lord: Mars rules houses 5, 10 (the primary house for this question); sits in house 8', 'Saturn transits Aries, 2027-06-03 to 2027-10-19: it occupies house 10 from the Lagna',
                        'Cautionary or mixed', 'Supportive', 'TIMING CANDIDATES', 'NOT CALCULATED BY THIS APP', 'KP cusps'):
             self.assertIn(needle, brief)
         rules = brief.split('TRIGGERED RULES')[1].split('TIMING CANDIDATES')[0]
@@ -542,6 +551,55 @@ class PipelineTests(PlannedBase):
         answer = answer_schema()['schema']
         self.assertEqual(set(answer['required']), set(answer['properties']))
         self.assertFalse(answer['additionalProperties'])
+
+
+@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',))
+class ChartFreshnessTests(PlannedBase):
+    """A chart stored under an earlier calculation method is never read silently."""
+
+    def stale(self, **changes):
+        from charts.models import SavedChart
+        chart = SavedChart.objects.get(pk=self.chart.pk)
+        data = deepcopy(chart.chart_data)
+        data['calculation_method'] = {'profile': 'lahiri.apparent.earlier.v1'}
+        data['chart_template'] = 'earlier_template'
+        periods = data['dashas']['vimshottari']['periods']
+        periods[0]['start'] = '1900-01-01'                                 # a marker that only a recalculation removes
+        SavedChart.objects.filter(pk=chart.pk).update(chart_data=data, **changes)
+        return chart
+
+    def test_stale_chart_is_recalculated_before_the_reading_and_the_method_is_traced(self):
+        from charts.models import SavedChart
+        self.stale()
+        provider = Scripted(CAREER, self.truthful())
+        result = self.consult(provider)
+        self.assertEqual(result['stop_reason'], 'complete', result['trace'][-3:])
+        method = result['chart_method']
+        self.assertEqual((method['recorded_profile'], method['stale'], method['refreshed']), ('lahiri.apparent.earlier.v1', True, True))
+        self.assertEqual(method['profile_after'], method['current_profile'])
+        self.assertNotEqual(method['fingerprint_before'], method['chart_fingerprint'])
+        stored = SavedChart.objects.get(pk=self.chart.pk).chart_data
+        self.assertNotEqual(stored['dashas']['vimshottari']['periods'][0]['start'], '1900-01-01')
+        self.assertIn('recalculated with the current calculation method', result['answer'])
+        self.assertEqual(result['trace'][0]['event'], 'chart_method')         # before any model call or tool
+
+    def test_stale_chart_that_cannot_be_recalculated_stops_a_timing_question_before_any_paid_call(self):
+        self.stale(latitude=None, longitude=None)                          # no coordinates: the app cannot recalculate it
+        provider = Scripted(CAREER, self.truthful())
+        result = self.consult(provider)
+        self.assertEqual((result['status'], result['stop_reason']), ('partial', 'chart_recalculation_required'))
+        self.assertEqual(provider.calls, [])                               # "next year" is a dated question: no model call
+        self.assertEqual(result['evidence'], {})
+        self.assertIn('calculated with an earlier version of the calculation method', result['answer'])
+        self.assertIn('this timing question was not answered', result['answer'])
+
+    def test_stale_chart_without_a_stated_period_stops_after_the_label_shows_a_timing_question(self):
+        self.stale(latitude=None, longitude=None)
+        provider = Scripted(CAREER, self.truthful())
+        result = self.consult(provider, 'Will I get a promotion?')
+        self.assertEqual(result['stop_reason'], 'chart_recalculation_required')
+        self.assertEqual([stage for stage, _ in provider.calls], ['intent'])
+        self.assertEqual(result['evidence'], {})
 
 
 @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',))
@@ -577,9 +635,15 @@ class PlannedUiTests(M3Base):
         self.assertEqual(events['plan']['houses']['primary'], [10])
         self.assertIn('get_transits', events['plan']['calls'])
         self.assertEqual(events['rerank']['kept'], 4)
+        self.assertFalse(saved.get('truncated'))
+        self.assertEqual(len(saved['sources']), 4)                           # exactly the passages given to the writer
+        self.assertTrue(all(s['excerpt'] and s['retrieved_for'] and s['citation']['filename'] for s in saved['sources']))
+        self.assertEqual(saved['chart_method']['recorded_profile'], saved['chart_method']['current_profile'])
+        self.assertFalse(saved['chart_method']['stale'])
+        self.assertTrue(all(t['method'].get('method_profile') for t in saved['tools'] if t['tool'] != 'search_astrology_knowledge'))
         self.assertTrue(saved['tools'])
         self.assertNotIn('good job next year', json.dumps(saved))          # no question text in the saved diagnostics
-        self.assertNotIn('10th lord Mars in the 8th house', json.dumps(saved))   # nor the search text built from the chart
+        self.assertNotIn('10th lord Mars in the 8th house', json.dumps(saved['agent_events']))   # nor the search text built from the chart
 
     @override_settings(ASTROGPT_AGENT_PIPELINE='loop')
     def test_the_earlier_agent_loop_stays_selectable(self):

@@ -131,6 +131,7 @@ class Tables:
                 self.transits.append({'planet': s['lord'], 'sign': s.get('transit_sign_number'), 'house': s.get('transit_house_from_lagna'),
                                       'moon_house': s.get('transit_house_from_moon'), 'start': s['start'], 'end': s.get('end') or s['start'],
                                       'sav': s.get('sarvashtakavarga_points'),
+                                      'aspects': [h for h in s.get('transit_aspected_houses_from_lagna') or [] if type(h) is int],
                                       'ref': {'evidence_id': eid, 'path': f'/data/samples/{i}'}})
 
     def _evaluate_astrology_rules(self, eid, data, args):
