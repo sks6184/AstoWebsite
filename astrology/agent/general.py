@@ -185,6 +185,16 @@ def tool_menu(today):
 
 
 class GeneralConsultation:
+    pipeline = 'general_agent'
+
+    def default_provider(self):
+        from .general_provider import GeneralProvider
+        return GeneralProvider()
+
+    def extra(self):
+        """Additional result fields a subclass publishes for tracing."""
+        return {}
+
     def __init__(self, user, chart_id, question, *, today, provider=None, limits=None, clock=time.monotonic,
                  knowledge_adapter=None, consultation_context=None, profile=None):
         self.user, self.chart_id, self.question, self.today = user, chart_id, question, today
@@ -702,8 +712,7 @@ class GeneralConsultation:
             if query is not None:
                 answer, atoms, status = self.shortcut(query)
             else:
-                from .general_provider import GeneralProvider
-                provider = self.provider or GeneralProvider()
+                provider = self.provider or self.default_provider()
                 self.menu = tool_menu(self.today)
                 outcome = self.investigate(provider)
                 if outcome == 'out_of_scope':
@@ -739,7 +748,7 @@ class GeneralConsultation:
                 'prompt_tokens': self.usage['input_tokens'], 'completion_tokens': self.usage['output_tokens'],
                 'evidence': self.evidence, 'trace': self.trace, 'usage': self.usage, 'stop_reason': self.stop_reason,
                 'label': self.label, 'non_answer_states': states, 'unavailable_calculations': calculations,
-                'pipeline': 'general_agent', 'published_by': published_by}
+                'pipeline': self.pipeline, 'published_by': published_by, **self.extra()}
 
 
 def run_general_consultation(user, chart_id, question, *, today=None, provider=None, limits=None, knowledge_adapter=None,

@@ -795,7 +795,7 @@ class M3OwnershipTests(M3Base):
 
 
 class M3RoutingTests(M3Base):
-    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('pilot@example.test',))
+    @override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('pilot@example.test',), ASTROGPT_AGENT_PIPELINE='loop')
     def test_ac1_allowlisted_account_uses_agent_and_never_legacy(self):
         self.assertEqual(agent_route(self.owner), 'general')
         self.assertEqual(agent_route(self.other), 'legacy')

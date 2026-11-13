@@ -40,7 +40,11 @@ def generate_question_answer(user, chart, question, depth_level, answer_language
     if answer_language != 'English':
         return {'status': 'error', 'answer': 'The agent evidence report currently supports English only.',
                 'model': 'deterministic', 'prompt_tokens': 0, 'completion_tokens': 0}
-    runner = run_general_consultation if route == 'general' else run_consultation
+    if route == 'general' and getattr(settings, 'ASTROGPT_AGENT_PIPELINE', 'planned') != 'loop':
+        from astrology.planned.consultation import run_planned_consultation
+        runner = run_planned_consultation
+    else:
+        runner = run_general_consultation if route == 'general' else run_consultation
     if consultation_context is not None:
         return runner(user, chart.pk, question, consultation_context=consultation_context)
     return runner(user, chart.pk, question)

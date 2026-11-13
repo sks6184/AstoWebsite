@@ -10,7 +10,8 @@ from chat.models import Message
 from astrology.test_m3 import M3Base, Script, final, label, reply, req, domain_requests
 
 
-@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',))
+# The multi-round loop is no longer the default pipeline; these tests keep it covered (ASTROGPT_AGENT_PIPELINE=loop).
+@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',), ASTROGPT_AGENT_PIPELINE='loop')
 class M3InterpretiveUiTests(M3Base):
     def post(self, provider, question='In next year can I get a career rise by promotion or job change?'):
         self.client.force_login(self.owner)

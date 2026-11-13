@@ -22,17 +22,25 @@ def manifest(result, provider_models=()):
             for passage in (response.get('data') or {}).get('passages', [])[:5]:
                 value['sources'].append({'evidence_id': passage['evidence_id'], 'citation': passage['citation']})
     value['claim_ids'] = [c['id'] for c in result.get('claims', [])[:128]]
-    if result.get('pipeline') == 'general_agent':
+    if result.get('pipeline') in ('general_agent', 'planned_consultation'):
         # M3 diagnostics: server-side fields only (no question, answer, query or chart text).
         keep = ('tool', 'status', 'error_code', 'judgement', 'round', 'counted_input_tokens',
-                'provider_input_tokens', 'provider_output_tokens', 'requests', 'final', 'question_type', 'domains', 'events')
-        value.update(pipeline='general_agent', stop_reason=str(result.get('stop_reason', ''))[:48],
+                'provider_input_tokens', 'provider_output_tokens', 'requests', 'final', 'question_type', 'domains', 'events',
+                'stage', 'supplementary', 'verified_statements', 'soft_notes', 'repair_round', 'after_removal', 'candidates',
+                'count', 'calls', 'findings', 'window', 'houses', 'planets', 'vargas', 'dasha_systems', 'rule_categories',
+                'unsupported', 'guided_books', 'latency_ms')
+        value.update(pipeline=result['pipeline'], stop_reason=str(result.get('stop_reason', ''))[:48],
                      label=result.get('label'), non_answer_states=list(result.get('non_answer_states', []))[:3],
                      published_by=result.get('published_by'), agent_events=[])
         for event in result.get('trace', [])[:60]:
             item = {'event': str(event.get('event'))[:32], **{k: event[k] for k in keep if k in event}}
             if event.get('event') in ('stop', 'fallback', 'invalid_label', 'rejected_request', 'search_ceiling'):
                 item['reason'] = str(event.get('reason', ''))[:160]
+            if event.get('event') == 'rerank':
+                item['searches'] = [{'purpose': str(q.get('purpose'))[:60], 'stance': str(q.get('stance'))[:16]} for q in event.get('queries', [])[:6]]
+                item['kept'] = len(event.get('kept', []))
+            if event.get('event') == 'plan':
+                item['calls'] = [str(c.get('tool'))[:40] for c in event.get('calls', [])[:24]]
             if event.get('event') == 'validation':
                 item['issues'] = [str(i)[:120] for i in event.get('issues', [])[:8]]
                 item['missing'] = [str(m)[:60] for m in event.get('missing', [])[:8]]

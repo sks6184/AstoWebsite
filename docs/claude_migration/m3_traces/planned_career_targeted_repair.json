@@ -1,0 +1,1306 @@
+{
+  "name": "career_targeted_repair",
+  "synthetic": true,
+  "model": "scripted offline stand-in (no model call)",
+  "1_intent": {
+    "question_type": "predictive_timing",
+    "domains": [
+      "career"
+    ],
+    "events": [
+      "career:voluntary_employer_change",
+      "career:promotion"
+    ],
+    "window": {
+      "start": "2027-01-01",
+      "end": "2027-12-31",
+      "stated": true
+    }
+  },
+  "2_plan": {
+    "window": {
+      "start": "2027-01-01",
+      "end": "2027-12-31",
+      "stated": true
+    },
+    "timing": true,
+    "houses": {
+      "primary": [
+        10
+      ],
+      "event": [
+        6,
+        12,
+        11
+      ],
+      "supporting": [
+        1,
+        5,
+        8,
+        2
+      ]
+    },
+    "planets": [
+      "Su",
+      "Me",
+      "Sa"
+    ],
+    "vargas": [
+      "d1",
+      "d9",
+      "d10"
+    ],
+    "jaimini_points": [
+      "amatyakaraka",
+      "arudha_lagna",
+      "10th_from_arudha_lagna",
+      "10th_from_karakamsha"
+    ],
+    "dasha_systems": [
+      "vimshottari",
+      "chara",
+      "yogini"
+    ],
+    "rule_categories": [
+      "career",
+      "job"
+    ],
+    "events": [
+      "career:voluntary_employer_change",
+      "career:promotion"
+    ],
+    "calls": [
+      {
+        "tool": "get_chart_facts",
+        "args": {
+          "charts": [
+            "d1",
+            "d9",
+            "d10"
+          ],
+          "include_yogas": true
+        }
+      },
+      {
+        "tool": "get_natal_aspects",
+        "args": {}
+      },
+      {
+        "tool": "get_ashtakavarga",
+        "args": {
+          "kind": "both"
+        }
+      },
+      {
+        "tool": "get_jaimini_facts",
+        "args": {}
+      },
+      {
+        "tool": "get_counted_sign",
+        "args": {
+          "reference": "arudha_lagna",
+          "count": 10
+        }
+      },
+      {
+        "tool": "get_counted_sign",
+        "args": {
+          "reference": "karakamsha",
+          "count": 10
+        }
+      },
+      {
+        "tool": "get_dasha_periods",
+        "args": {
+          "system": "vimshottari",
+          "granularity": "antardasha",
+          "start_date": "2027-01-01",
+          "end_date": "2027-12-31"
+        }
+      },
+      {
+        "tool": "get_dasha_periods",
+        "args": {
+          "system": "chara",
+          "granularity": "antardasha",
+          "start_date": "2027-01-01",
+          "end_date": "2027-12-31"
+        }
+      },
+      {
+        "tool": "get_dasha_periods",
+        "args": {
+          "system": "yogini",
+          "granularity": "antardasha",
+          "start_date": "2027-01-01",
+          "end_date": "2027-12-31"
+        }
+      },
+      {
+        "tool": "get_transits",
+        "args": {
+          "planets": [
+            "Ju",
+            "Sa",
+            "Ra",
+            "Ke"
+          ],
+          "output": "segments",
+          "start_date": "2027-01-01",
+          "end_date": "2027-12-31"
+        }
+      },
+      {
+        "tool": "evaluate_astrology_rules",
+        "args": {
+          "category": "career",
+          "as_of": "2027-01-01"
+        }
+      },
+      {
+        "tool": "evaluate_astrology_rules",
+        "args": {
+          "category": "job",
+          "as_of": "2027-01-01"
+        }
+      },
+      {
+        "tool": "get_timing_candidates",
+        "args": {
+          "topic": "career",
+          "start_date": "2027-01-01",
+          "end_date": "2027-12-31"
+        }
+      }
+    ],
+    "unsupported": []
+  },
+  "3_tool_outputs": {
+    "E1": {
+      "tool": "get_chart_facts",
+      "arguments": {
+        "charts": [
+          "d1",
+          "d9",
+          "d10"
+        ],
+        "include_yogas": true
+      },
+      "status": "ok"
+    },
+    "E2": {
+      "tool": "get_natal_aspects",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E3": {
+      "tool": "get_ashtakavarga",
+      "arguments": {
+        "kind": "both"
+      },
+      "status": "ok"
+    },
+    "E4": {
+      "tool": "get_jaimini_facts",
+      "arguments": {},
+      "status": "ok"
+    },
+    "E5": {
+      "tool": "get_counted_sign",
+      "arguments": {
+        "reference": "arudha_lagna",
+        "count": 10
+      },
+      "status": "ok"
+    },
+    "E6": {
+      "tool": "get_counted_sign",
+      "arguments": {
+        "reference": "karakamsha",
+        "count": 10
+      },
+      "status": "ok"
+    },
+    "E7": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "vimshottari",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "status": "ok"
+    },
+    "E8": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "chara",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "status": "ok"
+    },
+    "E9": {
+      "tool": "get_dasha_periods",
+      "arguments": {
+        "system": "yogini",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "status": "ok"
+    },
+    "E10": {
+      "tool": "get_transits",
+      "arguments": {
+        "planets": [
+          "Ju",
+          "Sa",
+          "Ra",
+          "Ke"
+        ],
+        "output": "segments",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "status": "ok"
+    },
+    "E11": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "career",
+        "as_of": "2027-01-01"
+      },
+      "status": "partial"
+    },
+    "E12": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "job",
+        "as_of": "2027-01-01"
+      },
+      "status": "partial"
+    },
+    "E13": {
+      "tool": "get_timing_candidates",
+      "arguments": {
+        "topic": "career",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "status": "ok"
+    },
+    "E14": {
+      "tool": "evaluate_astrology_rules",
+      "arguments": {
+        "category": "career",
+        "as_of": "2027-03-14"
+      },
+      "status": "partial"
+    },
+    "E15": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "the natal promise"
+        ],
+        "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change",
+        "result_count": 5
+      },
+      "status": "partial"
+    },
+    "E16": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "the running periods"
+        ],
+        "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession",
+        "result_count": 5
+      },
+      "status": "partial"
+    },
+    "E17": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "the transits in the window"
+        ],
+        "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus",
+        "result_count": 5
+      },
+      "status": "partial"
+    },
+    "E18": {
+      "tool": "search_astrology_knowledge",
+      "arguments": {
+        "topic": "career",
+        "concepts": [
+          "contrary or cautionary indications"
+        ],
+        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles",
+        "result_count": 5
+      },
+      "status": "partial"
+    }
+  },
+  "4_retrieval": {
+    "searches": [
+      {
+        "purpose": "the natal promise",
+        "stance": "supporting",
+        "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change"
+      },
+      {
+        "purpose": "the running periods",
+        "stance": "supporting",
+        "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession"
+      },
+      {
+        "purpose": "the transits in the window",
+        "stance": "supporting",
+        "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus"
+      },
+      {
+        "purpose": "contrary or cautionary indications",
+        "stance": "contrary",
+        "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles"
+      }
+    ],
+    "ranking": [
+      {
+        "id": "Kec69aaf7d0657719619e",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "contrary or cautionary indications",
+        "stance": "contrary",
+        "semantic": 0.81,
+        "overlap": 1.0,
+        "guided_book": null,
+        "score": 0.96,
+        "kept": true
+      },
+      {
+        "id": "K129139ddead5666f3778",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "the natal promise",
+        "stance": "supporting",
+        "semantic": 0.81,
+        "overlap": 0.75,
+        "guided_book": null,
+        "score": 0.9225,
+        "kept": true
+      },
+      {
+        "id": "K5cd944c0d7a70aaba959",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "the running periods",
+        "stance": "supporting",
+        "semantic": 0.81,
+        "overlap": 0.4,
+        "guided_book": null,
+        "score": 0.87,
+        "kept": true
+      },
+      {
+        "id": "K96387cf7ba521e122418",
+        "title": "Synthetic Parashari Notes",
+        "purpose": "the transits in the window",
+        "stance": "supporting",
+        "semantic": 0.81,
+        "overlap": 0.33,
+        "guided_book": null,
+        "score": 0.86,
+        "kept": true
+      }
+    ],
+    "passages_given_to_writer": [
+      {
+        "marker": "P1",
+        "id": "Kec69aaf7d0657719619e",
+        "title": "Synthetic Parashari Notes",
+        "chapter": "1",
+        "page": null,
+        "purpose": "contrary or cautionary indications",
+        "stance": "contrary",
+        "score": 0.96
+      },
+      {
+        "marker": "P2",
+        "id": "K129139ddead5666f3778",
+        "title": "Synthetic Parashari Notes",
+        "chapter": "1",
+        "page": null,
+        "purpose": "the natal promise",
+        "stance": "supporting",
+        "score": 0.9225
+      },
+      {
+        "marker": "P3",
+        "id": "K5cd944c0d7a70aaba959",
+        "title": "Synthetic Parashari Notes",
+        "chapter": "1",
+        "page": null,
+        "purpose": "the running periods",
+        "stance": "supporting",
+        "score": 0.87
+      },
+      {
+        "marker": "P4",
+        "id": "K96387cf7ba521e122418",
+        "title": "Synthetic Parashari Notes",
+        "chapter": "1",
+        "page": null,
+        "purpose": "the transits in the window",
+        "stance": "supporting",
+        "score": 0.86
+      }
+    ]
+  },
+  "5_brief": [
+    "QUESTION",
+    "Question: Can I get a good job next year?",
+    "Today: 2026-11-07.",
+    "Question type: predictive_timing. Areas: Career, job and profession.",
+    "Window examined: 2027-01-01 to 2027-12-31 (stated in the question).",
+    "Event in question: voluntary employer change. Examine: 10th and its lord, plus the 6th (service) and 12th (leaving) when a move is initiated; whether periods link the 10th with 6/12 Note: The user chooses to move; do not treat it as a loss.",
+    "Event in question: promotion. Examine: 10th and 11th, their lords, the Sun (authority), D10 Lagna and 10th lord; periods and transits in the window Note: Distinguish advancement within the same employer from a change of employer.",
+    "Sensitivity: Present disruption indicators carefully. No guarantee of job outcomes.",
+    "",
+    "NATAL CHART (D1)",
+    "Lagna (Ascendant): Cancer. Whole-sign houses, Lahiri sidereal zodiac.",
+    "Moon: Capricorn, house 7, Dhanishta nakshatra.",
+    "- 10th house (primary): sign Aries. Its lord Mars is placed in Aquarius, house 8. Occupants: Mercury. Aspected by (Parashari): none. SAV 30.",
+    "- 6th house (named for this event): sign Sagittarius. Its lord Jupiter is placed in Gemini, house 12. Occupants: none. Aspected by (Parashari): Jupiter. SAV 30.",
+    "- 12th house (named for this event): sign Gemini. Its lord Mercury is placed in Aries, house 10. Occupants: Jupiter. Aspected by (Parashari): none. SAV 25.",
+    "- 11th house (named for this event): sign Taurus. Its lord Venus is placed in Pisces, house 9 (exalted). Occupants: Sun. Aspected by (Parashari): Mars. SAV 28.",
+    "- 1st house (supporting): sign Cancer. Its lord Moon is placed in Capricorn, house 7. Occupants: Ketu. Aspected by (Parashari): Moon, Saturn, Rahu. SAV 23.",
+    "- 5th house (supporting): sign Scorpio. Its lord Mars is placed in Aquarius, house 8. Occupants: none. Aspected by (Parashari): Sun. SAV 35.",
+    "- 8th house (supporting): sign Aquarius. Its lord Saturn is placed in Capricorn, house 7 (in its own sign). Occupants: Mars. Aspected by (Parashari): Jupiter. SAV 28.",
+    "- 2nd house (supporting): sign Leo. Its lord Sun is placed in Taurus, house 11. Occupants: none. Aspected by (Parashari): Mars. SAV 27.",
+    "",
+    "PLANETS OF INTEREST",
+    "- Sun (natural significator for this area): D1 Taurus, house 11, Krittika nakshatra. Rules house 2. Aspects house 5. D9: Capricorn, house 4. D10: Capricorn, house 8.",
+    "- Mercury (natural significator for this area): D1 Aries, house 10, Bharani nakshatra. Rules houses 3, 12. Aspects house 4. D9: Leo, house 11. D10: Leo, house 3.",
+    "- Saturn (natural significator for this area): D1 Capricorn, house 7, Uttara Ashadha nakshatra, retrograde, in its own sign. Rules houses 7, 8. Aspects houses 9, 1, 4. D9: Capricorn, house 4. D10: Virgo, house 4.",
+    "- Jupiter (period lord in the window): D1 Gemini, house 12, Ardra nakshatra. Rules houses 6, 9. Aspects houses 4, 6, 8. D9: Aquarius, house 5. D10: Scorpio, house 6.",
+    "- Moon (period lord in the window): D1 Capricorn, house 7, Dhanishta nakshatra. Rules house 1. Aspects house 1. D9: Leo, house 11. D10: Taurus, house 12.",
+    "- Mars (period lord in the window): D1 Aquarius, house 8, Purva Bhadrapada nakshatra. Rules houses 5, 10. Aspects houses 11, 2, 3. D9: Taurus, house 8. D10: Libra, house 5.",
+    "- Venus (period lord in the window): D1 Pisces, house 9, Revati nakshatra, exalted. Rules houses 4, 11. Aspects house 3. D9: Capricorn, house 4. D10: Gemini, house 1.",
+    "- Rahu (period lord in the window): D1 Capricorn, house 7, Shravana nakshatra. Aspects house 1. D9: Taurus, house 8. D10: Aquarius, house 9.",
+    "",
+    "DIVISIONAL CHARTS",
+    "- D9: Lagna Libra. Its 10th lord Moon is in Leo, D9 house 11. The D1 10th lord Mars is in Taurus, D9 house 8.",
+    "- D10: Lagna Gemini. Its 10th lord Jupiter is in Scorpio, D10 house 6. The D1 10th lord Mars is in Libra, D10 house 5.",
+    "",
+    "YOGAS DETECTED BY THE APP (detections, not outcomes)",
+    "- Shakata Yoga (strength moderate): Jupiter is 6 houses from Moon.",
+    "- Sunapha Yoga (strength moderate): Planet(s) in 2nd from Moon: Mars.",
+    "- Sasa Yoga (strength strong): Saturn is in a kendra and own sign: Saturn in Capricorn / house 7.",
+    "- Harsha Yoga (strength moderate): Lord of 6th house is placed in dusthana house 12.",
+    "- Vipareeta Raja Yoga (strength strong): Present forms: Harsha Yoga.",
+    "",
+    "JAIMINI (7 Chara karakas; house padas without the disputed exceptions)",
+    "- Atmakaraka: Mars, in Aquarius, house 8.",
+    "- Amatyakaraka: Moon, in Capricorn, house 7.",
+    "- Karakamsha (D9 sign of the Atmakaraka): Taurus.",
+    "- Arudha Lagna (AL): Cancer, house 1 from the Lagna.",
+    "- 10th from the Arudha Lagna: Aries, house 10 from the Lagna. Occupants: Mercury. Influenced by (occupation or rasi drishti): Mars, Mercury.",
+    "- 10th from the Karakamsha: Aquarius, house 8 from the Lagna. Occupants: Mars. Influenced by (occupation or rasi drishti): Mars, Mercury, Ketu.",
+    "- Jaimini combination detected: Atmakaraka-Putrakaraka. Atmakaraka-Putrakaraka are together or in mutual Jaimini aspect.",
+    "- Jaimini combination detected: Atmakaraka-fifth lord. Atmakaraka-fifth lord are together or in mutual Jaimini aspect.",
+    "- Jaimini combination detected: Amatyakaraka-Darakaraka. Amatyakaraka-Darakaraka are together or in mutual Jaimini aspect.",
+    "- Jaimini combination detected: Putrakaraka-fifth lord. Putrakaraka-fifth lord are together or in mutual Jaimini aspect.",
+    "",
+    "PERIODS IN THE WINDOW (period end dates are exclusive; calendar-date precision)",
+    "- Vimshottari Mahadasha: Jupiter, 2014-07-15 to 2030-07-15.",
+    "  - Vimshottari sub-period Jupiter / Moon: 2025-11-15 to 2027-03-14.",
+    "  - Vimshottari sub-period Jupiter / Mars: 2027-03-14 to 2028-02-18.",
+    "  - Vimshottari period lords in D1: Jupiter rules 6, 9; sits in house 12; aspects 6, 8. Moon rules 1; sits in house 7; aspects 1. Mars rules 5, 10; sits in house 8; aspects 11, 2.",
+    "- Chara Mahadasha: Pisces, 2026-05-17 to 2035-05-17.",
+    "  - Chara sub-period Pisces / Aries: 2026-05-17 to 2027-02-15.",
+    "  - Chara sub-period Pisces / Taurus: 2027-02-15 to 2027-11-16.",
+    "  - Chara sub-period Pisces / Gemini: 2027-11-16 to 2028-08-15.",
+    "  - Chara sign Pisces is house 9 from the Lagna; occupants: Venus.",
+    "  - Chara sign Aries is house 10 from the Lagna; occupants: Mercury.",
+    "  - Chara sign Taurus is house 11 from the Lagna; occupants: Sun.",
+    "  - Chara sign Gemini is house 12 from the Lagna; occupants: Jupiter.",
+    "- Yogini Mahadasha: Pingala (Sun), 2026-02-18 to 2028-02-18.",
+    "  - Yogini sub-period Pingala (Sun) / Ulka (Saturn): 2026-11-29 to 2027-03-30.",
+    "  - Yogini sub-period Pingala (Sun) / Siddha (Venus): 2027-03-30 to 2027-08-20.",
+    "  - Yogini sub-period Pingala (Sun) / Sankata (Rahu): 2027-08-20 to 2028-01-29.",
+    "  - Yogini period lords in D1: Sun rules 2; sits in house 11; aspects 5. Saturn rules 7, 8; sits in house 7; aspects 1. Venus rules 4, 11; sits in house 9. Rahu sits in house 7; aspects 1.",
+    "",
+    "TRANSITS IN THE WINDOW (daily noon samples: sign-change dates are approximate)",
+    "- Jupiter transits Leo: house 2 from the Lagna, house 8 from the Moon, 2027-01-01 to 2027-01-24; SAV of that sign 27.",
+    "- Jupiter transits Cancer: house 1 from the Lagna, house 7 from the Moon, 2027-01-25 to 2027-06-25; SAV of that sign 23.",
+    "- Jupiter transits Leo: house 2 from the Lagna, house 8 from the Moon, 2027-06-26 to 2027-11-26; SAV of that sign 27.",
+    "- Jupiter transits Virgo: house 3 from the Lagna, house 9 from the Moon, 2027-11-27 to 2027-12-31; SAV of that sign 27.",
+    "- Saturn transits Pisces: house 9 from the Lagna, house 3 from the Moon, 2027-01-01 to 2027-06-02; SAV of that sign 32.",
+    "- Saturn transits Aries: house 10 from the Lagna, house 4 from the Moon, 2027-06-03 to 2027-10-19; SAV of that sign 30.",
+    "- Saturn transits Pisces: house 9 from the Lagna, house 3 from the Moon, 2027-10-20 to 2027-12-31; SAV of that sign 32.",
+    "- Rahu transits Capricorn: house 7 from the Lagna, house 1 from the Moon, 2027-01-01 to 2027-12-31; SAV of that sign 26.",
+    "- Ketu transits Cancer: house 1 from the Lagna, house 7 from the Moon, 2027-01-01 to 2027-12-31; SAV of that sign 23.",
+    "",
+    "TRIGGERED RULES (decided by the deterministic rule engine; heuristic, not probabilities)",
+    "Rules for career as of 2027-01-01 (40 returned by the engine; strongest shown):",
+    "- Supportive [Parashari/Vimshottari]: A yoga becomes more relevant when the running dasha activates one of its participating lords.",
+    "- Supportive [Parashari/Vimshottari]: Career timing gains relevance when the active dasha lord owns or occupies career/income houses.",
+    "- Supportive [Parashari]: Kendra-trikona lord relationships are classical Parashari rise/status factors, but they must be judged with dasha and divisional confirmation.",
+    "- Supportive [Parashari/Vimshottari]: Wealth combinations are more deliverable when the running dasha activates a participating lord.",
+    "- Supportive [Jaimini]: Chapter 14 treats Navamsha as the crucial filter showing which Rajayogas remain effective for professional rise, authority, and recognition.",
+    "- Cautionary or mixed [Parashari]: 10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work; the final answer should not overstate smooth promotion.",
+    "- Cautionary or mixed [Divisional]: D10 10th lord connected with 6th, 8th, or 12th can indicate career problems, sudden changes, transfers, or work pressure.",
+    "- Cautionary or mixed [Parashari/Vimshottari]: Results can arrive with stress, delay, conflict, loss, or transformation when dasha activates a dusthana-pressured topic lord.",
+    "- Cautionary or mixed [Divisional]: Dasha relationship with D10 6th, 8th, or 12th can indicate transfer, change, pressure, or forced movement.",
+    "- Cautionary or mixed [Parashari/Vimshottari]: Dasha periods of 6th or 8th lords can bring pressure, conflict, debt, health strain, interruption, or transformation unless other benefic factors strongly modify them.",
+    "Rules for job as of 2027-01-01 (40 returned by the engine; strongest shown):",
+    "- Supportive [Divisional/Generic]: The D1 Lagna lord well placed in angle or trine strongly supports the chart's promise.",
+    "- Supportive [D1/LagnaRoles]: Exalted Venus in D1 delivers outstanding results in its natural domains (luxury, relationships, arts, material comforts, marriage) during its dasha. This is the highest possible strength.",
+    "- Supportive [D1/LagnaRoles]: The 11th lord Venus is placed in an angle or trine in D1 with exalted dignity. This supports the job promise of this house with reliable, sustained results.",
+    "- Supportive [Parashari/Vimshottari]: Dasha periods of 5th and 9th lords are generally favorable, especially when the planet is strong and connected to the question.",
+    "- Supportive [Jaimini]: Chapter 13 treats this placement as support for a generally smoother professional path, while the level of rise still depends on other factors.",
+    "- Cautionary or mixed [Divisional/Generic]: Double affliction: Jupiter poorly placed in the birth chart and again in D10 cannot give good results for the chart's signification.",
+    "- Cautionary or mixed [Divisional/Generic]: Moon in a dusthana of D10 weakens delivery — classical texts state this holds even in exaltation.",
+    "- Cautionary or mixed [Divisional/Generic]: Ketu in the D1 Lagna causes stress and disruption for the chart's significations.",
+    "- Cautionary or mixed [D1/LagnaRoles]: Lagna lord Moon is conjunct with Saturn (8th lord) in D1. This Arishta Yoga pollutes the lagna lord with dusthana energy, bringing obstacles, health concerns, or recurring setbacks — especially during their shared dasha period.",
+    "- Cautionary or mixed [Jaimini]: Chapter 15 treats Chara periods containing or aspected by Atmakaraka as significant, but rejects automatic predictions of fall. Final answers should not overstate ease or difficulty without support from other systems.",
+    "Rules for career as of 2027-03-14 (40 returned by the engine; strongest shown):",
+    "- Supportive [Parashari/Vimshottari]: Vimshottari periods of a relevant house lord can deliver that house's results; the 10th lord period is important for profession, authority, and career decisions.",
+    "- Supportive [Parashari/Vimshottari]: A direct 10th-house dasha connection supports professional action, visibility, and career decisions.",
+    "- Supportive [Parashari/Vimshottari]: The sub-period of the 5th lord in the period of the 9th lord, or the reverse, is treated as favorable and can support merit, guidance, fortune, and smoother outcomes.",
+    "- Supportive [Divisional]: D10 10th lord placement in work and gains houses supports practical career outcomes.",
+    "- Supportive [Parashari/Vimshottari]: When multiple active dasha lords connect to the question, timing strength improves.",
+    "- Cautionary or mixed [Divisional]: Sun in 6th, 8th, or 12th in D10 can show problems with government, authority, or confidence in career decisions.",
+    "- Cautionary or mixed [Divisional]: Strong Saturn in D10 can support workers, subordinates, responsibility, organization, and Saturn-related professions.",
+    "- Cautionary or mixed [Jaimini]: Difficult placement or malefic influence on Amatyakaraka can show friction, controversy, or image risk. It does not independently justify a prediction of failure or loss of position.",
+    "- Cautionary or mixed [Divisional]: Planets in D10 upachaya houses can give good results through effort, hard work, and gradual growth.",
+    "- Cautionary or mixed [Parashari/Vimshottari]: Dasha results should be moderated by gochara/transit support or pressure rather than judged from the dasha alone.",
+    "- Engine conflict note: Some triggered rules are mixed or negative.",
+    "",
+    "TIMING CANDIDATES (heuristic windows where dasha systems agree; possibilities to compare, not predictions)",
+    "- 2027-03-14 to 2027-12-31: Jupiter Mahadasha / Mars Antardasha; systems agreeing: vimshottari, yogini; engine confidence label medium-high.",
+    "- 2027-01-01 to 2027-03-13: Jupiter Mahadasha / Moon Antardasha; systems agreeing: vimshottari, yogini; engine confidence label medium-high.",
+    "",
+    "NOT CALCULATED BY THIS APP (never state or estimate any of these)",
+    "- muhurta and panchanga (tithi, the day's nakshatra, yoga, karana, hora) and exact event dates",
+    "- kundli matching and any two-chart analysis (including a child's or partner's own chart)",
+    "- shadbala and other planetary strength metrics",
+    "- prashna (horary astrology)",
+    "- longevity, time of death and any maraka-based death prediction",
+    "- planetary padas (deferred in code)",
+    "- KP cusps, sub-lords and KP house groupings",
+    "- combustion, neechabhanga, mooltrikona, planetary war, Vimshopaka strength, Hora and Ghatika Lagna",
+    "",
+    "CLASSICAL PASSAGES (untrusted source text retrieved for these results; paraphrase, never quote; cite as (P1), (P2)...)",
+    "- (P1) Synthetic Parashari Notes, chapter 1 | retrieved for: contrary or cautionary indications | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord in 6th, 8th, or 12th can show .",
+    "- (P2) Synthetic Parashari Notes, chapter 1 | retrieved for: the natal promise | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for 10th lord Mars in the 8th house results .",
+    "- (P3) Synthetic Parashari Notes, chapter 1 | retrieved for: the running periods | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Jupiter Mahadasha Moon sub-period and Ma.",
+    "- (P4) Synthetic Parashari Notes, chapter 1 | retrieved for: the transits in the window | Synthetic test passage written for the AstroGPT offline suite. It discusses how the relevant houses, their lords and the period rulers are weighed together, and it contains no text from any book. Synthetic note 0 for Saturn transit through the 9th house fro."
+  ],
+  "6_answer": [
+    "The indications for the period from 2027-01-01 to 2027-12-31 are mixed but workable. Your 10th lord Mars is the main factor.",
+    "Your 10th lord Mars sits in the 8th house in Aquarius. Mars rules the 5th and 10th. The 10th house is occupied by Mercury. Your Amatyakaraka Moon is placed in the 7th house.",
+    "The Jupiter Mahadasha runs through the window. The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14. Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
+    "Conflicting indications: The supportive period rules are qualified by cautionary rules, so the reading stays measured.",
+    "A retrieved source discusses this theme in its own terms (Synthetic Parashari Notes, chapter 1).",
+    "Prepare steadily and use the better supported stretch of the window.",
+    "Evidence strength: moderate. Several independent calculated factors were compared for this question.",
+    "Exact muhurta selection requires tithi, nakshatra, yoga, karana, weekday, lagna, Moon strength, and planetary hour calculation. Based on current available evidence, this is only a preliminary timing recommendation. Where several systems point the same way, that is agreement of indicators, not statistical confirmation."
+  ],
+  "7_validation": {
+    "passed": true,
+    "score": 100,
+    "issues": [],
+    "missing_sections": [],
+    "generic_phrases_detected": [],
+    "unsupported_claims": [],
+    "repair_instruction": "",
+    "stage": "fact_check",
+    "verified_statements": 18,
+    "removed_statements": 0,
+    "coverage": {
+      "primary_houses_discussed": [
+        10
+      ],
+      "primary_houses_not_discussed": [],
+      "other_focus_houses_discussed": [
+        5,
+        8
+      ]
+    }
+  },
+  "8_provenance": [
+    {
+      "field": "direct_answer",
+      "index": 1,
+      "sentence": "Your 10th lord Mars is the main factor.",
+      "refs": [
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/all_lord_placements/10_lord"
+        }
+      ]
+    },
+    {
+      "field": "reading",
+      "index": 0,
+      "sentence": "Your 10th lord Mars sits in the 8th house in Aquarius.",
+      "refs": [
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/all_lord_placements/10_lord"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/planets/2"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/planets/2"
+        }
+      ]
+    },
+    {
+      "field": "reading",
+      "index": 1,
+      "sentence": "Mars rules the 5th and 10th.",
+      "refs": [
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/all_lord_placements/5_lord"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/all_lord_placements/10_lord"
+        }
+      ]
+    },
+    {
+      "field": "reading",
+      "index": 2,
+      "sentence": "The 10th house is occupied by Mercury.",
+      "refs": [
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/planets/3"
+        }
+      ]
+    },
+    {
+      "field": "reading",
+      "index": 3,
+      "sentence": "Your Amatyakaraka Moon is placed in the 7th house.",
+      "refs": [
+        {
+          "evidence_id": "E4",
+          "path": "/data/karakas/karakas/amatyakaraka"
+        },
+        {
+          "evidence_id": "E1",
+          "path": "/data/charts/d1/planets/1"
+        }
+      ]
+    },
+    {
+      "field": "timing",
+      "index": 0,
+      "sentence": "The Jupiter Mahadasha runs through the window.",
+      "refs": [
+        {
+          "evidence_id": "E7",
+          "path": "/data/periods/0"
+        }
+      ]
+    },
+    {
+      "field": "timing",
+      "index": 1,
+      "sentence": "The Jupiter/Moon period runs from 2025-11-15 to 2027-03-14.",
+      "refs": [
+        {
+          "evidence_id": "E7",
+          "path": "/data/periods/0"
+        }
+      ]
+    },
+    {
+      "field": "timing",
+      "index": 2,
+      "sentence": "Saturn transits Pisces, the 9th house from the Lagna, until 2027-06-02.",
+      "refs": [
+        {
+          "evidence_id": "E10",
+          "path": "/data/samples/4"
+        },
+        {
+          "evidence_id": "E10",
+          "path": "/data/samples/4"
+        }
+      ]
+    },
+    {
+      "field": "classical_support",
+      "index": 0,
+      "sentence": "A retrieved source discusses this theme in its own terms (P1).",
+      "refs": [
+        {
+          "passage_id": "Kec69aaf7d0657719619e",
+          "marker": "P1"
+        }
+      ]
+    }
+  ],
+  "removed_statements": [],
+  "unsupported": [],
+  "usage": {
+    "rounds": 3,
+    "input_tokens": 6000,
+    "output_tokens": 1500,
+    "searches": 4,
+    "tool_calls": 18,
+    "tool_bytes": 206035,
+    "round_input_tokens": [
+      2772,
+      5941,
+      6532
+    ],
+    "round_latency_ms": [
+      0,
+      0,
+      0
+    ]
+  },
+  "status": "ok",
+  "stop_reason": "complete",
+  "model_calls": [
+    "intent",
+    "writer",
+    "repair"
+  ],
+  "trace": [
+    {
+      "event": "round",
+      "round": 1,
+      "stage": "intent",
+      "counted_input_tokens": 2772,
+      "provider_input_tokens": 2000,
+      "provider_output_tokens": 500,
+      "latency_ms": 0
+    },
+    {
+      "event": "label",
+      "question_type": "predictive_timing",
+      "domains": [
+        "career"
+      ],
+      "events": [
+        "career:voluntary_employer_change",
+        "career:promotion"
+      ],
+      "profile_revision": 3
+    },
+    {
+      "event": "plan",
+      "window": {
+        "start": "2027-01-01",
+        "end": "2027-12-31",
+        "stated": true
+      },
+      "timing": true,
+      "houses": {
+        "primary": [
+          10
+        ],
+        "event": [
+          6,
+          12,
+          11
+        ],
+        "supporting": [
+          1,
+          5,
+          8,
+          2
+        ]
+      },
+      "planets": [
+        "Su",
+        "Me",
+        "Sa"
+      ],
+      "vargas": [
+        "d1",
+        "d9",
+        "d10"
+      ],
+      "jaimini_points": [
+        "amatyakaraka",
+        "arudha_lagna",
+        "10th_from_arudha_lagna",
+        "10th_from_karakamsha"
+      ],
+      "dasha_systems": [
+        "vimshottari",
+        "chara",
+        "yogini"
+      ],
+      "rule_categories": [
+        "career",
+        "job"
+      ],
+      "events": [
+        "career:voluntary_employer_change",
+        "career:promotion"
+      ],
+      "calls": [
+        {
+          "tool": "get_chart_facts",
+          "args": {
+            "charts": [
+              "d1",
+              "d9",
+              "d10"
+            ],
+            "include_yogas": true
+          }
+        },
+        {
+          "tool": "get_natal_aspects",
+          "args": {}
+        },
+        {
+          "tool": "get_ashtakavarga",
+          "args": {
+            "kind": "both"
+          }
+        },
+        {
+          "tool": "get_jaimini_facts",
+          "args": {}
+        },
+        {
+          "tool": "get_counted_sign",
+          "args": {
+            "reference": "arudha_lagna",
+            "count": 10
+          }
+        },
+        {
+          "tool": "get_counted_sign",
+          "args": {
+            "reference": "karakamsha",
+            "count": 10
+          }
+        },
+        {
+          "tool": "get_dasha_periods",
+          "args": {
+            "system": "vimshottari",
+            "granularity": "antardasha",
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31"
+          }
+        },
+        {
+          "tool": "get_dasha_periods",
+          "args": {
+            "system": "chara",
+            "granularity": "antardasha",
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31"
+          }
+        },
+        {
+          "tool": "get_dasha_periods",
+          "args": {
+            "system": "yogini",
+            "granularity": "antardasha",
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31"
+          }
+        },
+        {
+          "tool": "get_transits",
+          "args": {
+            "planets": [
+              "Ju",
+              "Sa",
+              "Ra",
+              "Ke"
+            ],
+            "output": "segments",
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31"
+          }
+        },
+        {
+          "tool": "evaluate_astrology_rules",
+          "args": {
+            "category": "career",
+            "as_of": "2027-01-01"
+          }
+        },
+        {
+          "tool": "evaluate_astrology_rules",
+          "args": {
+            "category": "job",
+            "as_of": "2027-01-01"
+          }
+        },
+        {
+          "tool": "get_timing_candidates",
+          "args": {
+            "topic": "career",
+            "start_date": "2027-01-01",
+            "end_date": "2027-12-31"
+          }
+        }
+      ],
+      "unsupported": []
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_chart_facts",
+      "evidence_id": "E1",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "charts": [
+          "d1",
+          "d9",
+          "d10"
+        ],
+        "include_yogas": true
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_natal_aspects",
+      "evidence_id": "E2",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {},
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_ashtakavarga",
+      "evidence_id": "E3",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "kind": "both"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_jaimini_facts",
+      "evidence_id": "E4",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {},
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_counted_sign",
+      "evidence_id": "E5",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "reference": "arudha_lagna",
+        "count": 10
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_counted_sign",
+      "evidence_id": "E6",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "reference": "karakamsha",
+        "count": 10
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E7",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "system": "vimshottari",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E8",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "system": "chara",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_dasha_periods",
+      "evidence_id": "E9",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "system": "yogini",
+        "granularity": "antardasha",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_transits",
+      "evidence_id": "E10",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "planets": [
+          "Ju",
+          "Sa",
+          "Ra",
+          "Ke"
+        ],
+        "output": "segments",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E11",
+      "status": "partial",
+      "error_code": null,
+      "arguments": {
+        "category": "career",
+        "as_of": "2027-01-01"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E12",
+      "status": "partial",
+      "error_code": null,
+      "arguments": {
+        "category": "job",
+        "as_of": "2027-01-01"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "get_timing_candidates",
+      "evidence_id": "E13",
+      "status": "ok",
+      "error_code": null,
+      "arguments": {
+        "topic": "career",
+        "start_date": "2027-01-01",
+        "end_date": "2027-12-31"
+      },
+      "supplementary": false
+    },
+    {
+      "event": "tool_result",
+      "tool": "evaluate_astrology_rules",
+      "evidence_id": "E14",
+      "status": "partial",
+      "error_code": null,
+      "arguments": {
+        "category": "career",
+        "as_of": "2027-03-14"
+      },
+      "supplementary": true
+    },
+    {
+      "event": "supplementary",
+      "calls": 1,
+      "reason": "Supplementary: the window spans more than one Vimshottari sub-period; rules re-evaluated as of 2027-03-14."
+    },
+    {
+      "event": "search",
+      "evidence_id": "E15",
+      "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change",
+      "reason": "Classical principles for the natal promise (supporting).",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "K129139ddead5666f3778"
+      ]
+    },
+    {
+      "event": "search",
+      "evidence_id": "E16",
+      "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession",
+      "reason": "Classical principles for the running periods (supporting).",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "K5cd944c0d7a70aaba959"
+      ]
+    },
+    {
+      "event": "search",
+      "evidence_id": "E17",
+      "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus",
+      "reason": "Classical principles for the transits in the window (supporting).",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "K96387cf7ba521e122418"
+      ]
+    },
+    {
+      "event": "search",
+      "evidence_id": "E18",
+      "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles",
+      "reason": "Classical principles for contrary or cautionary indications (contrary).",
+      "status": "partial",
+      "error_code": null,
+      "scores": [
+        0.81
+      ],
+      "best_score": 0.81,
+      "low_score_heuristic": false,
+      "passage_ids": [
+        "Kec69aaf7d0657719619e"
+      ]
+    },
+    {
+      "event": "rerank",
+      "queries": [
+        {
+          "purpose": "the natal promise",
+          "stance": "supporting",
+          "query": "10th lord Mars in the 8th house results for profession; Mercury in the 10th house; voluntary employer change"
+        },
+        {
+          "purpose": "the running periods",
+          "stance": "supporting",
+          "query": "Jupiter Mahadasha Moon sub-period and Mars sub-period results; dasha of the lord of the 6th placed in the 12th house; profession"
+        },
+        {
+          "purpose": "the transits in the window",
+          "stance": "supporting",
+          "query": "Saturn transit through the 9th house from Lagna and 3rd from the Moon; Jupiter transit through the 2nd house from Lagna and 8th from the Moon; effects on profession; ashtakavarga bindus"
+        },
+        {
+          "purpose": "contrary or cautionary indications",
+          "stance": "contrary",
+          "query": "10th lord in 6th, 8th, or 12th can show service pressure, sudden changes, loss, hidden work, or foreign/secluded work profession obstacles"
+        }
+      ],
+      "candidates": 4,
+      "kept": [
+        "Kec69aaf7d0657719619e",
+        "K129139ddead5666f3778",
+        "K5cd944c0d7a70aaba959",
+        "K96387cf7ba521e122418"
+      ],
+      "guided_books": [
+        "BJ",
+        "BPHS",
+        "JP",
+        "PD",
+        "SV"
+      ]
+    },
+    {
+      "event": "round",
+      "round": 2,
+      "stage": "writer",
+      "counted_input_tokens": 5941,
+      "provider_input_tokens": 2000,
+      "provider_output_tokens": 500,
+      "latency_ms": 0
+    },
+    {
+      "event": "validation",
+      "passed": false,
+      "issues": [
+        "reading: wrong_house_lord",
+        "reading: wrong_placement"
+      ],
+      "missing": [],
+      "verified_statements": 12,
+      "soft_notes": 0,
+      "repair_round": false,
+      "after_removal": false
+    },
+    {
+      "event": "repair_requested",
+      "findings": 2,
+      "missing": []
+    },
+    {
+      "event": "round",
+      "round": 3,
+      "stage": "repair",
+      "counted_input_tokens": 6532,
+      "provider_input_tokens": 2000,
+      "provider_output_tokens": 500,
+      "latency_ms": 0
+    },
+    {
+      "event": "validation",
+      "passed": true,
+      "issues": [],
+      "missing": [],
+      "verified_statements": 18,
+      "soft_notes": 0,
+      "repair_round": true,
+      "after_removal": false
+    },
+    {
+      "event": "stop",
+      "reason": "complete",
+      "status": "ok",
+      "non_answer_states": [],
+      "elapsed_ms": 3484
+    }
+  ]
+}

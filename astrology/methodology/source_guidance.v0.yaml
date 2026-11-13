@@ -1,0 +1,73 @@
+# Source guidance for retrieval, v0. Derived from the "Sources" column of docs/AstroGPT_Event_Matrix.csv.
+#
+# Status: bibliographic pointers only (book and chapter numbers). UNVERIFIED at verse level, as in the matrix.
+# Contains no book text. Used only to rank retrieved passages: a passage from a book listed for the labelled
+# event gets a small boost. It never adds a citation, and the writer may cite only passages that were retrieved.
+schema_version: 0
+books:
+  BPHS: [brihat parashara, parashara hora, parasara hora, bphs]
+  PD: [phaladeepika, phala deepika, phaladipika]
+  BJ: [brihat jataka]
+  JP: [jataka parijata]
+  SV: [saravali]
+  UK: [uttara kalamrita, uttarakalamrita]
+  JS: [jaimini sutra, jaimini]
+  KNR: [k.n. rao, k n rao, chara dasha]
+events:
+  career:
+    _domain: {BPHS: "21, 24, 34, 39", PD: "5, 7", BJ: "10-11", JP: "7, 15", SV: "33"}
+    promotion: {BPHS: "21, 24, 34, 39", PD: "5, 7", BJ: "10-11", JP: "7, 15", SV: "33"}
+    involuntary_disruptive_change: {JP: "6", BJ: "11", BPHS: "21, 42"}
+    unemployment_and_reemployment: {BPHS: "42"}
+    leadership_and_senior_management: {BPHS: "34, 39, 40, 75", PD: "6-7", BJ: "11", JP: "7", SV: "37"}
+    foreign_relocation: {BPHS: "23, 24", UK: "5"}
+  business:
+    _domain: {BJ: "10", PD: "5", BPHS: "22, 29, 41"}
+    business_versus_employment: {BJ: "10", PD: "5"}
+    partnership: {BPHS: "18, 29"}
+    growth_or_expansion: {BPHS: "22, 41", SV: "3"}
+    losses_or_closure: {BPHS: "13, 22, 23, 29, 41, 42"}
+    online_technology_or_foreign_markets: {UK: "5"}
+  marriage:
+    _domain: {BPHS: "18, 30, 33", PD: "10", JP: "14"}
+    timing_of_marriage: {BPHS: "18, 30, 33", PD: "10, 26", JP: "14", KNR: ""}
+    delay_or_obstacles: {BPHS: "18", PD: "10"}
+    quality_of_married_life: {BPHS: "18, 30, 80", PD: "10-11", BJ: "24", JP: "14, 16"}
+    separation_or_divorce_concerns: {BPHS: "18, 30", JS: "1.4"}
+    remarriage: {BPHS: "18, 30", PD: "10"}
+    nature_of_spouse: {BPHS: "18, 30, 33", PD: "10", JP: "14"}
+  relationships:
+    _domain: {BPHS: "18"}
+  children:
+    _domain: {BPHS: "16, 24", PD: "12"}
+  conception_childbirth:
+    _domain: {BPHS: "16, 30, 83", PD: "12", JP: "13", SV: "34"}
+    timing_of_conception_or_birth: {PD: "12, 20, 26", BPHS: "16, 47-48", KNR: ""}
+  education:
+    _domain: {BPHS: "15, 16, 33", PD: "1"}
+    examination_or_admission_result: {BPHS: "17", SV: "3"}
+    higher_education: {BPHS: "20, 33"}
+    field_of_study: {BPHS: "33", JS: "1.2", PD: "2, 5", BJ: "10", UK: "5"}
+  wealth:
+    _domain: {BPHS: "13, 22, 29, 41", BJ: "10", PD: "5"}
+    income_growth: {BPHS: "13, 22, 29", BJ: "10", PD: "5"}
+    savings_and_accumulation: {BPHS: "13, 24, 41"}
+    debt_or_loans: {BPHS: "17, 42", PD: "6", UK: "5"}
+    sudden_gains_losses_or_inheritance: {BPHS: "13, 19, 20, 41", UK: "5"}
+    financial_stability: {BPHS: "29, 41, 42, 72"}
+  health:
+    _domain: {BPHS: "10, 12, 17, 27", PD: "1, 4, 14", SV: "3-4"}
+  foreign_settlement:
+    _domain: {UK: "5", PD: "1", BPHS: "18, 20, 23, 24"}
+    extended_residence: {BPHS: "23, 24"}
+  property:
+    _domain: {BPHS: "15, 24, 33", UK: "5"}
+    sale_or_disputes: {BPHS: "15, 17, 24"}
+  spirituality:
+    _domain: {BPHS: "20, 23, 33", JS: "1.2", PD: "14, 27"}
+  family:
+    _domain: {BPHS: "14, 15, 20, 21, 24, 32", PD: "1"}
+  vehicles:
+    _domain: {BPHS: "7, 15"}
+  legal_and_adversarial:
+    _domain: {BPHS: "17, 24", PD: "6, 8", SV: "3"}

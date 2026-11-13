@@ -162,6 +162,12 @@ ASTROGPT_AGENT_ENABLED = os.getenv("ASTROGPT_AGENT_ENABLED", "false").lower() in
 # existing and new user stays on legacy until explicitly added. Rollback: remove the account.
 ASTROGPT_AGENT_USERS = tuple(u.strip().casefold() for u in os.getenv("ASTROGPT_AGENT_USERS", "").split(",") if u.strip())
 # M3: the earlier P3 career slice is reachable only through this explicit compatibility setting (off by default).
+# M3 second design (2026-11-13): allow-listed accounts use the planned consultation (one intent call, a
+# deterministic calculation plan, retrieval from the results, one writer call). 'loop' selects the earlier
+# multi-round agent loop, kept for comparison (git tag m3-agent-loop-v1).
+ASTROGPT_AGENT_PIPELINE = os.getenv("ASTROGPT_AGENT_PIPELINE", "planned").strip().lower() or "planned"
+# Optional stronger model for the writer call only; empty uses OPENAI_MODEL. It must have a tariff entry.
+ASTROGPT_WRITER_MODEL = os.getenv("ASTROGPT_WRITER_MODEL", "").strip()
 ASTROGPT_AGENT_P3_COMPAT = os.getenv("ASTROGPT_AGENT_P3_COMPAT", "false").lower() in {"1", "true", "yes"}
 # M2: retrieval adapter for the agent knowledge tool ("hosted" file_search or "direct" vector-store search).
 # M2-AC5 (owner, provisional, 2026-11-11): direct vector-store search. Rollback: set ASTROGPT_RETRIEVAL_ADAPTER=hosted.
