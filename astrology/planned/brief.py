@@ -165,6 +165,21 @@ def _rules(t, plan):
     return lines
 
 
+def _in_window(row, window):
+    """Which end of a period falls inside the window, in words: a pair of dates alone was misread by the writer
+    (a period ending five days into the window was reported as starting then)."""
+    if not (row.get('start') and row.get('end')):
+        return ''
+    before, after = row['start'] < window['start'], row['end'] > window['end']
+    if before and after:
+        return ' It is running for the whole window; it neither starts nor ends in it.'
+    if before:
+        return f" It is ALREADY RUNNING when the window opens (it started on {row['start']}, before the window) and ENDS on {row['end']}."
+    if after:
+        return f" It STARTS on {row['start']} and is still running when the window closes."
+    return f" It STARTS on {row['start']} and ENDS on {row['end']}."
+
+
 def build_brief(question, plan, tables, passages, profile, today):
     """Return (text, sections) where sections maps a heading to its lines (for tracing)."""
     t = tables
@@ -252,9 +267,16 @@ def build_brief(question, plan, tables, passages, profile, today):
             periods.append(f"- {system.title()} Mahadasha: {name}, {start} to {end}.")
         for r in rows[:8]:
             line = f"  - {system.title()} sub-period {r['major_name']} / {r['sub_name']}: {r['start']} to {r['end']}."
+            if plan.timing:
+                line += _in_window(r, plan.window)
             if system == 'vimshottari' and r['sub']:
                 line += f" Sub-period lord: {_links(t, r['sub'], focus, plan)}."
             periods.append(line)
+        if plan.timing:
+            changes = [f"on {b['start']} {a['major_name']} / {a['sub_name']} ends and {b['major_name']} / {b['sub_name']} starts"
+                       for a, b in zip(rows[:8], rows[1:8]) if a['end'] == b['start'] and plan.window['start'] <= b['start'] <= plan.window['end']]
+            if changes:
+                periods.append(f"  - {system.title()} changes of period inside the window: " + '; '.join(changes) + '. Do not swap a start for an end.')
         if system != 'chara':
             lords = dict.fromkeys(code for r in rows for code in ((r['major'],) if system == 'vimshottari' else (r['major'], r['sub'])) if code)
             links = [x for x in (_links(t, c, focus, plan) for c in lords) if x]

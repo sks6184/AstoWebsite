@@ -85,6 +85,9 @@ VAGUE = re.compile(r'\b((?:planetary|astrological|cosmic|celestial)\s+(?:influen
 NEGATED = re.compile(r"\b(not|n't|never|cannot|unavailable|would\s+(?:need|require)|requires?|beyond|outside|does\s+not|is\s+not)\b", re.I)
 SAV_CUE = re.compile(r'\b(SAV|BAV|bindus?|sarvashtakavarga|ashtakavarga)\b', re.I)
 BOUNDARY_CUE = re.compile(r'\b(begin\w*|start\w*|end\w*|until|till|from|through|by|after|before|since|on|around|commenc\w+|runs?|lasts?)\b', re.I)
+# The words directly before a date that say which end of a period it is: "starts 5 January 2027", "until 26 October 2027".
+ROLE_BEFORE = re.compile(r"\b(?:(?P<start>begin\w*|start\w*|commenc\w+|from|since)|(?P<end>end\w*|until|till|(?<!prior\s)to|through|conclud\w+|finish\w*))"
+                         r"(?:\s+(?:on|around|about|in|the|approximately|roughly|early|late|mid))*[\s,:-]*$", re.I)
 DEPENDENT = re.compile(r'^(?:This|That|These|Those|Therefore|Thus|Hence|So|Consequently|As a result|Because of this|For this reason|Accordingly)\b')
 
 
@@ -452,9 +455,12 @@ class SentenceCheck:
                 kind = None                                       # "aspects the 10th from the 4th": origin, not verified here
             elif chained and relation[0] in ('place', 'rules', 'aspect', 'influence'):
                 kind = relation[0]                                # "in the 12th house, in Cancer" / "rules the 2nd and 11th"
-            elif len(span.split()) > 14:
+            elif len(span.split()) > 14 and not (last_target is not None and last_target.end >= subject_end
+                                                 and (ASPECT.search(between) or INFLUENCE.search(between)) and len(between.split()) <= 14):
                 kind = None
             else:
+                if len(span.split()) > 14:
+                    span = between                                # "... occupying your 1st house and aspecting your career (10th house)"
                 cues = [(m.start(), name) for name, pattern in (('rules', RULES), ('aspect', ASPECT), ('place', PLACE), ('influence', INFLUENCE))
                         for m in pattern.finditer(span)]
                 kind = max(cues)[1] if cues else None             # the cue nearest to the house or sign decides
@@ -659,6 +665,13 @@ class SentenceCheck:
         if scope == 'periods' and self.period_rows:
             boundaries = {date.fromisoformat(r[k]) for r in self.period_rows for k in ('start', 'end', 'major_start', 'major_end') if r.get(k)}
         boundaries |= {date.fromisoformat(window['start']), date.fromisoformat(window['end']), self.today}
+        # When the sentence says a named period starts or ends on a date, the date must be that end of the period.
+        edges = None
+        if self.period_rows and not self.transit:
+            day = lambda r, k: date.fromisoformat(r[k]) if r.get(k) else None
+            edges = {'start': {day(r, k) for r in self.period_rows for k in ('start', 'major_start')} | {date.fromisoformat(window['start']), self.today},
+                     'end': {day(r, k) for r in self.period_rows for k in ('end', 'major_end')} | {date.fromisoformat(window['end'])}}
+            edges = {role: {d for d in days if d} for role, days in edges.items()}
         low, high = min(self.today, date.fromisoformat(window['start'])), date.fromisoformat(window['end'])
         for kind, value, position in self.dates:
             if kind == 'invalid':
@@ -667,6 +680,8 @@ class SentenceCheck:
                 if not any(abs((value - b).days) <= 1 for b in boundaries):
                     self.fail('unsupported_date', f'{value.isoformat()} is not a calculated period, transit or window date',
                               'Use only the dates given for the periods, transits and candidate windows.')
+                elif self.wrong_edge(edges, position, lambda b: abs((value - b).days) <= 1):
+                    self.boundary_failure(value.isoformat(), position, lambda b: abs((value - b).days) <= 1)
                 else:
                     self.verified += 1
             elif kind == 'month':
@@ -676,10 +691,30 @@ class SentenceCheck:
                 if not (edge or (inside and not (cue and cue.group().casefold().startswith(('begin', 'start', 'end', 'commenc'))))):
                     self.fail('unsupported_date', f'{value[1]:02d}/{value[0]} is not supported by a calculated period or transit date',
                               'Use only the dates given for the periods, transits and candidate windows.')
+                elif self.wrong_edge(edges, position, lambda b: (b.year, b.month) == value):
+                    self.boundary_failure(f'{value[1]:02d}/{value[0]}', position, lambda b: (b.year, b.month) == value)
             elif kind == 'year':
                 years = {b.year for b in boundaries} | set(range(low.year, high.year + 1))
                 if value not in years and value > self.today.year:
                     self.fail('unsupported_date', f'the year {value} is outside the calculated periods and window')
+
+    def boundary_role(self, position):
+        cue = ROLE_BEFORE.search(self.text[:position])
+        return cue.lastgroup if cue else None
+
+    def wrong_edge(self, edges, position, same):
+        role = self.boundary_role(position) if edges else None
+        return bool(role) and not any(same(b) for b in edges[role])
+
+    def boundary_failure(self, shown, position, same):
+        role = self.boundary_role(position)
+        rows = list({(r['major_name'], r['sub_name'], r['start']): r for r in self.period_rows}.values())[:3]
+        fact = ' '.join(f"{r['major_name']} / {r['sub_name']} starts on {r['start']} and ends on {r['end']}." for r in rows)
+        other = 'end' if role == 'start' else 'start'
+        match = next((r for all_rows in self.t.dashas.values() for r in all_rows if r.get(role) and same(date.fromisoformat(r[role]))), None)
+        if match:
+            fact += f" The period that {role}s on {match[role]} is {match['major_name']} / {match['sub_name']}."
+        self.fail('wrong_period_boundary', f'{shown} is stated as the {role} of the named period; it is not (check whether it is its {other})', fact)
 
     def numbers(self):
         if not SAV_CUE.search(self.blank):

@@ -5,6 +5,7 @@ the results, the brief, the fact check and targeted repair. They do not show ast
 what a live model writes.
 """
 from copy import deepcopy
+from datetime import date
 import json
 import os
 from pathlib import Path
@@ -795,3 +796,82 @@ class PlannedUiTests(M3Base):
         with patch.object(agent_service, 'run_general_consultation', return_value={'status': 'ok', 'answer': 'loop'}) as loop:
             agent_service.generate_question_answer(self.owner, self.chart, QUESTION, 'standard')
         self.assertTrue(loop.called)
+
+
+class PeriodBoundaryTests(PlannedBase):
+    """Regression for the live error of 2026-11-14: a sub-period that ended a few days into the window was
+    reported as starting on that date, and the check accepted it because the date was one of that period's
+    two dates. Dates are read from the synthetic chart's calculated rows, never written here."""
+
+    def setUp(self):
+        super().setUp()
+        self.result = self.consult(Scripted(CAREER, self.truthful()))
+        self.c = self.consultation
+        rows = self.c.tables.dashas['vimshottari']
+        window = self.c.plan.window
+        self.window = window
+        # a: running when the window opens and ending inside it; b: the period that follows it.
+        self.a, self.b = next((x, y) for x, y in zip(rows, rows[1:]) if x['start'] < window['start'] < x['end'] == y['start'] <= window['end'])
+        self.name = lambda r: f"{r['major_name']} / {r['sub_name']}"
+
+    def codes(self, sentence, field='periods'):
+        return [f['code'] for f in SentenceCheck(sentence, self.c.tables, self.c.plan, {}, TODAY, field).run().findings]
+
+    @staticmethod
+    def words(iso):
+        day = date.fromisoformat(iso)
+        return f"{day.strftime('%B')} {day.day}, {day.year}"
+
+    def test_an_end_date_stated_as_a_start_is_caught(self):
+        a, b = self.a, self.b
+        for sentence in (f"In the window, the {self.name(a)} period starts {self.words(a['end'])}, which supports gains.",
+                         f"The {self.name(a)} period begins on {a['end']}.",
+                         f"The {self.name(a)} period runs from {self.words(a['end'])}."):
+            check = SentenceCheck(sentence, self.c.tables, self.c.plan, {}, TODAY, 'periods').run()
+            self.assertEqual([f['code'] for f in check.findings], ['wrong_period_boundary'], sentence)
+            # The correction names both dates of the period and the period that really starts then.
+            self.assertIn(f"{self.name(a)} starts on {a['start']} and ends on {a['end']}", check.findings[0]['correction'])
+            self.assertIn(f"The period that starts on {b['start']} is {self.name(b)}", check.findings[0]['correction'])
+
+    def test_a_start_date_stated_as_an_end_is_caught(self):
+        b = self.b
+        self.assertEqual(self.codes(f"The {self.name(b)} period ends on {b['start']}."), ['wrong_period_boundary'])
+        self.assertEqual(self.codes(f"The {self.name(b)} period lasts until {self.words(b['start'])}."), ['wrong_period_boundary'])
+
+    def test_a_month_given_as_the_wrong_end_is_caught(self):
+        a = self.a
+        end = date.fromisoformat(a['end'])
+        self.assertNotEqual(a['start'][:7], a['end'][:7])
+        self.assertEqual(self.codes(f"The {self.name(a)} period starts in {end.strftime('%B')} {end.year}."), ['wrong_period_boundary'])
+        self.assertEqual(self.codes(f"The {self.name(a)} period ends in {end.strftime('%B')} {end.year}."), [])
+
+    def test_correct_starts_ends_active_periods_and_transitions_pass(self):
+        a, b, window = self.a, self.b, self.window
+        for sentence in (
+                f"The {self.name(a)} period ends on {a['end']}.",
+                f"The {self.name(b)} period starts on {self.words(b['start'])}.",
+                f"The {self.name(b)} period runs from {b['start']} to {b['end']}.",
+                f"The {self.name(a)} period, which began on {a['start']}, continues until {self.words(a['end'])}.",
+                # Active periods: running when the window opens, with the window's own dates.
+                f"The {self.name(a)} period is already running when the window opens on {window['start']}.",
+                f"From {window['start']}, the {self.name(a)} period continues until {a['end']}.",
+                # Transition dates, in either order of telling.
+                f"On {b['start']} the {self.name(a)} period ends and the {self.name(b)} period starts.",
+                f"The {self.name(a)} period ends and the {self.name(b)} period starts on {b['start']}.",
+                f"The {self.name(b)} period starts when the {self.name(a)} period ends on {self.words(a['end'])}."):
+            self.assertEqual(self.codes(sentence), [], sentence)
+
+    def test_brief_says_in_words_which_end_of_each_period_falls_in_the_window(self):
+        a, b = self.a, self.b
+        brief = self.result['brief']
+        self.assertIn(f"sub-period {self.name(a)}: {a['start']} to {a['end']}. It is ALREADY RUNNING when the window opens "
+                      f"(it started on {a['start']}, before the window) and ENDS on {a['end']}.", brief)
+        self.assertIn(f"sub-period {self.name(b)}: {b['start']} to {b['end']}. It STARTS on {b['start']}", brief)
+        self.assertIn(f"on {b['start']} {self.name(a)} ends and {self.name(b)} starts", brief)
+
+    def test_a_transit_aspect_late_in_a_long_sentence_is_still_checked(self):
+        # Synthetic chart: Jupiter in Cancer occupies house 1 and aspects 5, 7 and 9; it does not aspect the 10th.
+        wrong = ('Jupiter transits Cancer from 25 January 2027 to 25 June 2027, occupying your 1st house and aspecting your '
+                 'career (10th house), offering a strong start.')
+        self.assertEqual(self.codes(wrong, 'transits'), ['wrong_aspect'])
+        self.assertEqual(self.codes(wrong.replace('career (10th house)', 'fortune (9th house)'), 'transits'), [])
