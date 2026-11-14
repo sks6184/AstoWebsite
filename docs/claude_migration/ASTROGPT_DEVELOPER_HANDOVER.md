@@ -22,6 +22,14 @@ owner wants evidence-grounded consultations, not generic LLM text.
 | Structured five-section answers, follow-ups, remedies | Designed and approved, **not implemented** (`M3_STRUCTURED_CONSULTATION_DESIGN.md`) |
 | Writer-model comparison (gpt-4o-mini vs gpt-4.1) | Planned, **not run** (section 12) |
 
+Why the multi-round agent loop was replaced (confirmed in live runs, 2026-11-11 to 2026-11-13): the
+model chose which tools to call, round by round. With gpt-4o-mini it chose badly, repeated requests it
+had already been answered, sent draft answers together with new requests so the requests never ran, and
+often ended with no answer at all. Two rounds of fixes (commits `3f48aec`, `ed6c926`) did not make it
+reliable. The owner then asked for the present order: the model only classifies the question and writes;
+the server decides and runs every calculation, searches the library from the results, and checks the
+answer. Do not bring model-chosen tools back.
+
 Other documents in this folder: `M1_REPORT.md`, `M1B_REPORT.md`, `M2_REPORT.md`, `M3_REPORT.md` (describes
 the abandoned loop; out of date for the planned pipeline), `M3_DOMAIN_PROFILE_CHANGES.md` (not updated for
 profile revision 4), `M3_EVENT_MATRIX_COMPARISON.md`, `M3_STRUCTURED_CONSULTATION_DESIGN.md`.
@@ -205,18 +213,25 @@ patch scripts with a file tool and assert that no backspace character (`chr(8)`)
 
 ## 10. Git
 
-- Remote: `origin` = `https://github.com/sks6184/AstoWebsite.git`. Only `main` exists there (`2312a42`).
+- Remote: `origin` = `https://github.com/sks6184/AstoWebsite.git`. It holds `main` (`2312a42`) and
+  `claude/m3-publish-partial`.
 - Live checkout: `...\Astro_Code_base`, branch `claude/m3-planned-consultation` at `b691ef5`. The owner's
   development server runs from it and reloads on every file change.
 - Development worktree: `...\Astro_Code_base_dev`, branch `claude/m3-publish-partial`. It has no `.env`,
-  so it cannot make paid calls. This document was committed there.
+  so it cannot make paid calls. This document is committed there. **This is the branch to continue
+  from**: it is the live branch plus docs-only commits, and it was pushed to `origin` on 2026-11-14 with
+  the owner's approval.
+- To move the live checkout onto it later (`git merge --ff-only claude/m3-publish-partial` in the live
+  checkout), the untracked copy of `docs/claude_migration/M3_STRUCTURED_CONSULTATION_DESIGN.md` there has
+  to be removed first, because the branch now tracks that file. The owner has asked that it not be
+  touched without their say.
 - Tags: `m3-agent-loop-v1` (old loop; also branch `claude/m3-agent-loop-archive`), `m3-planned-v1`
   (planned pipeline before the audit fixes).
 - Commits on the feature line, newest first: `b691ef5` publish preliminary readings and failure records;
   `eb20110` period start/end check and brief wording; `8425556`, `79d55f9`, `75ec57d`, `1f86200` audit
   fixes; `49023e2`, `439ed93` planned pipeline.
-- Nothing is pushed. The owner approved pushing the feature branch after a live check; never merge into
-  `main` without explicit approval.
+- Pushed: `claude/m3-publish-partial` only. Never merge into `main` without explicit approval. The live
+  diagnostic test of `b691ef5` (approved budget US$0.05) has not been run.
 - Untracked in the live checkout, the owner's: `.vscode/`, `docs/AstroGPT Implementation
   Recommendations.txt`, `docs/AstroGPT_Event_Matrix.csv`.
 
@@ -275,14 +290,19 @@ validator stay unchanged. Procedure:
 4. Compare: wrong statements by type before repair, sentences removed, sections missing, outcome, the
    owner's blind rating of reasoning and usefulness, tokens, latency and cost.
 
-Questions: "When will I get a new job in 2027?" and "How will my next week be? Give me a weekly
-prediction." The weekly question is expected to fail for both writers until defect 1 is addressed,
-because the evidence is not there; it measures how each writer behaves with thin evidence.
+Owner decisions of 2026-11-14: approved in principle with a ceiling of US$0.20 in paid calls; not to be
+run until defect 4 (private capture of raw writer answers, repaired answers, removed sentences and
+findings) is implemented; pricing and model availability must be verified immediately before the run.
+Two career questions are the primary comparison ("When will I get a new job in 2027?" and one more, for
+example "Can I get promoted next year or get a new job?"). The weekly question ("How will my next week
+be? Give me a weekly prediction.") is a diagnostic for insufficient evidence only: it is expected to end
+incomplete for both writers until defect 1 is addressed.
 
 Prices read from OpenAI's pricing page on 2026-11-13, to be re-verified on the day: gpt-4o-mini US$0.15
 input and US$0.60 output per million tokens; gpt-4.1 US$2.00 and US$8.00. Estimate: freezing two
 questions US$0.02; gpt-4o-mini both questions US$0.01; gpt-4.1 about US$0.06 (career, with repair) plus
-US$0.04 (weekly). Total about US$0.13; proposed ceiling US$0.20. One gpt-4.1 career answer with repair
+US$0.04 (weekly). With a second career question the total is about US$0.20, at the approved ceiling: check the
+estimate again before running, and drop the weekly question first if it does not fit. One gpt-4.1 career answer with repair
 exceeds the app's US$0.05 per-question cap, which is why the runner is separate.
 
 ## 13. Next approved phase (not started)
@@ -320,6 +340,10 @@ approach: store them in a separate key of the assistant message's provenance (or
 for failed readings) so the 16 KB cap on the evidence record does not drop them. They contain chart
 statements, so they must stay private: check that `chat.views.answer_provenance` and
 `templates/chat/ask.html` do not expose the new key.
+
+The owner has assigned fixes 1 to 5 of the audit to the next agent: defect 4 (capture), defect 3
+(concise incomplete reading), defect 9 (strength label), defect 2 (server reads "next week" and "this
+week") and the retrieval filter for diagram and contents text in defect 5.
 
 **Second and third.** Defect 3 (a concise incomplete reading that keeps verified sentences) and defect 9
 (the strength label). Both are small and inside `consultation.py` and `checker.py`. Then bring defects 1
