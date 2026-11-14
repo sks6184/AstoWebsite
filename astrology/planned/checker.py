@@ -88,6 +88,36 @@ BOUNDARY_CUE = re.compile(r'\b(begin\w*|start\w*|end\w*|until|till|from|through|
 # The words directly before a date that say which end of a period it is: "starts 5 January 2027", "until 26 October 2027".
 ROLE_BEFORE = re.compile(r"\b(?:(?P<start>begin\w*|start\w*|commenc\w+|from|since)|(?P<end>end\w*|until|till|(?<!prior\s)to|through|conclud\w+|finish\w*))"
                          r"(?:\s+(?:on|around|about|in|the|approximately|roughly|early|late|mid))*[\s,:-]*$", re.I)
+# Between a period's name and the word that says "starts" or "ends": nothing that begins another clause.
+TIGHT = re.compile(r"^\s*(?:(?:which|that|it|also|then|now|itself|will|is|was|has|only|actually|period|phase)\s+)*"
+                   r"(?:(?:runs?|lasts?|continues?|extends?|operates?)\s+)?$", re.I)
+# What a reading cannot do without, by question intent. Anything else that is missing makes it preliminary.
+ALWAYS_ESSENTIAL = ('all', 'direct_answer', 'calculated_basis', 'natal_basis', 'primary_house_logic')
+SECTION_NAMES = {'direct_answer': 'a direct answer', 'calculated_basis': 'the calculated basis', 'natal_basis': 'the birth-chart basis',
+                 'primary_house_logic': 'the main house for this question', 'timing': 'the timing analysis',
+                 'period_basis': 'the dasha periods', 'event_comparison': 'a separate assessment of each event',
+                 'divisional_basis': 'divisional-chart confirmation', 'jaimini_basis': 'the Jaimini view',
+                 'transit_basis': 'the transits', 'conflicting_signals': 'the conflicting indications',
+                 'classical_support': 'classical source support', 'evidence_strength_label': 'an evidence-strength assessment',
+                 'evidence_strength_reason': 'the reason for the evidence strength', 'all': 'the reading itself'}
+
+
+def essential_sections(plan):
+    """The sections this question cannot be answered without. A timing question needs its timing analysis
+    and the dasha periods; a comparison of events needs each event assessed. Divisional, Jaimini, transit,
+    classical-source and conflict sections support a reading: without them it is preliminary, not empty."""
+    essential = set(ALWAYS_ESSENTIAL)
+    if plan.timing:
+        essential |= {'timing', 'period_basis'}
+    if len(plan.events) > 1 or plan.label.get('question_type') == 'comparative_decision':
+        essential.add('event_comparison')
+    return essential
+
+
+def describe_missing(missing):
+    return list(dict.fromkeys(SECTION_NAMES.get(m, m.replace('_', ' ')) for m in missing))
+
+
 DEPENDENT = re.compile(r'^(?:This|That|These|Those|Therefore|Thus|Hence|So|Consequently|As a result|Because of this|For this reason|Accordingly)\b')
 
 
@@ -202,6 +232,7 @@ class SentenceCheck:
         self.findings, self.soft, self.refs, self.verified = [], [], [], 0
         self.kinds = set()             # which bodies of evidence this sentence's verified statements rest on
         self.period_rows = []          # the period rows this sentence names (its dates must be theirs)
+        self.period_mentions = []      # (where the name ends, its rows, True for a Mahadasha) for the start/end check
         self.dates, blank = _dates(text)
         self.blank = blank
         self.ents = entities(blank)
@@ -632,6 +663,7 @@ class SentenceCheck:
                 match = next((r for r in rows if r['major'] == codes[0] and r['sub'] == codes[1]), None)
                 if match:
                     self.period_rows.append(match)
+                    self.period_mentions.append((e.end, [match], False))
                     self.ok(match['ref'])
                 else:
                     self.fail('wrong_period', f'a {P(codes[0])}/{P(codes[1])} period is stated', self.period_fact())
@@ -641,6 +673,9 @@ class SentenceCheck:
             match = next((r for r in rows if any(r[k] == code for k in keys)), None)
             if match:
                 self.period_rows += [r for r in rows if any(r[k] == code for k in keys)] if level == 'sub' else [match]
+                if level:
+                    self.period_mentions.append((max(e.end, named[-1].end), [r for r in rows if r['sub'] == code] if level == 'sub' else [match],
+                                                 level == 'major'))
                 self.ok(match['ref'])
             else:
                 kind = {'major': 'Mahadasha', 'sub': 'sub-period'}.get(level, 'period')
@@ -665,13 +700,6 @@ class SentenceCheck:
         if scope == 'periods' and self.period_rows:
             boundaries = {date.fromisoformat(r[k]) for r in self.period_rows for k in ('start', 'end', 'major_start', 'major_end') if r.get(k)}
         boundaries |= {date.fromisoformat(window['start']), date.fromisoformat(window['end']), self.today}
-        # When the sentence says a named period starts or ends on a date, the date must be that end of the period.
-        edges = None
-        if self.period_rows and not self.transit:
-            day = lambda r, k: date.fromisoformat(r[k]) if r.get(k) else None
-            edges = {'start': {day(r, k) for r in self.period_rows for k in ('start', 'major_start')} | {date.fromisoformat(window['start']), self.today},
-                     'end': {day(r, k) for r in self.period_rows for k in ('end', 'major_end')} | {date.fromisoformat(window['end'])}}
-            edges = {role: {d for d in days if d} for role, days in edges.items()}
         low, high = min(self.today, date.fromisoformat(window['start'])), date.fromisoformat(window['end'])
         for kind, value, position in self.dates:
             if kind == 'invalid':
@@ -680,8 +708,8 @@ class SentenceCheck:
                 if not any(abs((value - b).days) <= 1 for b in boundaries):
                     self.fail('unsupported_date', f'{value.isoformat()} is not a calculated period, transit or window date',
                               'Use only the dates given for the periods, transits and candidate windows.')
-                elif self.wrong_edge(edges, position, lambda b: abs((value - b).days) <= 1):
-                    self.boundary_failure(value.isoformat(), position, lambda b: abs((value - b).days) <= 1)
+                elif self.swapped(position, lambda b: abs((value - b).days) <= 1):
+                    self.boundary_failure(value.isoformat(), *self.swapped(position, lambda b: abs((value - b).days) <= 1))
                 else:
                     self.verified += 1
             elif kind == 'month':
@@ -691,30 +719,46 @@ class SentenceCheck:
                 if not (edge or (inside and not (cue and cue.group().casefold().startswith(('begin', 'start', 'end', 'commenc'))))):
                     self.fail('unsupported_date', f'{value[1]:02d}/{value[0]} is not supported by a calculated period or transit date',
                               'Use only the dates given for the periods, transits and candidate windows.')
-                elif self.wrong_edge(edges, position, lambda b: (b.year, b.month) == value):
-                    self.boundary_failure(f'{value[1]:02d}/{value[0]}', position, lambda b: (b.year, b.month) == value)
+                elif self.swapped(position, lambda b: (b.year, b.month) == value):
+                    self.boundary_failure(f'{value[1]:02d}/{value[0]}', *self.swapped(position, lambda b: (b.year, b.month) == value))
             elif kind == 'year':
                 years = {b.year for b in boundaries} | set(range(low.year, high.year + 1))
                 if value not in years and value > self.today.year:
                     self.fail('unsupported_date', f'the year {value} is outside the calculated periods and window')
 
-    def boundary_role(self, position):
+    def swapped(self, position, same):
+        """(role, row, is a Mahadasha) when the sentence gives a named period's END as its start, or its START as
+        its end. Only a true swap counts: the date must be the other end of that same period, and the period's
+        name must lead straight into the word "starts" or "ends". A sentence that names one period and then
+        gives the date on which the next one begins is left alone."""
         cue = ROLE_BEFORE.search(self.text[:position])
-        return cue.lastgroup if cue else None
-
-    def wrong_edge(self, edges, position, same):
-        role = self.boundary_role(position) if edges else None
-        return bool(role) and not any(same(b) for b in edges[role])
-
-    def boundary_failure(self, shown, position, same):
-        role = self.boundary_role(position)
-        rows = list({(r['major_name'], r['sub_name'], r['start']): r for r in self.period_rows}.values())[:3]
-        fact = ' '.join(f"{r['major_name']} / {r['sub_name']} starts on {r['start']} and ends on {r['end']}." for r in rows)
+        if not cue or self.transit:
+            return None
+        role = cue.lastgroup
         other = 'end' if role == 'start' else 'start'
-        match = next((r for all_rows in self.t.dashas.values() for r in all_rows if r.get(role) and same(date.fromisoformat(r[role]))), None)
-        if match:
-            fact += f" The period that {role}s on {match[role]} is {match['major_name']} / {match['sub_name']}."
-        self.fail('wrong_period_boundary', f'{shown} is stated as the {role} of the named period; it is not (check whether it is its {other})', fact)
+        day = lambda r, k: date.fromisoformat(r[k]) if r.get(k) else None
+        for end, rows, major in self.period_mentions:
+            if end > cue.start() or not TIGHT.match(self.text[end:cue.start()]):
+                continue
+            stated = [day(r, k) for r in rows for k in (role, 'major_' + role)]
+            if any(d and same(d) for d in stated):
+                continue                                      # it is that end of the period, as stated
+            key = 'major_' + other if major else other
+            hit = next((r for r in rows if day(r, key) and same(day(r, key))), None)
+            if hit:
+                return role, hit, major
+        return None
+
+    def boundary_failure(self, shown, role, row, major):
+        other = 'end' if role == 'start' else 'start'
+        if major:
+            fact = f"The {row['major_name']} Mahadasha starts on {row['major_start']} and ends on {row['major_end']}."
+        else:
+            fact = f"{row['major_name']} / {row['sub_name']} starts on {row['start']} and ends on {row['end']}."
+            nxt = next((r for rows in self.t.dashas.values() for r in rows if r is not row and r.get(role) == row[other]), None)
+            if nxt:
+                fact += f" The period that {role}s on {nxt[role]} is {nxt['major_name']} / {nxt['sub_name']}."
+        self.fail('wrong_period_boundary', f'{shown} is stated as the {role} of the named period, but it is its {other}', fact)
 
     def numbers(self):
         if not SAV_CUE.search(self.blank):
@@ -851,10 +895,10 @@ def check_answer(answer, tables, plan, passages, *, today, conflicts_present):
     if qtype != 'concept_explanation' and plan.houses['primary'] and not coverage['primary_houses_discussed']:
         missing.append('primary_house_logic')
     coverage['evidence_used'] = sorted(kinds)
-    return _report(findings, soft, provenance, missing, verified, coverage)
+    return _report(findings, soft, provenance, missing, verified, coverage, essential_sections(plan))
 
 
-def _report(findings, soft, provenance, missing, verified, coverage):
+def _report(findings, soft, provenance, missing, verified, coverage, essential=ALWAYS_ESSENTIAL):
     issues = list(dict.fromkeys(f"{f['field']}: {f['code']}" for f in findings))
     problems = issues + ['missing_' + m for m in missing]
     lines = []
@@ -880,7 +924,10 @@ def _report(findings, soft, provenance, missing, verified, coverage):
         instruction = ('Correct only the statements listed below and keep everything else as it is. Each correction gives the '
                        'calculated value; restate the sentence with it, or delete the sentence, and adjust any conclusion that '
                        'depended on it so the reading stays coherent.\n' + '\n'.join(lines))
-    return {'passed': not problems, 'score': max(0, 100 - 10 * len(problems)), 'issues': issues, 'missing_sections': list(missing),
+    # passed: complete. publishable: nothing wrong remains and nothing essential is missing (a preliminary reading).
+    return {'passed': not problems, 'publishable': not findings and not any(m in essential for m in missing),
+            'essential_missing': [m for m in missing if m in essential], 'supplementary_missing': [m for m in missing if m not in essential],
+            'score': max(0, 100 - 10 * len(problems)), 'issues': issues, 'missing_sections': list(missing),
             'generic_phrases_detected': [f['detail'] for f in findings if f['code'] == 'generic_phrase'],
             'unsupported_claims': list(dict.fromkeys(f['sentence'][:160] for f in findings))[:12], 'repair_instruction': instruction,
             'findings': findings, 'soft': soft[:40], 'provenance': provenance, 'verified_statements': verified, 'coverage': coverage}

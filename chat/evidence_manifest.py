@@ -11,6 +11,17 @@ def manifest(result, provider_models=()):
         'provider_models': list(dict.fromkeys(str(m)[:100] for m in provider_models))[:8],
         'exact_replay_available': False,
         'tools': [], 'sources': [], 'claim_ids': []}
+    if result.get('pipeline') == 'planned_consultation':
+        from .diagnostics import APP_VERSION
+        value['app_version'] = APP_VERSION
+        # Complete, preliminary (which sections are missing) or incomplete: kept apart from the event list,
+        # which is the first thing dropped when the record has to be shortened.
+        draft = result.get('draft_validation') if type(result.get('draft_validation')) is dict else {}
+        value['reading'] = {'complete': bool(draft.get('passed')) and result.get('stop_reason') == 'complete',
+                            'preliminary': bool(checked.get('preliminary')),
+                            'missing_sections': [str(m)[:60] for m in (draft.get('missing_sections') or [])[:12]],
+                            'essential_missing': [str(m)[:60] for m in (draft.get('essential_missing') or [])[:12]],
+                            'removed_statements': len(result.get('removed_statements') or [])}
     for eid, entry in list(result.get('evidence', {}).items())[:24]:
         response = entry['result']
         method = response.get('method', {})

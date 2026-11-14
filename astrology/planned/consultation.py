@@ -28,7 +28,7 @@ from charts.models import SavedChart
 from astrology.tools import invoke_tool
 from astrology.tools.contracts import validate_payload
 from .brief import build_brief
-from .checker import FIELDS, check_answer, clean_text, markers, prune
+from .checker import FIELDS, check_answer, clean_text, markers, prune, describe_missing
 from .plan import build_plan, stated_window, supplementary_calls
 from .retrieval import build_queries, guided_books, rerank
 from .tables import Tables
@@ -40,6 +40,9 @@ STALE_CHART = ('This chart was calculated with an earlier version of the calcula
 STALE_NOTE = 'This chart was calculated with an earlier version of the calculation method; open the chart to recalculate it.'
 REFRESHED_NOTE = 'Your chart was recalculated with the current calculation method before this reading.'
 NOT_CITED = 'Classical passages were retrieved for these factors, but this reading does not cite them.'
+PRELIMINARY = 'Preliminary reading. Everything stated here was checked against the calculations, but this reading does not include: {}.'
+INCOMPLETE = ('This reading is incomplete: {} could not be verified against the calculations, so no prediction is given. '
+              'Here is the calculated evidence that was gathered, without interpretation.')
 REMOVED_NOTE = 'One or more statements that could not be verified against the calculations were removed from this reading.'
 REPORT_SECTIONS = ('NATAL CHART', 'PERIODS', 'TRANSITS', 'TRIGGERED RULES', 'TIMING CANDIDATES')
 
@@ -216,6 +219,11 @@ class PlannedConsultation(GeneralConsultation):
         concept = self.label['question_type'] == 'concept_explanation'
         if report['findings'] or not str(answer.get('direct_answer') or '').strip() or (not concept and report['verified_statements'] < 2):
             raise Stop('validation_failed')
+        if report['essential_missing']:
+            # Nothing wrong remains, but what the question asked for is not there (for example the whole
+            # timing analysis of a timing question): an incomplete reading, never a prediction without basis.
+            self.trace.append({'event': 'essential_missing', 'missing': report['essential_missing']})
+            raise Stop('essential_evidence_missing')
         return 'published'
 
     def normalize_label(self, intent):
@@ -240,6 +248,9 @@ class PlannedConsultation(GeneralConsultation):
     # ── Publication ──────────────────────────────────────────────────────
     def render(self, final):
         blocks = []
+        missing = (self.final_validation or {}).get('supplementary_missing') or []
+        if missing:
+            blocks.append(PRELIMINARY.format('; '.join(describe_missing(missing))))
         for field in FIELDS:
             text = clean_text(final.get(field) or '', self.kept)
             if text:
@@ -287,6 +298,8 @@ class PlannedConsultation(GeneralConsultation):
         states, calculations, succeeded, failed = self.states()
         blocks = ['I could not complete a verified written interpretation for this question, so here is the calculated '
                   'evidence that was gathered, without interpretation.']
+        if reason == 'essential_evidence_missing':
+            blocks = [INCOMPLETE.format('; '.join(describe_missing((self.final_validation or {}).get('essential_missing') or [])))]
         for heading, lines in self.sections.items():
             if heading.startswith(REPORT_SECTIONS):
                 blocks.append(heading.split(' (')[0].title() + '\n' + '\n'.join(lines[:14]))
@@ -302,9 +315,12 @@ class PlannedConsultation(GeneralConsultation):
         published = {}
         if self.stop_reason == 'complete' and self.final is not None:
             # The fact check's own report is the published validation (AGENTS.md shape).
+            # 'passed' here means verified and publishable; 'complete' says whether every section is present.
             published = {'published_by': 'model',
-                         'validation': {**{k: report[k] for k in ('passed', 'score', 'issues', 'missing_sections', 'generic_phrases_detected',
+                         'validation': {**{k: report[k] for k in ('score', 'issues', 'missing_sections', 'generic_phrases_detected',
                                                                  'unsupported_claims', 'repair_instruction')},
+                                        'passed': report['publishable'], 'complete': report['passed'],
+                                        'preliminary': bool(report['missing_sections']),
                                         'stage': 'fact_check', 'verified_statements': report['verified_statements'],
                                         'removed_statements': len(self.removed), 'coverage': report['coverage']}}
             if report['missing_sections']:

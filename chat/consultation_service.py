@@ -16,6 +16,7 @@ from accounts.usage_policy import BudgetExceeded
 from accounts.provider_meter import request_budget
 from accounts.models import UsageRequest
 from .evidence_manifest import manifest
+from .diagnostics import from_exception, from_result, record_failure
 
 
 @dataclass(frozen=True)
@@ -78,6 +79,7 @@ def _append_turn(user, conversation_id, question, *, request_id, expected_revisi
                         'memory_epoch': conversation.memory_epoch})
         turn = ConsultationTurn.objects.create(conversation=conversation, request_id=request_id,
             sequence=conversation.revision, epoch=conversation.memory_epoch, user_message=user_message)
+    failure = None                     # private diagnostics when no reading is published (never shown to the user)
     try:
         context = build_context(conversation, before_message_id=user_message.pk, reference_message_id=reference_message_id, current_message=user_message)
         if not Conversation.objects.filter(pk=conversation_id, user=user, chart_id=conversation.chart_id,
@@ -98,12 +100,18 @@ def _append_turn(user, conversation_id, question, *, request_id, expected_revisi
             raise ValueError('Invalid generation usage.')
         for field in ('validation', 'validation_result'):
             if field in result and (type(result[field]) is not dict or result[field].get('passed') is not True):
+                failure = failure or from_result(result, 'validation_not_passed')
                 result = {**result, 'status': 'error', 'answer': 'The final reading could not be verified; no unvalidated answer was published.'}
-    except BudgetExceeded:
+        if result.get('status') == 'error' and failure is None:
+            failure = from_result(result, result.get('stop_reason') or 'generator_error')
+    except BudgetExceeded as exc:
+        failure = {'stage': 'budget', 'code': str(exc)[:48]}
         result = {'status': 'error', 'answer': 'The request reached its spending limit or was cancelled. No question credit was consumed.', 'model': 'deterministic'}
-    except ValueError:
+    except ValueError as exc:
+        failure = from_exception(exc, 'context_or_result')
         result = {'status': 'error', 'answer': 'The requested conversation context is unavailable or invalid. Please review your references and try again.', 'model': 'deterministic'}
-    except Exception:
+    except Exception as exc:
+        failure = from_exception(exc)
         result = {'status': 'error', 'answer': 'The reading could not be completed. Please retry with a new submission.', 'model': 'deterministic'}
     try:
         with transaction.atomic():
@@ -134,11 +142,14 @@ def _append_turn(user, conversation_id, question, *, request_id, expected_revisi
             delivered = bool(assistant and result.get('status') == 'ok' and checked.get('passed') is True
                              and result.get('stop_reason', 'complete') == 'complete')
             settle(usage.pk, delivered=delivered, reason='partial_free' if assistant else 'failed')
+        if assistant is None:
+            record_failure(user_message, usage.pk, failure, request_id)
         return TurnOutcome(200, 'complete' if assistant else 'failed', conversation_id, result)
-    except Exception:
+    except Exception as exc:
         # A failed save (for example a locked SQLite database) must never leave the request running,
         # the credit reserved or the conversation locked. Settle unbilled, then re-raise as before.
         _abandon(usage.pk, conversation_id, request_id, turn.pk)
+        record_failure(user_message, usage.pk, failure or from_exception(exc, 'save'), request_id)
         raise
 
 

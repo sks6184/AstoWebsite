@@ -875,3 +875,177 @@ class PeriodBoundaryTests(PlannedBase):
                  'career (10th house), offering a strong start.')
         self.assertEqual(self.codes(wrong, 'transits'), ['wrong_aspect'])
         self.assertEqual(self.codes(wrong.replace('career (10th house)', 'fortune (9th house)'), 'transits'), [])
+
+
+class AdjacentPeriodTests(PeriodBoundaryTests):
+    """Only a true swap is rejected. A sentence that names one period and then gives the date on which the
+    next one begins is correct and must stay (the first version of the check would have removed it)."""
+
+    def test_the_start_of_the_next_period_may_follow_the_name_of_the_earlier_one(self):
+        a, b = self.a, self.b
+        for sentence in (
+                f"After the {self.name(a)} period, the next phase begins on {b['start']}.",
+                f"The {self.name(a)} period gives way to a new phase that starts on {self.words(b['start'])}.",
+                f"The {self.name(a)} period is followed by the {self.name(b)} period, which begins on {b['start']}.",
+                f"Once the {self.name(a)} period is over, things change from {self.words(a['end'])}.",
+                f"The {self.name(b)} period, which comes after the {self.name(a)} period ends, runs from {b['start']} to {b['end']}."):
+            self.assertEqual(self.codes(sentence), [], sentence)
+
+    def test_the_calculated_dates_are_what_the_correction_states(self):
+        a = self.a
+        check = SentenceCheck(f"The {self.name(a)} period starts on {a['end']}.", self.c.tables, self.c.plan, {}, TODAY, 'periods').run()
+        self.assertEqual(check.findings[0]['code'], 'wrong_period_boundary')
+        self.assertIn('but it is its end', check.findings[0]['detail'])
+        self.assertIn(f"starts on {a['start']} and ends on {a['end']}", check.findings[0]['correction'])
+
+
+@override_settings(ASTROGPT_AGENT_ENABLED=True, ASTROGPT_AGENT_USERS=('m3-pilot',))
+class PublicationTests(M3Base):
+    """What reaches the user, and what it costs them, through the real view and the real service:
+    complete (1 credit), preliminary (0), incomplete (0), failed (0, with a private record)."""
+
+    post = PlannedUiTests.post
+
+    def outcome(self):
+        from accounts.models import CreditAccount
+        row = UsageRequest.objects.filter(user=self.owner).latest('pk')
+        account = CreditAccount.objects.get(user=self.owner)
+        answer = Message.objects.filter(role=Message.ASSISTANT, conversation__user=self.owner).order_by('-pk').first()
+        question = Message.objects.filter(role=Message.USER, conversation__user=self.owner).latest('pk')
+        return row, account, answer, question
+
+    def test_complete_validated_reading_is_published_and_uses_one_credit(self):
+        response, _ = self.post()
+        row, account, answer, question = self.outcome()
+        self.assertEqual((row.status, row.credits_consumed, row.credits_released, row.credits_reserved), ('succeeded', 1, 0, 0))
+        self.assertEqual((account.consumed, account.reserved), (1, 0))
+        saved = answer.provenance['evidence']
+        self.assertEqual(saved['status'], 'ok')
+        self.assertEqual(saved['reading'], {'complete': True, 'preliminary': False, 'missing_sections': [], 'essential_missing': [], 'removed_statements': 0})
+        self.assertTrue(saved['app_version'])
+        self.assertNotIn('Preliminary reading', answer.content)
+        self.assertNotIn('failure', question.provenance)
+
+    def test_preliminary_reading_without_supplementary_evidence_is_published_free_and_labelled(self):
+        vague = lambda made: (lambda p: astrologer(made[0], divisional_confirmation='The divisional charts confirm this.',
+                                                   jaimini_view='The Jaimini indicators agree.'))
+        made = []
+        self.client.force_login(self.owner)
+        with patch.object(PlannedConsultation, 'default_provider', lambda c: made.append(c) or Scripted(CAREER, vague(made), vague(made))), \
+             patch('astrology.agent.general.KnowledgeSession.__init__', autospec=True,
+                   side_effect=lambda s, u, c, a=None: setattr(s, 'user', u) or setattr(s, 'chart_id', c) or
+                   setattr(s, 'adapter', self.library) or setattr(s, 'cache', {}) or
+                   setattr(s, 'last_usage', {'input_tokens': 0, 'output_tokens': 0, 'provider_rounds': 0})):
+            response = self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': QUESTION, 'answer_language': 'English'}, follow=True)
+        row, account, answer, question = self.outcome()
+        self.assertIsNotNone(answer)                                              # published, not discarded (messages 482-484)
+        self.assertTrue(answer.content.startswith('Preliminary reading.'))
+        self.assertIn('does not include: divisional-chart confirmation; the Jaimini view.', answer.content)
+        self.assertIn('Your 10th lord Mars sits in the 8th house in Aquarius', answer.content)
+        self.assertContains(response, 'Preliminary reading.')
+        self.assertEqual((row.status, row.credits_consumed, row.credits_released), ('partial_free', 0, 1))
+        self.assertEqual((account.consumed, account.reserved), (0, 0))
+        saved = answer.provenance['evidence']
+        self.assertEqual((saved['status'], saved['stop_reason'], saved['published_by']), ('partial', 'complete', 'model'))
+        self.assertTrue(saved['validated'])
+        self.assertEqual(saved['reading']['missing_sections'], ['divisional_basis', 'jaimini_basis'])
+        self.assertEqual((saved['reading']['complete'], saved['reading']['preliminary'], saved['reading']['essential_missing']), (False, True, []))
+
+    def run_with(self, *answers):
+        made = []
+        steps = [(lambda made, a: (lambda p: astrologer(made[0], **a)))(made, a) for a in answers]
+        self.client.force_login(self.owner)
+        with patch.object(PlannedConsultation, 'default_provider', lambda c: made.append(c) or Scripted(CAREER, *steps)), \
+             patch('astrology.agent.general.KnowledgeSession.__init__', autospec=True,
+                   side_effect=lambda s, u, c, a=None: setattr(s, 'user', u) or setattr(s, 'chart_id', c) or
+                   setattr(s, 'adapter', self.library) or setattr(s, 'cache', {}) or
+                   setattr(s, 'last_usage', {'input_tokens': 0, 'output_tokens': 0, 'provider_rounds': 0})):
+            return self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': QUESTION, 'answer_language': 'English'}, follow=True)
+
+    def test_timing_question_without_any_timing_analysis_is_incomplete_and_gives_no_prediction(self):
+        no_timing = {'periods': '', 'direct_answer': 'A good job is well indicated for you. Your 10th lord Mars is the main factor.'}
+        self.run_with(no_timing, no_timing)
+        row, account, answer, question = self.outcome()
+        saved = answer.provenance['evidence']
+        self.assertEqual((saved['status'], saved['stop_reason'], saved['published_by']), ('partial', 'essential_evidence_missing', 'server'))
+        self.assertTrue(answer.content.startswith('This reading is incomplete: the dasha periods; the timing analysis could not be verified'))
+        self.assertIn('no prediction is given', answer.content)
+        self.assertNotIn('A good job is well indicated', answer.content)          # the writer's unsupported conclusion is not shown
+        self.assertIn('Vimshottari Mahadasha: Jupiter', answer.content)           # the calculated evidence is
+        self.assertEqual(saved['reading']['essential_missing'], ['period_basis', 'timing'])
+        self.assertEqual((row.status, row.credits_consumed, row.credits_released), ('partial_free', 0, 1))
+        self.assertEqual((account.consumed, account.reserved), (0, 0))
+
+    def test_incorrect_claims_still_wrong_after_repair_are_removed_and_the_rest_is_published(self):
+        wrong = {'natal_promise': 'Your 10th lord Mars sits in the 8th house in Aquarius. Saturn aspects your 10th house. '
+                                  'This brings heavy pressure. Mercury occupies your 10th house in Aries.' + BASIS}
+        self.run_with(wrong, wrong)
+        row, account, answer, question = self.outcome()
+        self.assertNotIn('Saturn aspects', answer.content)
+        self.assertNotIn('heavy pressure', answer.content)
+        self.assertIn('Mercury occupies your 10th house', answer.content)
+        self.assertIn('could not be verified against the calculations were removed', answer.content)
+        saved = answer.provenance['evidence']
+        self.assertEqual((saved['status'], saved['reading']['complete'], saved['reading']['removed_statements']), ('ok', True, 2))
+        self.assertEqual((row.status, row.credits_consumed), ('succeeded', 1))
+
+    def test_a_reading_whose_period_section_is_emptied_by_removal_is_incomplete_not_lost(self):
+        # The case behind messages 482-484: the only period sentence is wrong, is removed, and nothing is left of the timing.
+        swap = lambda made: (lambda p: astrologer(made[0], periods=(
+            lambda r: f"The {P(r['major'])}/{P(r['sub'])} period starts on {r['end']}.")(made[0].tables.dashas['vimshottari'][0])))
+        made = []
+        self.client.force_login(self.owner)
+        with patch.object(PlannedConsultation, 'default_provider', lambda c: made.append(c) or Scripted(CAREER, swap(made), swap(made))), \
+             patch('astrology.agent.general.KnowledgeSession.__init__', autospec=True,
+                   side_effect=lambda s, u, c, a=None: setattr(s, 'user', u) or setattr(s, 'chart_id', c) or
+                   setattr(s, 'adapter', self.library) or setattr(s, 'cache', {}) or
+                   setattr(s, 'last_usage', {'input_tokens': 0, 'output_tokens': 0, 'provider_rounds': 0})):
+            self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': QUESTION, 'answer_language': 'English'}, follow=True)
+        row, account, answer, question = self.outcome()
+        self.assertIsNotNone(answer)
+        saved = answer.provenance['evidence']
+        self.assertEqual(saved['stop_reason'], 'essential_evidence_missing')
+        self.assertIn('wrong_period_boundary', json.dumps(saved['agent_events']))
+        self.assertNotIn('period starts on', answer.content)
+        self.assertEqual((row.status, row.credits_consumed), ('partial_free', 0))
+
+    def test_a_failed_consultation_costs_nothing_and_leaves_a_private_record(self):
+        self.client.force_login(self.owner)
+        with patch('astrology.planned.consultation.run_planned_consultation', side_effect=RuntimeError('secret chart text')):
+            response = self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': QUESTION, 'answer_language': 'English'}, follow=True)
+        row, account, answer, question = self.outcome()
+        self.assertIsNone(answer)
+        self.assertEqual((row.status, row.credits_consumed, row.credits_released, row.credits_reserved), ('failed', 0, 1, 0))
+        self.assertEqual((account.consumed, account.reserved), (0, 0))
+        failure = question.provenance['failure']
+        self.assertEqual((failure['stage'], failure['code'], failure['exception']), ('generation', 'exception', 'RuntimeError'))
+        self.assertTrue(failure['where'] and failure['app_version'])
+        self.assertEqual(failure['message_id'], question.pk)
+        self.assertEqual(failure['usage_request_id'], row.pk)
+        self.assertEqual(failure['request_id'], str(row.request_id))
+        self.assertEqual(failure['credit'], {'status': 'failed', 'reserved': 0, 'consumed': 0, 'released': 1})
+        self.assertEqual(failure['api_cost_usd'], '0')
+        self.assertEqual(row.stop_reason, 'exception')
+        # Nothing technical reaches the user, and no question, answer or exception text enters the record.
+        page = response.content.decode()
+        for private in ('RuntimeError', 'secret chart text', 'app_version', 'consultation_service'):
+            self.assertNotIn(private, page)
+        self.assertNotIn('secret chart text', json.dumps(failure))
+        self.assertNotIn('good job', json.dumps(failure))
+
+    def test_a_result_that_did_not_pass_validation_is_recorded_with_its_issues(self):
+        unverified = {'status': 'partial', 'answer': 'An unverified reading.', 'model': 'scripted', 'prompt_tokens': 0, 'completion_tokens': 0,
+                      'stop_reason': 'complete', 'validation': {'passed': False, 'issues': ['periods: wrong_period'], 'missing_sections': ['timing']},
+                      'trace': [{'event': 'round', 'stage': 'intent'}, {'event': 'round', 'stage': 'writer'}]}
+        self.client.force_login(self.owner)
+        with patch('astrology.planned.consultation.run_planned_consultation', return_value=unverified):
+            response = self.client.post(reverse('ask_question'), {'chart_id': self.chart.pk, 'question': QUESTION, 'answer_language': 'English'}, follow=True)
+        row, account, answer, question = self.outcome()
+        self.assertIsNone(answer)
+        self.assertNotContains(response, 'An unverified reading.')
+        failure = question.provenance['failure']
+        self.assertEqual((failure['stage'], failure['code']), ('validation', 'validation_not_passed'))
+        self.assertEqual(failure['validation']['issues'], ['periods: wrong_period'])
+        self.assertEqual(failure['validation']['missing_sections'], ['timing'])
+        self.assertEqual(failure['model_stages'], ['intent', 'writer'])
+        self.assertEqual((row.status, row.credits_consumed, account.consumed), ('failed', 0, 0))

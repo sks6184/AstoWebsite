@@ -16,7 +16,10 @@ class SafeJsonFormatter(logging.Formatter):
             'level': record.levelname, 'component': record.name,
             'status': getattr(record, 'status_code', None),
             'route': getattr(record, 'safe_route', None) if getattr(record, 'safe_route', None) in ROUTES else None,
-            'elapsed_ms': getattr(record, 'elapsed_ms', None)}, separators=(',', ':'))
+            'elapsed_ms': getattr(record, 'elapsed_ms', None),
+            # Failed-consultation diagnostics: codes and identifiers only, never question, answer or chart text.
+            **{k: str(getattr(record, 'safe_' + k))[:48] for k in ('code', 'stage', 'usage', 'version') if getattr(record, 'safe_' + k, None) is not None}},
+            separators=(',', ':'))
 
 
 class PilotMiddleware:
