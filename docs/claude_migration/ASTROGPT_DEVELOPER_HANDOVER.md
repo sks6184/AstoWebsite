@@ -213,8 +213,8 @@ patch scripts with a file tool and assert that no backspace character (`chr(8)`)
 
 ## 10. Git
 
-- Remote: `origin` = `https://github.com/sks6184/AstoWebsite.git`. It holds `main` (`2312a42`) and
-  `claude/m3-publish-partial`.
+- Remote: `origin` = `https://github.com/sks6184/AstoWebsite.git`. It holds `main` (`2312a42`),
+  `claude/m3-publish-partial` and an older `master` branch (`dbd0d4e`) that this work never used.
 - Live checkout: `...\Astro_Code_base`, branch `claude/m3-planned-consultation` at `b691ef5`. The owner's
   development server runs from it and reloads on every file change.
 - Development worktree: `...\Astro_Code_base_dev`, branch `claude/m3-publish-partial`. It has no `.env`,
